@@ -8,7 +8,7 @@ The repository contains a minimal TanStack Start app, an installable web app man
 
 ## Local development
 
-Use Node.js 24 (see `.nvmrc`).
+Use Node.js 24.
 
 ```sh
 npm ci
@@ -20,8 +20,10 @@ Open `http://localhost:3000`.
 ## Build and checks
 
 ```sh
-npm run build
+npm run format:check
+npm run lint
 npm run typecheck
+npm run build
 npx playwright install chromium webkit
 npm test
 ```
@@ -29,6 +31,23 @@ npm test
 The build generates TanStack Router's route tree and a prerendered SPA shell. `npm run preview` serves the production build using Cloudflare's local runtime. Browser tests run against this production preview; WebKit emulation does not replace testing on a physical iPhone.
 
 The committed PNG installation icons are generated from `public/icon.svg`. After changing the SVG, regenerate them with `npm run icons` (requires the Playwright Chromium browser).
+
+## Formatting, linting, and Git hooks
+
+Oxfmt uses Ultracite's formatting preset. Oxlint uses Ultracite's core, React, and built-in anti-slop presets. Generated route code and the package lockfile are excluded from formatting; generated route code is also excluded from linting.
+
+```sh
+npm run format
+npm run lint
+npm run lint:fix
+```
+
+Lefthook installs Git hooks through the `prepare` script during `npm install` or `npm ci`. To reinstall hooks manually, run `npm run prepare`.
+
+- **Pre-commit:** format staged files and re-stage formatter changes, lint staged code, then typecheck the entire project. Jobs run sequentially and stop on failure, so checks see the formatted files.
+- **Pre-push:** build the app and run the browser tests against the fresh production build. Install Chromium and WebKit with the command above before pushing.
+
+Fully stage files before committing. Formatting operates on working-tree files and re-stages them, so partial staging is not preserved for files the formatter processes.
 
 ## PWA installation
 

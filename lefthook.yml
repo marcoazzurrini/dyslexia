@@ -18,5 +18,5 @@ pre-commit:
 
 pre-push:
   jobs:
-    - name: tests
-      run: npm run build && npm test
+    - name: verification
+      run: npm run verify

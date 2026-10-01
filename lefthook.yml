@@ -1,0 +1,22 @@
+pre-commit:
+  piped: true
+  jobs:
+    - name: format
+      glob: "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts,json,jsonc,css,html,md,mdx,yml,yaml}"
+      exclude:
+        - src/routeTree.gen.ts
+        - package-lock.json
+      run: npm run format -- {staged_files}
+      stage_fixed: true
+    - name: lint
+      glob: "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}"
+      exclude:
+        - src/routeTree.gen.ts
+      run: npm run lint -- {staged_files}
+    - name: typecheck
+      run: npm run typecheck
+
+pre-push:
+  jobs:
+    - name: tests
+      run: npm run build && npm test

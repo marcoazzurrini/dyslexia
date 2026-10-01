@@ -32,5 +32,7 @@ jobs:
         with:
           node-version-file: .node-version
           cache: npm
+      - name: Trust the checked-out workspace inside the container
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
       - run: npm run ci

@@ -9,20 +9,6 @@ interface SavedPlayback {
   rate: number;
 }
 
-export type PlaybackStatus =
-  | "ready"
-  | "loading"
-  | "playing"
-  | "paused"
-  | "ended"
-  | "error";
-
-interface PlaybackCallbacks {
-  onRate: (rate: number) => void;
-  onReady: (ready: boolean) => void;
-  onStatus: (status: PlaybackStatus) => void;
-}
-
 const validRate = (rate: unknown): rate is number =>
   typeof rate === "number" && PLAYBACK_RATES.some((value) => value === rate);
 
@@ -50,15 +36,16 @@ const readPlayback = (): SavedPlayback => {
   return { position: 0, rate: 1 };
 };
 
+// Video.js owns playback state and controls. This adapter only manages the
+// application's saved position, preferred speed, and optional system controls.
 export const connectPlayback = (
   audio: HTMLAudioElement,
-  { onRate, onReady, onStatus }: PlaybackCallbacks
+  { onRate, play }: { onRate: (rate: number) => void; play: () => void }
 ) => {
   const saved = readPlayback();
   let pendingPosition = saved.position;
   let { rate } = saved;
   let restored = false;
-  let disposed = false;
   let lastSave = 0;
 
   const hasDuration = () =>
@@ -67,8 +54,7 @@ export const connectPlayback = (
     audio.duration > 0;
 
   const save = () => {
-    // In particular, ratechange and visibility events can precede metadata.
-    // Never replace a pending saved position with the initial currentTime of 0.
+    // Events can precede metadata. Never overwrite a pending saved position.
     if (
       !restored ||
       !hasDuration() ||
@@ -87,22 +73,7 @@ export const connectPlayback = (
         })
       );
     } catch {
-      // Playback remains usable when browser storage is unavailable.
-    }
-  };
-
-  const play = async () => {
-    onStatus("loading");
-    try {
-      await audio.play();
-    } catch (error) {
-      if (
-        disposed ||
-        (error instanceof DOMException && error.name === "AbortError")
-      ) {
-        return;
-      }
-      onStatus("error");
+      // Playback remains usable when storage is unavailable.
     }
   };
 
@@ -115,43 +86,16 @@ export const connectPlayback = (
     if (!hasDuration()) {
       return;
     }
-    audio.preservesPitch = true;
     if (!restored) {
       try {
         audio.currentTime = Math.min(pendingPosition, audio.duration);
-        // Rate changes can seek the decoder too. Do not apply the saved rate
-        // before valid metadata exists, especially with delayed media loads.
         audio.defaultPlaybackRate = rate;
         audio.playbackRate = rate;
         restored = true;
       } catch {
-        // Some engines only accept a seek once loadeddata/canplay fires.
+        // Some engines only accept restoration once loadeddata/canplay fires.
         return;
       }
-    }
-    onReady(true);
-    mediaSession.update();
-    if (audio.paused) {
-      onStatus("ready");
-    }
-  };
-  const canPlay = () => {
-    metadata();
-    onStatus(audio.paused ? "ready" : "playing");
-  };
-  const playing = () => {
-    onStatus("playing");
-    mediaSession.update();
-  };
-  const pause = () => {
-    if (!audio.error) {
-      onStatus(audio.ended ? "ended" : "paused");
-    }
-    sync();
-  };
-  const timeUpdate = () => {
-    if (Date.now() - lastSave >= 5000) {
-      save();
     }
     mediaSession.update();
   };
@@ -161,34 +105,28 @@ export const connectPlayback = (
       if (audio.defaultPlaybackRate !== rate) {
         audio.defaultPlaybackRate = rate;
       }
-      audio.preservesPitch = true;
       onRate(rate);
       sync();
     }
   };
-  const loading = () => onStatus("loading");
-  const error = () => {
-    onStatus("error");
+  const timeUpdate = () => {
+    if (Date.now() - lastSave >= 5000) {
+      save();
+    }
     mediaSession.update();
   };
-  const ended = () => {
-    onStatus("ended");
-    sync();
-  };
   const events = {
-    canplay: canPlay,
+    canplay: metadata,
     durationchange: metadata,
-    ended,
-    error,
+    ended: sync,
+    error: sync,
     loadeddata: metadata,
     loadedmetadata: metadata,
-    loadstart: loading,
-    pause,
-    playing,
+    pause: sync,
+    playing: sync,
     ratechange: rateChange,
     seeked: sync,
     timeupdate: timeUpdate,
-    waiting: loading,
   };
   for (const [event, handler] of Object.entries(events)) {
     audio.addEventListener(event, handler);
@@ -198,9 +136,6 @@ export const connectPlayback = (
   audio.preservesPitch = true;
   onRate(rate);
   metadata();
-  if (audio.error) {
-    error();
-  }
 
   const retry = () => {
     save();
@@ -208,14 +143,12 @@ export const connectPlayback = (
       pendingPosition = audio.currentTime;
     }
     restored = false;
-    onReady(false);
     audio.load();
     // Keep play() in the click call stack for browsers requiring activation.
     play();
   };
   const dispose = () => {
     save();
-    disposed = true;
     for (const [event, handler] of Object.entries(events)) {
       audio.removeEventListener(event, handler);
     }
@@ -224,5 +157,5 @@ export const connectPlayback = (
     mediaSession.dispose();
   };
 
-  return { dispose, play, retry };
+  return { dispose, retry };
 };

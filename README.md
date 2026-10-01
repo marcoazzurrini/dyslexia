@@ -4,7 +4,7 @@ An audio-first web app for listening to articles, with source-preserving narrati
 
 ## Status
 
-The repository contains a TanStack Start app, an installable web app manifest, and the first complete article narration. The player uses native audio and Media Chrome controls, optional lock-screen controls, and device-local progress and speed. The 50-minute recording is stored in Cloudflare R2. Article importing, automatic adaptation, offline listening, and cross-device synchronization are not implemented. Physical iPhone background playback still needs a listening test; see [playback setup and verification](docs/playback.md).
+The repository contains a TanStack Start app, an installable web app manifest, and the first complete article narration. The player uses Video.js v10 (`@videojs/react` pinned to `10.0.0-rc.4`) over native audio, optional lock-screen controls, and device-local progress and speed. The 50-minute recording is stored in Cloudflare R2. Article importing, automatic adaptation, offline listening, and cross-device synchronization are not implemented. Physical iPhone background playback still needs a listening test; see [playback setup and verification](docs/playback.md).
 
 ## Local development
 
@@ -126,7 +126,7 @@ URL imports, a library, offline downloads, and cross-device synchronization are 
 
 - TanStack Start, React, and TypeScript.
 - Cloudflare Workers and Workers Static Assets for deployment.
-- Browser-native audio playback and Media Chrome controls, with Media Session enhancements where supported.
+- Video.js v10 audio controls with Media Session enhancements where supported.
 - Cloudflare R2 for the full recording and HTTP byte-range delivery.
 - Local browser storage for playback position and speed.
 - ElevenLabs v4 hosted TTS for pregenerating the audio fixture outside the browser.

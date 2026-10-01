@@ -82,7 +82,7 @@ Listen through the assembled recording before loading it into the app. Check omi
 
 All 12 chunks are assembled in `.local/narration/audio/narration-b2ac2e01fb55c21c.mp3`: 50 minutes and 34.32 seconds, 48.55 MB. File checks confirm that its duration matches the sum of the chunks. A listening review is still required.
 
-The app uses native audio with Media Chrome controls. The recording is stored separately in R2 because it exceeds the static asset size limit; Git builds do not receive the ignored local file. See [playback and hosting](playback.md) for local seeding, uploads, byte-range verification, and physical iPhone checks. The app's audio route remains publicly reachable until access control is added.
+The app uses Video.js v10 over native audio. The recording is stored separately in R2 because it exceeds the static asset size limit; Git builds do not receive the ignored local file. See [playback and hosting](playback.md) for local seeding, uploads, byte-range verification, and physical iPhone checks. The app's audio route remains publicly reachable until access control is added.
 
 ## Verification
 

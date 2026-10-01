@@ -14,4 +14,6 @@ export default defineConfig({
     }),
     react(),
   ],
+  // Use the same loopback address for SPA prerendering in Linux containers.
+  preview: { host: "127.0.0.1" },
 });

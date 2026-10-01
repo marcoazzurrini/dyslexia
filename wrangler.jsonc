@@ -3,6 +3,9 @@
   "name": "dyslexia",
   "account_id": "168a8fd9b88ae669c145fa229de911c5",
   "workers_dev": true,
+  "routes": [
+    { "pattern": "dyslexia.marcoazzurrini.com", "custom_domain": true },
+  ],
   "main": "@tanstack/react-start/server-entry",
   "compatibility_date": "2026-09-30",
   "compatibility_flags": ["nodejs_compat"],

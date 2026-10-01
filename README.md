@@ -55,6 +55,10 @@ For installation testing, serve the app over HTTPS. On iPhone, open the URL in S
 
 ## Cloudflare deployment
 
+Production URL: <https://dyslexia.marcoazzurrini.com>.
+
+The custom domain is declared in `wrangler.jsonc` so Git deployments preserve it. Cloudflare manages its DNS record and HTTPS certificate. The `workers.dev` URL remains available as a fallback.
+
 The Cloudflare Vite plugin and `wrangler.jsonc` configure Workers and Static Assets. No database or external storage binding is configured.
 
 ### Pull requests and GitHub Actions

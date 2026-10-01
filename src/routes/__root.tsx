@@ -1,4 +1,5 @@
 import {
+  ClientOnly,
   createRootRoute,
   HeadContent,
   Link,
@@ -6,8 +7,21 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { lazy, Suspense } from "react";
 
 import styles from "../styles.css?url";
+
+const ArticlePlayer = lazy(async () => {
+  const module = await import("../components/article-player");
+  return { default: module.ArticlePlayer };
+});
+
+const PlayerFallback = () => (
+  <div className="player-shell">
+    <p>Loading audio controls…</p>
+    <noscript>Enable JavaScript to use the audio player.</noscript>
+  </div>
+);
 
 const RootDocument = ({ children }: { children: ReactNode }) => (
   <html lang="en">
@@ -19,6 +33,11 @@ const RootDocument = ({ children }: { children: ReactNode }) => (
         Skip to content
       </a>
       {children}
+      <ClientOnly fallback={<PlayerFallback />}>
+        <Suspense fallback={<PlayerFallback />}>
+          <ArticlePlayer />
+        </Suspense>
+      </ClientOnly>
       <Scripts />
     </body>
   </html>

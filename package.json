@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build",
-    "ci": "npm run format:check && npm run lint && npm run build && npm run typecheck && npm test",
+    "ci": "npm run format:check && npm run lint && npm run test:scripts && npm run build && npm run typecheck && npm test",
     "preview": "vite preview --host 0.0.0.0 --port 3000",
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
+    "test:scripts": "node --test scripts/*.test.mjs",
+    "narrate": "node scripts/narration.mjs",
     "format": "oxfmt --write",
     "format:check": "oxfmt --check",
     "lint": "oxlint --deny-warnings",
@@ -22,11 +24,13 @@
   "dependencies": {
     "@tanstack/react-router": "1.170.40",
     "@tanstack/react-start": "1.168.59",
+    "media-chrome": "4.19.3",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.62.3",
+    "@cloudflare/workers-types": "5.20261001.1",
     "@playwright/test": "1.63.0",
     "@types/node": "^24.0.0",
     "@types/react": "19.3.0",

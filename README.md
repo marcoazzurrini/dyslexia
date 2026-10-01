@@ -4,7 +4,7 @@ An audio-first web app for listening to articles, with source-preserving narrati
 
 ## Status
 
-The repository contains a minimal TanStack Start app, an installable web app manifest, and the initial research. The app currently shows an empty home screen and installation guidance. Article import and audio playback are not implemented. No audio has been generated or deployed.
+The repository contains a TanStack Start app, an installable web app manifest, and the first complete article narration. The player uses native audio and Media Chrome controls, optional lock-screen controls, and device-local progress and speed. The 50-minute recording is stored in Cloudflare R2. Article importing, automatic adaptation, offline listening, and cross-device synchronization are not implemented. Physical iPhone background playback still needs a listening test; see [playback setup and verification](docs/playback.md).
 
 ## Local development
 
@@ -15,7 +15,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3000`. To hear the full recording locally, first seed the local R2 store using [the playback instructions](docs/playback.md#supply-the-recording-locally). Production R2 objects are not downloaded automatically.
 
 ## Build and checks
 
@@ -24,7 +24,7 @@ npx playwright install chromium webkit
 npm run ci
 ```
 
-`npm run ci` checks formatting and linting, builds the app, checks types, and runs the browser tests. It stops on the first failure. Each check also remains available as an individual npm script.
+`npm run ci` checks formatting and linting, runs the narration script tests, builds the app, checks types, and runs the browser tests. It stops on the first failure. Each check also remains available as an individual npm script.
 
 The build generates TanStack Router's route tree and a prerendered SPA shell. `npm run preview` serves the production build using Cloudflare's local runtime. Browser tests run against this production preview; WebKit emulation does not replace testing on a physical iPhone.
 
@@ -59,7 +59,7 @@ Production URL: <https://dyslexia.marcoazzurrini.com>.
 
 The custom domain is declared in `wrangler.jsonc` so Git deployments preserve it. Cloudflare manages its DNS record and HTTPS certificate. The `workers.dev` URL remains available as a fallback.
 
-The Cloudflare Vite plugin and `wrangler.jsonc` configure Workers and Static Assets. No database or external storage binding is configured.
+The Cloudflare Vite plugin and `wrangler.jsonc` configure Workers, Static Assets, and the `AUDIO` binding to the `dyslexia-audio` R2 bucket. The Worker streams the recording through a same-origin audio route with byte-range support. No database is configured.
 
 ### Pull requests and GitHub Actions
 
@@ -71,7 +71,7 @@ Prefer small pull requests and squash merges. GitHub Actions does not deploy and
 
 ### Cloudflare Git integration
 
-Cloudflare Workers Builds connects `marcoazzurrini/dyslexia` to the `dyslexia` Worker in the account configured in `wrangler.jsonc`. The Worker serves the application and its static assets; no D1 database, R2 bucket, or other storage resource is needed yet.
+Cloudflare Workers Builds connects `marcoazzurrini/dyslexia` to the `dyslexia` Worker in the account configured in `wrangler.jsonc`. The Worker serves the application and its static assets, and streams the pregenerated recording from R2. No D1 database is required. Upload the recording separately; Git builds do not include ignored local media.
 
 The production build settings are:
 
@@ -104,7 +104,9 @@ Deployment creates or updates the Worker named `dyslexia` in the authenticated C
 
 ## First playback test
 
-The first iteration uses one reviewed article excerpt and a pregenerated MP3 to test playback on an iPhone, both in Safari and as an installed web app.
+The first iteration uses a reviewed narration of the complete article [How I Vibed a Proof of Conway’s Conjecture](https://overreacted.io/how-i-vibed-a-proof-of-conways-conjecture/) and one pregenerated MP3 to test playback on an iPhone, both in Safari and as an installed web app.
+
+Extraction and adaptation are one-off preparation, not an automated pipeline. The local ElevenLabs v4 script handles planning, resumable generation, and audio assembly. See [the narration workflow](docs/narration.md). The reviewed narration and full recording are complete. See [the player and hosting guide](docs/playback.md) for delivery, local setup, and physical-device acceptance tests.
 
 The test covers:
 
@@ -121,11 +123,12 @@ URL imports, a library, offline downloads, and cross-device synchronization are 
 
 - TanStack Start, React, and TypeScript.
 - Cloudflare Workers and Workers Static Assets for deployment.
-- Browser-native audio playback, with Media Session enhancements where supported.
+- Browser-native audio playback and Media Chrome controls, with Media Session enhancements where supported.
+- Cloudflare R2 for the full recording and HTTP byte-range delivery.
 - Local browser storage for playback position and speed.
-- Fish hosted TTS for pregenerating the audio fixture outside the browser.
+- ElevenLabs v4 hosted TTS for pregenerating the audio fixture outside the browser.
 
-The first test does not require a database or TanStack Query. Cloudflare is the intended deployment target. The deployed recording's seeking behavior still needs verification once an audio fixture is available.
+The first test does not require a database or TanStack Query. Automated tests cover playback controls, local resume, and HTTP ranges. A real phone test is still required for screen-off playback, interruptions, and narration quality.
 
 ## Research and design
 

@@ -2,7 +2,7 @@
 
 ## Status and purpose
 
-The first playback test uses TanStack Start and pregenerated audio served as a static file. This document proposes the remaining technical choices; it does not cover deployment execution or paid audio generation.
+The first playback test uses TanStack Start and pregenerated audio served as a static file. The current scope is one complete article narrated with ElevenLabs v4, not an excerpt. See the [current narration workflow](../narration.md); the hosting and scaffolding observations below describe the original proposal. This document proposes the remaining technical choices; it does not cover deployment execution or paid audio generation.
 
 The test should establish whether a source-preserving narration sample remains understandable and whether an installed web app plays reliably on a locked iPhone. It is not the article-importing application yet.
 
@@ -42,12 +42,12 @@ Query becomes useful when the application has server data to manage: generation 
 
 ## Audio generation and files
 
-Generate the reviewed sample outside the running web app with a small local script using Fish's API. The generation script is a development tool, not the product interface.
+Generate the reviewed full narration outside the running web app with a small local script using ElevenLabs' API. The generation script is a development tool, not the product interface.
 
-- Keep the Fish API key in a local, ignored secret file or environment variable.
+- Keep `ELEVENLABS_API_KEY` in a local, ignored `.env` file or environment variable.
 - Never expose it through a client-visible environment variable, the public directory, or a bundled import.
 - Review the narration and show an estimated generation cost before making the paid request. Do not implement a monthly spending cap.
-- Generate a complete opening section with its necessary context. A several-minute sample is sufficient to begin; a longer recording can later exercise a sustained walking session.
+- Generate the complete article with its necessary context. Review all prose, diagrams, code, and equations before synthesis.
 - Prefer one MP3 for the first test. It avoids testing background transitions between multiple files at the same time as basic playback.
 - Serve it at a versioned URL, for example `/audio/conway-opening-v1.mp3`.
 - Keep metadata such as title, author, source URL, audio URL, and audio version in a small static record.
@@ -114,7 +114,7 @@ Desktop browser automation can cover controls and state restoration. It cannot c
 ## Remaining decisions before implementation
 
 1. Deployment versus a temporary HTTPS tunnel, including whether access should be private.
-2. The exact recording sample and Fish voice, followed by review of the script and estimated cost.
+2. The ElevenLabs voice, followed by review of the complete narration and estimated cost.
 3. The iPhone and iOS version used for the acceptance test.
 
 The database and TanStack Query choices do not need to block this test: both can be deferred without losing the chosen application framework.

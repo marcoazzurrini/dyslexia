@@ -19,12 +19,15 @@ Open `http://localhost:3000`. To hear the full recording locally, first seed the
 
 ## Build and checks
 
+Start OrbStack or Docker Desktop, then run:
+
 ```sh
-npx playwright install chromium webkit
-npm run ci
+npm run verify
 ```
 
-`npm run ci` checks formatting and linting, runs the narration script tests, builds the app, checks types, and runs the browser tests. It stops on the first failure. Each check also remains available as an individual npm script.
+Local pre-push and GitHub Actions run the same complete checks in a cached Linux ARM64 container. The first run downloads browser images and installs dependencies; later runs reuse those layers. Development stays native. See [reproducible verification](docs/verification.md) for focused tests, caches, and failure traces.
+
+Inside that container, `npm run ci` checks formatting and linting, runs all script tests, builds the app, checks types, and runs the browser tests. It stops on the first failure. Each check also remains available as an individual npm script. For optional host browser tests, install browsers with `npx playwright install chromium webkit` first; host results do not replace container verification.
 
 The build generates TanStack Router's route tree and a prerendered SPA shell. `npm run preview` serves the production build using Cloudflare's local runtime. Browser tests run against this production preview; WebKit emulation does not replace testing on a physical iPhone.
 
@@ -43,7 +46,7 @@ npm run lint:fix
 Lefthook installs Git hooks through the `prepare` script during `npm install` or `npm ci`. To reinstall hooks manually, run `npm run prepare`.
 
 - **Pre-commit:** format staged files and re-stage formatter changes, lint staged code, then typecheck the entire project. Jobs run sequentially and stop on failure, so checks see the formatted files.
-- **Pre-push:** build the app and run the browser tests against the fresh production build. Install Chromium and WebKit with the command above before pushing.
+- **Pre-push:** run `npm run verify`, including every CI check in the shared Linux ARM64 container. OrbStack or Docker Desktop must be running. Host browser installations are not needed for this check.
 
 Fully stage files before committing. Formatting operates on working-tree files and re-stages them, so partial staging is not preserved for files the formatter processes.
 
@@ -63,7 +66,7 @@ The Cloudflare Vite plugin and `wrangler.jsonc` configure Workers, Static Assets
 
 ### Pull requests and GitHub Actions
 
-Work on a short-lived branch and open a pull request targeting `main`. `.github/workflows/ci.yml` runs the `checks` job when a pull request opens or changes. It runs formatting, linting, the production build, typechecking, and Chromium/WebKit browser tests. A newer update cancels the older run. Manual checks remain available through GitHub Actions.
+Work on a short-lived branch and open a pull request targeting `main`. `.github/workflows/ci.yml` runs the `checks` job when a pull request opens or changes. It builds the same verification image used locally, then runs formatting, linting, script tests, the production build, typechecking, and Chromium/WebKit browser tests inside it. A newer update cancels the older run. Manual checks remain available through GitHub Actions.
 
 GitHub protects `main`: pull requests and a successful `checks` result from GitHub Actions are required, and the branch must be up to date before merging. These requirements apply to administrators too. Direct pushes, force pushes, and deleting `main` are blocked. No human approval is required for this solo-maintained project.
 

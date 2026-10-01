@@ -18,11 +18,8 @@ env:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
-    # Keep this image aligned with @playwright/test in package.json.
-    # Browsers and OS dependencies are preinstalled; no apt mirror is needed.
-    container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+    # Match Apple Silicon locally without slow x86 CPU emulation.
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -31,8 +28,28 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
-          cache: npm
-      - name: Trust the checked-out workspace inside the container
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - run: npm ci
-      - run: npm run ci
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build the shared verification image
+        id: verification
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Dockerfile.verify
+          platforms: linux/arm64
+          load: true
+          push: false
+          cache-from: type=gha,scope=verification-arm64
+          cache-to: type=gha,mode=max,scope=verification-arm64
+      - name: Run the same verification as pre-push
+        run: npm run verify
+        env:
+          VERIFY_IMAGE: ${{ steps.verification.outputs.imageid }}
+      - name: Upload failed browser traces
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-failure-traces
+          path: .cache/verification/
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 7

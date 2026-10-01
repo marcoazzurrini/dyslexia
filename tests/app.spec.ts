@@ -1,6 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-const origin = "http://127.0.0.1:3000";
+import { ARTICLE } from "../src/lib/article";
+
+test.beforeEach(async ({ page }) => {
+  // Layout tests must never download the full production narration.
+  await page.route(`**${ARTICLE.audioUrl}`, (route) =>
+    route.fulfill({ body: "Not found", contentType: "text/plain", status: 404 })
+  );
+});
 
 test("home loads without browser errors and fits the viewport", async ({
   page,
@@ -12,10 +19,10 @@ test("home loads without browser errors and fits the viewport", async ({
 
   await expect(page).toHaveTitle("Dyslexia — Article listening");
   await expect(
-    page.getByRole("heading", { level: 1, name: "A home for listening." })
+    page.getByRole("heading", { level: 1, name: ARTICLE.title })
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "No articles yet" })
+    page.getByRole("heading", { name: "Listen to the article" })
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Add to your Home Screen" })
@@ -36,7 +43,7 @@ test("keyboard users can skip to the main content", async ({
 }) => {
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "A home for listening." })
+    page.getByRole("heading", { name: ARTICLE.title })
   ).toBeVisible();
   // WebKit on macOS uses Option+Tab to include links in keyboard navigation.
   await page.keyboard.press(browserName === "webkit" ? "Alt+Tab" : "Tab");
@@ -110,15 +117,16 @@ test("manifest and installation icons are valid and served as assets", async ({
 
 test("unknown navigation shows a not-found page and can return home", async ({
   page,
+  baseURL,
 }) => {
   await page.goto("/not-a-real-page");
   await expect(
     page.getByRole("heading", { name: "Page not found" })
   ).toBeVisible();
   await page.getByRole("link", { name: "Return home" }).click();
-  await expect(page).toHaveURL(`${origin}/`);
+  await expect(page).toHaveURL(`${baseURL}/`);
   await expect(
-    page.getByRole("heading", { name: "A home for listening." })
+    page.getByRole("heading", { name: ARTICLE.title })
   ).toBeVisible();
 });
 

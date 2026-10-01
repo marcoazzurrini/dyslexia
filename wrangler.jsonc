@@ -8,8 +8,9 @@
   ],
   "main": "@tanstack/react-start/server-entry",
   "compatibility_date": "2026-09-30",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "assets_navigation_has_no_effect"],
   "assets": {
     "not_found_handling": "single-page-application",
   },
+  "r2_buckets": [{ "binding": "AUDIO", "bucket_name": "dyslexia-audio" }],
 }

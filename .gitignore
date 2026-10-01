@@ -31,6 +31,10 @@ secrets/
 *.p12
 *.pfx
 
+# Local source text, reviewed narration, and generation receipts
+/.local/narration/
+/page.html
+
 # Generated audio: supply deployment fixtures separately
 *.mp3
 *.wav

@@ -185,6 +185,26 @@ test("restores versioned position only after metadata without autoplay", async (
   await expect.poll(() => pendingRoutes.length).toBeGreaterThan(0);
   released = true;
   await Promise.all(pendingRoutes.map(serveAudio));
+  // Include the native decoder state if delayed metadata fails on an engine.
+  await expect
+    .poll(async () => {
+      const media = await page
+        .locator("audio")
+        .evaluate((audio: HTMLAudioElement) => ({
+          duration: audio.duration,
+          error: audio.error && {
+            code: audio.error.code,
+            message: audio.error.message,
+          },
+          network: audio.networkState,
+          ready: audio.readyState,
+        }));
+      return JSON.stringify({
+        media,
+        ranges: pendingRoutes.map((route) => route.request().headers().range),
+      });
+    })
+    .toContain('"duration":60');
   await ready(page);
   await expect.poll(() => audioValue(page, "position")).toBeCloseTo(24, 1);
   expect(await readAudio(page)).toMatchObject({

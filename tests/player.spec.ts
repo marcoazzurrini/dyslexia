@@ -182,6 +182,7 @@ test("restores versioned position only after metadata without autoplay", async (
   });
   expect(await readSaved(page)).toEqual({ position: 24, rate: 1.5 });
   expect(await audioValue(page, "position")).toBe(0);
+  expect(await audioValue(page, "rate")).toBe(1);
   await expect.poll(() => pendingRoutes.length).toBeGreaterThan(0);
   released = true;
   await Promise.all(pendingRoutes.map(serveAudio));

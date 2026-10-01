@@ -117,11 +117,21 @@ export const connectPlayback = (
     }
     audio.preservesPitch = true;
     if (!restored) {
+      // A metadata-only seek can be accepted before the decoder is ready.
+      // Wait for loadeddata/canplay before restoring a nonzero position.
+      if (
+        pendingPosition > 0 &&
+        audio.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+      ) {
+        return;
+      }
       try {
-        audio.currentTime = Math.min(pendingPosition, audio.duration);
+        if (pendingPosition > 0) {
+          audio.currentTime = Math.min(pendingPosition, audio.duration);
+        }
         restored = true;
       } catch {
-        // Some engines only accept a seek once loadeddata/canplay fires.
+        // A later loadeddata/canplay event can retry an unsupported seek.
         return;
       }
     }

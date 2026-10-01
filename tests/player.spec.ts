@@ -164,14 +164,15 @@ test("restores versioned position only after metadata without autoplay", async (
   page,
 }) => {
   await seedProgress(page, JSON.stringify({ position: 24, rate: 1.5 }));
-  // Hold the first media response until storage has been checked.
-  let pendingRoute: Route | undefined;
+  // Engines may probe metadata with multiple concurrent range requests.
+  // Hold every request behind one gate rather than losing earlier probes.
+  const pendingRoutes: Route[] = [];
   let released = false;
   await page.route(`**${ARTICLE.audioUrl}`, async (route) => {
     if (released) {
       await serveAudio(route);
     } else {
-      pendingRoute = route;
+      pendingRoutes.push(route);
     }
   });
   await page.goto("/", { waitUntil: "domcontentloaded" });
@@ -181,12 +182,9 @@ test("restores versioned position only after metadata without autoplay", async (
   });
   expect(await readSaved(page)).toEqual({ position: 24, rate: 1.5 });
   expect(await audioValue(page, "position")).toBe(0);
-  await expect.poll(() => Boolean(pendingRoute)).toBe(true);
-  if (!pendingRoute) {
-    throw new Error("The browser did not request audio metadata");
-  }
+  await expect.poll(() => pendingRoutes.length).toBeGreaterThan(0);
   released = true;
-  await serveAudio(pendingRoute);
+  await Promise.all(pendingRoutes.map(serveAudio));
   await ready(page);
   await expect.poll(() => audioValue(page, "position")).toBeCloseTo(24, 1);
   expect(await readAudio(page)).toMatchObject({

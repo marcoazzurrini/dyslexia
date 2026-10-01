@@ -117,21 +117,15 @@ export const connectPlayback = (
     }
     audio.preservesPitch = true;
     if (!restored) {
-      // A metadata-only seek can be accepted before the decoder is ready.
-      // Wait for loadeddata/canplay before restoring a nonzero position.
-      if (
-        pendingPosition > 0 &&
-        audio.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
-      ) {
-        return;
-      }
       try {
-        if (pendingPosition > 0) {
-          audio.currentTime = Math.min(pendingPosition, audio.duration);
-        }
+        audio.currentTime = Math.min(pendingPosition, audio.duration);
+        // Rate changes can seek the decoder too. Do not apply the saved rate
+        // before valid metadata exists, especially with delayed media loads.
+        audio.defaultPlaybackRate = rate;
+        audio.playbackRate = rate;
         restored = true;
       } catch {
-        // A later loadeddata/canplay event can retry an unsupported seek.
+        // Some engines only accept a seek once loadeddata/canplay fires.
         return;
       }
     }
@@ -162,7 +156,7 @@ export const connectPlayback = (
     mediaSession.update();
   };
   const rateChange = () => {
-    if (validRate(audio.playbackRate)) {
+    if (restored && validRate(audio.playbackRate)) {
       rate = audio.playbackRate;
       if (audio.defaultPlaybackRate !== rate) {
         audio.defaultPlaybackRate = rate;
@@ -202,8 +196,6 @@ export const connectPlayback = (
   document.addEventListener("visibilitychange", sync);
   window.addEventListener("pagehide", sync);
   audio.preservesPitch = true;
-  audio.defaultPlaybackRate = rate;
-  audio.playbackRate = rate;
   onRate(rate);
   metadata();
   if (audio.error) {

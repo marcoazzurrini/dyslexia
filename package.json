@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build",
+    "ci": "npm run format:check && npm run lint && npm run build && npm run typecheck && npm test",
     "preview": "vite preview --host 0.0.0.0 --port 3000",
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
@@ -15,7 +16,8 @@
     "lint:fix": "oxlint --fix --deny-warnings",
     "prepare": "lefthook install",
     "icons": "node scripts/generate-icons.mjs",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run ci && npm run deploy:only",
+    "deploy:only": "wrangler deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
     "@tanstack/react-router": "1.170.40",

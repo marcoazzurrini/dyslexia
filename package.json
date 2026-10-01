@@ -26,7 +26,7 @@
   "dependencies": {
     "@tanstack/react-router": "1.170.40",
     "@tanstack/react-start": "1.168.59",
-    "media-chrome": "4.19.3",
+    "@videojs/react": "10.0.0-rc.4",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

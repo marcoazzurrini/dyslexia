@@ -156,26 +156,8 @@ p {
   margin-bottom: 1rem;
 }
 
-media-controller {
-  display: block;
+.audio-player {
   width: 100%;
-  --media-background-color: #fffefa;
-  --media-secondary-color: #fffefa;
-  --media-primary-color: #24553d;
-  --media-text-color: #242c29;
-  --media-control-background: #fffefa;
-  --media-control-hover-background: #e8ede5;
-  --media-control-padding: 10px;
-  --media-font-family: inherit;
-  --media-font-size: 1rem;
-  --media-focus-box-shadow: inset 0 0 0 3px #24553d;
-  --media-range-track-background: #d9ddd4;
-  --media-range-bar-color: #24553d;
-  --media-range-thumb-background: #24553d;
-  --media-range-thumb-width: 18px;
-  --media-range-thumb-height: 18px;
-  --media-range-track-height: 6px;
-  --media-time-range-buffered-color: #a7b8a9;
 }
 
 .player-timeline,
@@ -192,19 +174,66 @@ media-controller {
   font-variant-numeric: tabular-nums;
 }
 
-media-time-display {
-  --media-control-padding: 0;
-  --media-font-size: 0.9375rem;
+.player-seek {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 44px;
+  cursor: pointer;
 }
 
-media-time-range {
-  display: block;
-  width: 100%;
-  min-width: 0;
+.player-seek-track {
+  position: absolute;
+  inset-inline: 0;
+  height: 6px;
+  border-radius: 3px;
+  background: #d9ddd4;
+  overflow: hidden;
+}
+
+.player-seek-buffer,
+.player-seek-fill {
+  height: 100%;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+}
+
+.player-seek-buffer {
+  width: var(--media-slider-buffer);
+  background: #a7b8a9;
+}
+
+.player-seek-fill {
+  width: var(--media-slider-fill);
+  background: #24553d;
+}
+
+.player-seek-thumb {
+  position: absolute;
+  left: var(--media-slider-fill);
+  transform: translateX(-50%);
+  width: 44px;
   height: 44px;
-  min-height: 44px;
-  --media-control-padding: 10px;
-  --media-time-range-hover-height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.player-seek-thumb::after {
+  content: "";
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #24553d;
+}
+
+[data-disabled],
+button:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .player-controls {
@@ -212,9 +241,6 @@ media-time-range {
   margin-top: 0.5rem;
 }
 
-media-play-button,
-media-seek-backward-button,
-media-seek-forward-button,
 button,
 select {
   min-width: 44px;
@@ -225,14 +251,6 @@ select {
   background: #fffefa;
   font: inherit;
   cursor: pointer;
-}
-
-media-play-button,
-media-seek-backward-button,
-media-seek-forward-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .play-button {

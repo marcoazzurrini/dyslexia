@@ -4,7 +4,11 @@
 
 One completed recording of Dan Abramov's **How I Vibed a Proof of Conway’s Conjecture** is ready for a phone listening test. The MP3 lasts 50 minutes and 34.32 seconds and occupies 48.55 MB. The browser does not call ElevenLabs or generate narration.
 
-Playback uses one native audio element, Media Chrome controls, and optional Media Session integration. Position and speed are saved on the current device, keyed by article and recording version. This is not cross-device synchronization. Browser storage can be cleared or denied; playback must still work.
+Playback uses Video.js v10 (`@videojs/react` pinned to `10.0.0-rc.4`), one native audio element, and optional Media Session integration. The audio feature preset drives playback state, seek buttons, and the timeline. The app only adds persistence, system controls, and a visible recovery path for rejected play requests. This is a release candidate; keep the version pinned and verify upgrades in the shared Linux container.
+
+The recording URL is assigned after mounting, once the player and persistence adapter are connected. Keep this startup order: the delayed-metadata and missing-media regression tests cover it.
+
+Position and speed are saved on the current device, keyed by article and recording version. This is not cross-device synchronization. Browser storage can be cleared or denied; playback must still work. Mux hosting and analytics are not used; the existing R2 recording is unchanged.
 
 The player remains mounted at the application root during client-side navigation. Playback requires a user gesture. Closing or force-quitting the browser ends playback; reopening can restore the last saved position without autoplay. Background suspension may prevent the most recent position from being saved.
 

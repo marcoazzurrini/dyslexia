@@ -5,7 +5,14 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    cloudflare({
+      // Browser tests mock paid APIs. Test real FFmpeg separately, without
+      // exposing the host Docker daemon inside the verification container.
+      config: (config) => ({
+        dev: { ...config.dev, enable_containers: process.env.CI !== "true" },
+      }),
+      viteEnvironment: { name: "ssr" },
+    }),
     tanstackStart({
       spa: {
         enabled: true,

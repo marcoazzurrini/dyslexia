@@ -20,6 +20,8 @@
 !public/**
 !scripts/
 !scripts/**
+!containers/
+!containers/**
 !tests/
 !tests/**
 !docs/

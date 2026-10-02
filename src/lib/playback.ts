@@ -1,3 +1,4 @@
+import type { Article } from "./article";
 import { ARTICLE } from "./article";
 import { connectMediaSession } from "./playback-session";
 
@@ -22,10 +23,10 @@ const isSavedPlayback = (value: unknown): value is SavedPlayback =>
   "rate" in value &&
   validRate(value.rate);
 
-const readPlayback = (): SavedPlayback => {
+const readPlayback = (storageKey: string): SavedPlayback => {
   try {
     const saved: unknown = JSON.parse(
-      localStorage.getItem(PLAYBACK_STORAGE_KEY) ?? "null"
+      localStorage.getItem(storageKey) ?? "null"
     );
     if (isSavedPlayback(saved)) {
       return saved;
@@ -40,9 +41,11 @@ const readPlayback = (): SavedPlayback => {
 // application's saved position, preferred speed, and optional system controls.
 export const connectPlayback = (
   audio: HTMLAudioElement,
-  { onRate, play }: { onRate: (rate: number) => void; play: () => void }
+  { onRate, play }: { onRate: (rate: number) => void; play: () => void },
+  article: Article = ARTICLE
 ) => {
-  const saved = readPlayback();
+  const storageKey = `dyslexia:playback:${article.id}:${article.version}`;
+  const saved = readPlayback(storageKey);
   let pendingPosition = saved.position;
   let { rate } = saved;
   let restored = false;
@@ -66,7 +69,7 @@ export const connectPlayback = (
     lastSave = Date.now();
     try {
       localStorage.setItem(
-        PLAYBACK_STORAGE_KEY,
+        storageKey,
         JSON.stringify({
           position: Math.min(audio.currentTime, audio.duration),
           rate,
@@ -78,6 +81,18 @@ export const connectPlayback = (
   };
 
   const mediaSession = connectMediaSession(audio, play);
+  // Keep the existing system controls and artwork, but name this recording.
+  try {
+    if (navigator.mediaSession && typeof MediaMetadata !== "undefined") {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        artist: article.author,
+        artwork: [...(navigator.mediaSession.metadata?.artwork ?? [])],
+        title: article.title,
+      });
+    }
+  } catch {
+    // Optional metadata must never interrupt playback.
+  }
   const sync = () => {
     save();
     mediaSession.update();

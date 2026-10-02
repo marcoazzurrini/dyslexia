@@ -67,22 +67,19 @@ const matchesIfRange = (value: string | null, object: R2Object) => {
   );
 };
 
-export const serveAudio = async (
+// The caller must authorize the request and choose the object key.
+export const serveAudioObject = async (
   request: Request,
-  filename: string,
+  objectKey: string,
   bucket: Pick<R2Bucket, "get" | "head">
 ): Promise<Response> => {
-  if (filename !== AUDIO_KEY) {
-    return new Response("Recording not found", { status: 404 });
-  }
   if (request.method !== "GET" && request.method !== "HEAD") {
     return new Response("Method not allowed", {
       headers: { Allow: "GET, HEAD" },
       status: 405,
     });
   }
-
-  const object = await bucket.head(AUDIO_KEY);
+  const object = await bucket.head(objectKey);
   if (!object) {
     return new Response("Recording is not available yet", {
       headers: { "Cache-Control": "no-store" },
@@ -91,8 +88,8 @@ export const serveAudio = async (
   }
   const headers = new Headers({
     "Accept-Ranges": "bytes",
-    // The app currently has no authentication. This prevents shared caching;
-    // it does not make the recording private or authorize the caller.
+    // Prevent shared caching. Authorization belongs to the calling route;
+    // the original demonstration recording remains public.
     "Cache-Control": "private, max-age=3600",
     "Content-Disposition": "inline",
     "Content-Type": "audio/mpeg",
@@ -120,7 +117,7 @@ export const serveAudio = async (
     return new Response(null, { headers });
   }
 
-  const result = await bucket.get(AUDIO_KEY, {
+  const result = await bucket.get(objectKey, {
     onlyIf: { etagMatches: object.etag },
     range,
   });
@@ -145,4 +142,17 @@ export const serveAudio = async (
     headers,
     status: range ? 206 : 200,
   });
+};
+
+export const serveAudio = (
+  request: Request,
+  filename: string,
+  bucket: Pick<R2Bucket, "get" | "head">
+): Promise<Response> => {
+  if (filename !== AUDIO_KEY) {
+    return Promise.resolve(
+      new Response("Recording not found", { status: 404 })
+    );
+  }
+  return serveAudioObject(request, AUDIO_KEY, bucket);
 };

@@ -1,8 +1,12 @@
 declare module "cloudflare:workers" {
-  import type { R2Bucket } from "@cloudflare/workers-types";
+  import type { CloudflareWorkersModule } from "@cloudflare/workers-types";
 
-  const env: {
-    AUDIO: R2Bucket;
-  };
+  import type { PipelineEnv } from "./pipeline/env";
+
+  const env: PipelineEnv;
   export { env };
+  export const DurableObject: typeof CloudflareWorkersModule.DurableObject;
+  export const WorkflowEntrypoint: typeof CloudflareWorkersModule.WorkflowEntrypoint;
+  export type WorkflowEvent<T> = CloudflareWorkersModule.WorkflowEvent<T>;
+  export type WorkflowStep = CloudflareWorkersModule.WorkflowStep;
 }

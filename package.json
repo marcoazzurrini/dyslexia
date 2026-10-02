@@ -7,7 +7,8 @@
     "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build",
     "ci": "npm run format:check && npm run lint && npm run test:scripts && npm run build && npm run typecheck && npm test",
-    "verify": "node scripts/verify.mjs",
+    "verify": "node scripts/verify.mjs && npm run test:assembly:container",
+    "test:assembly:container": "sh scripts/test-assembler.sh",
     "test:container": "node scripts/verify.mjs browser",
     "preview": "vite preview --host 0.0.0.0 --port 3000",
     "typecheck": "tsc --noEmit",
@@ -24,9 +25,13 @@
     "deploy:only": "wrangler deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
+    "@cloudflare/containers": "0.3.7",
+    "@elevenlabs/elevenlabs-js": "2.70.0",
+    "@openrouter/sdk": "1.4.18",
     "@tanstack/react-router": "1.170.40",
     "@tanstack/react-start": "1.168.59",
     "@videojs/react": "10.0.0-rc.4",
+    "effect": "4.0.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

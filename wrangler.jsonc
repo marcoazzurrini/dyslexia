@@ -6,11 +6,45 @@
   "routes": [
     { "pattern": "dyslexia.marcoazzurrini.com", "custom_domain": true },
   ],
-  "main": "@tanstack/react-start/server-entry",
+  "main": "src/worker.ts",
   "compatibility_date": "2026-09-30",
   "compatibility_flags": ["nodejs_compat", "assets_navigation_has_no_effect"],
   "assets": {
-    "not_found_handling": "single-page-application",
+    // Let the application handle missing paths; asset-level SPA fallback
+    // would turn missing images/scripts into successful HTML responses.
+    "run_worker_first": ["/api/pipeline/*", "/audio/*"],
   },
   "r2_buckets": [{ "binding": "AUDIO", "bucket_name": "dyslexia-audio" }],
+  "ratelimits": [
+    {
+      "name": "PIPELINE_LOGIN_LIMIT",
+      "namespace_id": "19381",
+      "simple": { "limit": 5, "period": 60 },
+    },
+  ],
+  "workflows": [
+    {
+      "binding": "NARRATION",
+      "name": "dyslexia-narration",
+      "class_name": "NarrationWorkflow",
+    },
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "ASSEMBLER", "class_name": "AudioAssembler" }],
+  },
+  "exports": {
+    "AudioAssembler": { "type": "durable-object", "storage": "sqlite" },
+  },
+  "containers": [
+    {
+      "class_name": "AudioAssembler",
+      "image": "./containers/assembler/Dockerfile",
+      "image_build_context": "./containers/assembler",
+      "instance_type": "lite",
+      "max_instances": 1,
+    },
+  ],
+  // Browser CI uses fake provider APIs; it must not require a nested Docker daemon.
+  // Enable this option explicitly for full local container integration.
+  "dev": { "enable_containers": false },
 }

@@ -8,12 +8,14 @@ import {
 import { Audio, audioFeatures } from "@videojs/react/audio";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { Article } from "../lib/article";
 import { ARTICLE } from "../lib/article";
 import { connectPlayback, PLAYBACK_RATES } from "../lib/playback";
+import { useSelectedArticle } from "../lib/selected-article";
 
 const { Player, usePlayer } = createPlayer({ features: audioFeatures });
 
-const PlaybackControls = () => {
+const PlaybackControls = ({ article }: { article: Article }) => {
   const player = usePlayer();
   const paused = usePlayer((state) => state.paused);
   const waiting = usePlayer((state) => state.waiting);
@@ -42,19 +44,23 @@ const PlaybackControls = () => {
     if (!audioRef.current) {
       return;
     }
-    const playback = connectPlayback(audioRef.current, {
-      onRate: setRate,
-      play,
-    });
+    const playback = connectPlayback(
+      audioRef.current,
+      {
+        onRate: setRate,
+        play,
+      },
+      article
+    );
     playbackRef.current = playback;
     // Suspense can create media before committing it to the document. Start
     // loading only after mounting, with the player and persistence connected.
-    setSource(ARTICLE.audioUrl);
+    setSource(article.audioUrl);
     return () => {
       playback.dispose();
       playbackRef.current = null;
     };
-  }, [play]);
+  }, [article, play]);
 
   let status =
     "Paused. Your place is saved on this device when storage is available.";
@@ -153,26 +159,34 @@ const PlaybackControls = () => {
   );
 };
 
-export const ArticlePlayer = () => (
-  <Player>
-    <div className="player-shell">
-      <section className="panel player" aria-labelledby="player-title">
-        <h2 id="player-title">Listen to the article</h2>
-        <p className="player-credit">Full narration · {ARTICLE.author}</p>
-        <PlaybackControls />
-        <noscript>Enable JavaScript to use the audio player.</noscript>
-      </section>
-      <section className="install-help" aria-labelledby="install-title">
-        <h2 id="install-title">Add to your Home Screen</h2>
-        <p>
-          On iPhone, open this page in Safari. Tap Share, then Add to Home
-          Screen.
-        </p>
-        <p className="small-text">
-          Listening needs an internet connection. Offline listening is not
-          available. Your saved place stays in this browser, not across devices.
-        </p>
-      </section>
-    </div>
-  </Player>
-);
+export const ArticlePlayer = () => {
+  const article = useSelectedArticle();
+  return (
+    <Player key={`${article.id}:${article.version}`}>
+      <div className="player-shell">
+        <section className="panel player" aria-labelledby="player-title">
+          <h2 id="player-title">
+            {article.id === ARTICLE.id
+              ? "Listen to the article"
+              : `Listen: ${article.title}`}
+          </h2>
+          <p className="player-credit">Full narration · {article.author}</p>
+          <PlaybackControls article={article} />
+          <noscript>Enable JavaScript to use the audio player.</noscript>
+        </section>
+        <section className="install-help" aria-labelledby="install-title">
+          <h2 id="install-title">Add to your Home Screen</h2>
+          <p>
+            On iPhone, open this page in Safari. Tap Share, then Add to Home
+            Screen.
+          </p>
+          <p className="small-text">
+            Listening needs an internet connection. Offline listening is not
+            available. Your saved place stays in this browser, not across
+            devices.
+          </p>
+        </section>
+      </div>
+    </Player>
+  );
+};

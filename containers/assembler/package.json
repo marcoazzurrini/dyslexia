@@ -1,0 +1,16 @@
+{
+  "name": "dyslexia-assembler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "smoke": "node smoke.mjs"
+  },
+  "dependencies": {
+    "effect": "4.0.0"
+  },
+  "engines": {
+    "node": ">=24.20.0"
+  }
+}

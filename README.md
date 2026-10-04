@@ -1,145 +1,30 @@
 # Dyslexia
 
-An audio-first web app for listening to articles, with source-preserving narration and access to original visual content.
+An audio-first web app for people who find reading hard. Give it an article and it produces a narration you can listen to, while keeping access to the original text and visuals.
 
-## Status
+## Intent
 
-The repository contains a TanStack Start app, an installable web app manifest, and the first complete article narration. The player uses Video.js v10 (`@videojs/react` pinned to `10.0.0-rc.4`) over native audio, optional lock-screen controls, and device-local progress and speed. The 50-minute recording is stored in Cloudflare R2. Article importing, automatic adaptation, offline listening, and cross-device synchronization are not implemented. Physical iPhone background playback still needs a listening test; see [playback setup and verification](docs/playback.md).
+- Listening comes first. The app is built around a player that works well on a phone, including from the home screen and with the screen locked.
+- Narration stays faithful to the source. Adaptation makes text easier to listen to; it does not summarize or change the meaning.
+- The original article is always one tap away, so nothing visual or factual is lost.
+- A person reviews the work before money is spent. Paid steps such as text-to-speech run only after approval.
 
-## Local development
+## How it works
 
-Use Node.js 24.20.0, pinned in `.node-version` for local development, GitHub Actions, and Cloudflare Builds.
+1. You submit an article link.
+2. The app extracts the article and shows it for review.
+3. A language model adapts the text for listening, and you review the draft.
+4. A text-to-speech service narrates the approved draft.
+5. The audio is stored and played back in the web app.
 
-```sh
-npm ci
-npm run dev
-```
+## Working on the project
 
-Open `http://localhost:3000`. To hear the full recording locally, first seed the local R2 store using [the playback instructions](docs/playback.md#supply-the-recording-locally). Production R2 objects are not downloaded automatically.
+The code is the source of truth. Read `package.json` for the available scripts and the configuration files for the deployment setup. Topic notes and research live in `docs/`.
 
-## Build and checks
+Changes go through pull requests to `main`. Checks must pass before merging, and merged changes deploy automatically.
 
-Start OrbStack or Docker Desktop, then run:
+## Secrets and content
 
-```sh
-npm run verify
-```
+Keep API keys in local environment files. Never commit them or expose them to the browser. `.env.example` lists the variables the app expects.
 
-Local pre-push and GitHub Actions run the same complete checks in a cached Linux ARM64 container. The first run downloads browser images and installs dependencies; later runs reuse those layers. Development stays native. See [reproducible verification](docs/verification.md) for focused tests, caches, and failure traces.
-
-Inside that container, `npm run ci` checks formatting and linting, runs all script tests, builds the app, checks types, and runs the browser tests. It stops on the first failure. Each check also remains available as an individual npm script. For optional host browser tests, install browsers with `npx playwright install chromium webkit` first; host results do not replace container verification.
-
-The build generates TanStack Router's route tree and a prerendered SPA shell. `npm run preview` serves the production build using Cloudflare's local runtime. Browser tests run against this production preview; WebKit emulation does not replace testing on a physical iPhone.
-
-The committed PNG installation icons are generated from `public/icon.svg`. After changing the SVG, regenerate them with `npm run icons` (requires the Playwright Chromium browser).
-
-## Formatting, linting, and Git hooks
-
-Oxfmt uses Ultracite's formatting preset. Oxlint uses Ultracite's core, React, and built-in anti-slop presets. Generated route code and the package lockfile are excluded from formatting; generated route code is also excluded from linting.
-
-```sh
-npm run format
-npm run lint
-npm run lint:fix
-```
-
-Lefthook installs Git hooks through the `prepare` script during `npm install` or `npm ci`. To reinstall hooks manually, run `npm run prepare`.
-
-- **Pre-commit:** format staged files and re-stage formatter changes, lint staged code, then typecheck the entire project. Jobs run sequentially and stop on failure, so checks see the formatted files.
-- **Pre-push:** run `npm run verify`, including every CI check in the shared Linux ARM64 container. OrbStack or Docker Desktop must be running. Host browser installations are not needed for this check.
-
-Fully stage files before committing. Formatting operates on working-tree files and re-stages them, so partial staging is not preserved for files the formatter processes.
-
-## PWA installation
-
-The app includes a manifest, standalone display mode, standard installation icons, and an Apple touch icon. It intentionally has no service worker or offline cache in this first version.
-
-For installation testing, serve the app over HTTPS. On iPhone, open the URL in Safari and choose **Share > Add to Home Screen**. A phone visiting a laptop's local HTTP address is not the same as using a deployed HTTPS app.
-
-## Cloudflare deployment
-
-Production URL: <https://dyslexia.marcoazzurrini.com>.
-
-The custom domain is declared in `wrangler.jsonc` so Git deployments preserve it. Cloudflare manages its DNS record and HTTPS certificate. The `workers.dev` URL remains available as a fallback.
-
-The Cloudflare Vite plugin and `wrangler.jsonc` configure Workers, Static Assets, and the `AUDIO` binding to the `dyslexia-audio` R2 bucket. The Worker streams the recording through a same-origin audio route with byte-range support. No database is configured.
-
-### Pull requests and GitHub Actions
-
-Work on a short-lived branch and open a pull request targeting `main`. `.github/workflows/ci.yml` runs the `checks` job when a pull request opens or changes. It builds the same verification image used locally, then runs formatting, linting, script tests, the production build, typechecking, and Chromium/WebKit browser tests inside it. A newer update cancels the older run. Manual checks remain available through GitHub Actions.
-
-GitHub protects `main`: pull requests and a successful `checks` result from GitHub Actions are required, and the branch must be up to date before merging. These requirements apply to administrators too. Direct pushes, force pushes, and deleting `main` are blocked. No human approval is required for this solo-maintained project.
-
-Prefer small pull requests and squash merges. GitHub Actions does not deploy and does not repeat the full suite after merging. CI checks need no Cloudflare credentials.
-
-### Cloudflare Git integration
-
-Cloudflare Workers Builds connects `marcoazzurrini/dyslexia` to the `dyslexia` Worker in the account configured in `wrangler.jsonc`. The Worker serves the application and its static assets, and streams the pregenerated recording from R2. No D1 database is required. Upload the recording separately; Git builds do not include ignored local media.
-
-The production build settings are:
-
-- Production branch: `main`.
-- Root directory: `/`.
-- Node.js: `24.20.0`, matching `.node-version` and GitHub Actions.
-- `SKIP_DEPENDENCY_INSTALL=1`: dependency installation is explicit in the build command.
-- Build command: `npm ci && npm run build && npm run typecheck`.
-- Deploy command: `npm run deploy:only`.
-- Build watch paths: `*`, with no exclusions.
-- Non-production branch builds: disabled.
-
-After a checked pull request merges, Cloudflare builds the new `main` revision and deploys only if that build succeeds. A failed build leaves the existing production release unchanged. The full browser suite runs before merging rather than again inside Cloudflare. Cloudflare manages deployment authentication; no Cloudflare API token is stored in GitHub.
-
-Saved Cloudflare build settings and GitHub branch protection are external configuration. Repository edits alone do not change them. Keep the dashboard settings aligned with these commands when changing the toolchain.
-
-### Manual deployment
-
-When ready to deploy locally:
-
-```sh
-npx wrangler login
-npx playwright install chromium webkit
-npm run deploy
-```
-
-`npm run deploy` runs the same CI checks before deploying. `npm run deploy:only` skips checks and building; Cloudflare runs it only after the configured production build succeeds. Use Git integration for ordinary releases rather than bypassing the pull request workflow with a manual deployment.
-
-Deployment creates or updates the Worker named `dyslexia` in the authenticated Cloudflare account. Deployment is not part of local development or the test suite.
-
-## First playback test
-
-The first iteration uses a reviewed narration of the complete article [How I Vibed a Proof of Conway’s Conjecture](https://overreacted.io/how-i-vibed-a-proof-of-conways-conjecture/) and one pregenerated MP3 to test playback on an iPhone, both in Safari and as an installed web app.
-
-Extraction and adaptation are one-off preparation, not an automated pipeline. The local ElevenLabs v4 script handles planning, resumable generation, and audio assembly. See [the narration workflow](docs/narration.md). The reviewed narration and full recording are complete. See [the player and hosting guide](docs/playback.md) for delivery, local setup, and physical-device acceptance tests.
-
-The test covers:
-
-- Playback, seeking, and speed controls.
-- Continued listening with the screen locked.
-- Supported lock-screen and headset controls.
-- Playback interruptions and resume behavior.
-- Locally saved position and speed.
-- Access to the source article and relevant visuals.
-
-URL imports, a library, offline downloads, and cross-device synchronization are outside this initial test.
-
-## Stack
-
-- TanStack Start, React, and TypeScript.
-- Cloudflare Workers and Workers Static Assets for deployment.
-- Video.js v10 audio controls with Media Session enhancements where supported.
-- Cloudflare R2 for the full recording and HTTP byte-range delivery.
-- Local browser storage for playback position and speed.
-- ElevenLabs v4 hosted TTS for pregenerating the audio fixture outside the browser.
-
-The first test does not require a database or TanStack Query. Automated tests cover playback controls, local resume, and HTTP ranges. A real phone test is still required for screen-off playback, interruptions, and narration quality.
-
-## Research and design
-
-- [Audio content preparation: evidence review](docs/research/audio-content-preparation.md)
-- [First playback test: technical proposal](docs/research/first-playback-test.md)
-
-## Secrets and media
-
-Keep API keys in local environment files, never in browser bundles or committed files. The `.gitignore` excludes local secrets, agent sessions, build output, and generated audio.
-
-Generated audio fixtures must be supplied separately during development and deployment. Publishing application source does not grant permission to redistribute source articles or generated recordings.
+Publishing this source code does not grant permission to redistribute source articles or generated recordings.

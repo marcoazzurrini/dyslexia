@@ -14,7 +14,6 @@
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
     "test:scripts": "node --test scripts/*.test.mjs",
-    "narrate": "node scripts/narration.mjs",
     "format": "oxfmt --write",
     "format:check": "oxfmt --check",
     "lint": "oxlint --deny-warnings",

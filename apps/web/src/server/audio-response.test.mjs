@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { serveAudio } from "../src/server/audio-response.ts";
+import { serveAudio } from "./audio-response.ts";
 
 const filename = "conway-b2ac2e01fb55c21c.mp3";
 const bytes = new TextEncoder().encode("0123456789");

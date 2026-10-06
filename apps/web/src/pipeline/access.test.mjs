@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { pipelineApi } from "../src/pipeline/api.ts";
-import { signCapability } from "../src/pipeline/auth.ts";
-import { chunkNarration } from "../src/pipeline/domain.ts";
+import { pipelineApi } from "./api.ts";
+import { signCapability } from "./auth.ts";
+import { chunkNarration } from "./domain.ts";
 
 const origin = "https://dyslexia.marcoazzurrini.com";
 const environment = () => ({

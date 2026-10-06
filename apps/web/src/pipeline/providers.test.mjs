@@ -13,13 +13,13 @@ import {
   ProviderFailure,
   SourceDocumentSchema,
   validateSourceUrl,
-} from "../src/pipeline/domain.ts";
+} from "./domain.ts";
 import {
   Extractor,
   makeProviderLayer,
   NarrationAdapter,
   SpeechGenerator,
-} from "../src/pipeline/providers.ts";
+} from "./providers.ts";
 
 const source = {
   markdown:

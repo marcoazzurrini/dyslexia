@@ -5,7 +5,8 @@ export default defineConfig({
   ...ultracite,
   ignorePatterns: [
     ...(ultracite.ignorePatterns ?? []),
-    "src/routeTree.gen.ts",
-    "package-lock.json",
+    "apps/web/src/routeTree.gen.ts",
+    "**/package-lock.json",
+    "bun.lock",
   ],
 });

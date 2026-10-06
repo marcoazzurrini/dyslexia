@@ -1,11 +1,12 @@
-# Server-side keys only. Never use a VITE_ prefix or commit .env.
+# Local development secrets. Copy to .dev.vars; never commit it or use a VITE_ prefix.
+# Production sets these with `wrangler secret put`.
 FIRECRAWL_API_KEY=
 OPENROUTER_API_KEY=
 ELEVENLABS_API_KEY=
-# Optional: defaults to George, the voice used for the first recording.
-ELEVENLABS_VOICE_ID=
-# Password entered in the web app. Keep it private; sign-in is rate-limited.
-PIPELINE_ACCESS_TOKEN=
-# Separate server-only signing key: at least 32 random characters.
-# Never enter this key in the web app.
-PIPELINE_SIGNING_SECRET=
+# Google sign-in: the OAuth client's ID and secret.
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+# At least 32 random characters: openssl rand -base64 32
+BETTER_AUTH_SECRET=
+# Overrides the production URL in wrangler.jsonc.
+BETTER_AUTH_URL=http://localhost:3000

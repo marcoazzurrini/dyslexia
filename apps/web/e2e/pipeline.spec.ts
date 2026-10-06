@@ -89,7 +89,9 @@ const mockPipeline = async (
   } = {}
 ) => {
   const mutations: { path: string; method: string; body: unknown }[] = [];
+  const authRequests: { path: string; body: unknown }[] = [];
   const state = {
+    authRequests,
     authenticated: options.authenticated ?? true,
     configured: options.configured ?? true,
     detailRequests: 0,
@@ -99,6 +101,22 @@ const mockPipeline = async (
     jobsRequests: 0,
     mutations,
   };
+  // Stands in for Better Auth: Google immediately returns to the callback page.
+  await page.route("**/api/auth/**", async (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname.replace("/api/auth", "");
+    state.authRequests.push({ body: request.postDataJSON(), path });
+    if (path === "/sign-in/social") {
+      state.authenticated = true;
+      // SAFETY: the sign-in button always sends callbackURL; the sign-in
+      // test asserts the full request body.
+      const { callbackURL } = request.postDataJSON() as { callbackURL: string };
+      await route.fulfill({ json: { redirect: true, url: callbackURL } });
+    } else {
+      state.authenticated = false;
+      await route.fulfill({ json: { success: true } });
+    }
+  });
   await page.route("**/api/pipeline/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace("/api/pipeline", "");
@@ -111,11 +129,6 @@ const mockPipeline = async (
       });
     }
     if (path === "/session") {
-      if (method === "POST") {
-        state.authenticated = true;
-      } else if (method === "DELETE") {
-        state.authenticated = false;
-      }
       await route.fulfill({
         json: {
           authenticated: state.authenticated,
@@ -198,44 +211,40 @@ test.beforeEach(async ({ page }) => {
   await page.route(`**${ARTICLE.audioUrl}`, serveAudio);
 });
 
-test("personal login keeps tokens out of storage and supports logout", async ({
+test("Google sign-in returns to this page, and sign-out signs out", async ({
   page,
 }) => {
   const state = await mockPipeline(page, { authenticated: false });
   await page.goto("/");
   await page.getByRole("link", { name: "Create narration" }).click();
-  const token = page.getByLabel("Password", { exact: true });
-  await expect(token).toHaveAttribute("type", "password");
-  await expect(token).toHaveAttribute("autocomplete", "current-password");
-  await token.fill("test-personal-token");
-  await page.getByRole("button", { exact: true, name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in with Google" }).click();
   await expect(page.getByLabel("Article URL", { exact: true })).toBeVisible();
-  expect(state.mutations).toEqual([
+  expect(state.authRequests).toEqual([
     {
-      body: { token: "test-personal-token" },
-      method: "POST",
-      path: "/session",
+      body: {
+        callbackURL: "/create",
+        errorCallbackURL: "/create",
+        provider: "google",
+      },
+      path: "/sign-in/social",
     },
   ]);
-  expect(
-    await page.evaluate(() =>
-      JSON.stringify({
-        cookie: document.cookie,
-        local: { ...localStorage },
-        session: { ...sessionStorage },
-      })
-    )
-  ).not.toContain("test-personal-token");
   await page.getByRole("button", { exact: true, name: "Sign out" }).click();
-  await expect(token).toBeVisible();
-  await expect(token).toHaveValue("");
-  expect(state.mutations.at(-1)).toMatchObject({
-    method: "DELETE",
-    path: "/session",
-  });
+  await expect(
+    page.getByRole("button", { name: "Sign in with Google" })
+  ).toBeVisible();
+  expect(state.authRequests.at(-1)?.path).toBe("/sign-out");
 });
 
-test("unconfigured service explains setup without showing a token field", async ({
+test("a rejected Google account is explained", async ({ page }) => {
+  await mockPipeline(page, { authenticated: false });
+  await page.goto("/create?error=account_not_allowed");
+  await expect(page.getByRole("alert")).toContainText(
+    "That Google account cannot use this app"
+  );
+});
+
+test("unconfigured service explains setup without offering sign-in", async ({
   page,
 }) => {
   const state = await mockPipeline(page, {
@@ -246,10 +255,10 @@ test("unconfigured service explains setup without showing a token field", async 
   await expect(
     page.getByRole("heading", { name: "Narration setup needed" })
   ).toBeVisible();
+  await expect(page.getByText(/configure Google sign-in/u)).toBeVisible();
   await expect(
-    page.getByText(/configure PIPELINE_ACCESS_TOKEN/u)
-  ).toBeVisible();
-  await expect(page.getByLabel("Password", { exact: true })).toHaveCount(0);
+    page.getByRole("button", { name: "Sign in with Google" })
+  ).toHaveCount(0);
   expect(state.jobsRequests).toBe(0);
 });
 
@@ -496,7 +505,9 @@ test("session expiry clears private jobs and offers sign-in", async ({
   );
   state.authenticated = false;
   await page.clock.fastForward(3000);
-  await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Sign in with Google" })
+  ).toBeVisible();
   await expect(page.getByRole("alert")).toContainText("Sign in to continue.");
   await expect(
     page.getByRole("heading", { name: "A new article" })

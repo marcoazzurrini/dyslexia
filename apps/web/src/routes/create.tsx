@@ -1,4 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  ACCOUNT_NOT_ALLOWED,
+  signIn as googleSignIn,
+  signOut as googleSignOut,
+} from "@dyslexia/auth/client";
+import { createFileRoute, getRouteApi, Link } from "@tanstack/react-router";
 import { Schema } from "effect";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -18,6 +23,9 @@ import {
 } from "../pipeline/contracts";
 
 const API = "/api/pipeline";
+// Google sign-in returns here with ?error= when it does not finish.
+const CreateSearch = Schema.Struct({ error: Schema.optional(Schema.String) });
+const route = getRouteApi("/create");
 const ACTIVE_STATES = new Set<JobStatus>([
   "extracting",
   "adapting",
@@ -277,22 +285,11 @@ const usePipeline = () => {
     }
   };
 
-  const signIn = (token: string) =>
-    perform(async (signal) => {
-      await request("/session", {
-        body: JSON.stringify({ token }),
-        method: "POST",
-        signal,
-      });
-      setSession(
-        Schema.decodeUnknownSync(SessionSchema)(
-          await request("/session", { signal })
-        )
-      );
-    });
+  // Leaves the app for Google and returns here.
+  const signIn = () => perform(() => googleSignIn());
   const signOut = () =>
-    perform(async (signal) => {
-      await request("/session", { method: "DELETE", signal });
+    perform(async () => {
+      await googleSignOut();
       setSession({ authenticated: false, configured: true });
       setJobs(null);
       setDetail(null);
@@ -729,6 +726,7 @@ const JobList = ({ pipeline }: { pipeline: Pipeline }) => {
 const Create = () => {
   const pipeline = usePipeline();
   const { session, busy } = pipeline;
+  const signInError = route.useSearch().error;
   return (
     <main id="main-content" className="app-shell create-page" tabIndex={-1}>
       <header className="app-header">
@@ -762,9 +760,8 @@ const Create = () => {
         <section className="panel" aria-labelledby="setup-title">
           <h2 id="setup-title">Narration setup needed</h2>
           <p>
-            Ask the server owner to configure PIPELINE_ACCESS_TOKEN and the
-            required narration providers. Keep the token secret and never place
-            it in a URL.
+            Ask the server owner to configure Google sign-in and the required
+            narration providers.
           </p>
           <button
             className="setup-refresh"
@@ -776,39 +773,26 @@ const Create = () => {
         </section>
       )}
       {session?.configured && !session.authenticated && (
-        <form
-          className="panel pipeline-form"
-          aria-describedby={pipeline.error ? "pipeline-error" : undefined}
-          onSubmit={(event) => {
-            event.preventDefault();
-            const token = new FormData(event.currentTarget).get("token");
-            event.currentTarget.reset();
-            if (token && !(token instanceof File)) {
-              void pipeline.signIn(token);
-            }
-          }}
-        >
-          <fieldset disabled={busy}>
-            <legend>Personal access</legend>
-            <p id="token-help">
-              Enter the password you chose for this app. This device stays
-              signed in for up to seven days.
+        <section className="panel" aria-labelledby="sign-in-title">
+          <h2 id="sign-in-title">Sign in</h2>
+          {signInError && (
+            <p role="alert">
+              {signInError === ACCOUNT_NOT_ALLOWED
+                ? "That Google account cannot use this app. Choose your own account."
+                : "Sign-in did not finish. Try again."}
             </p>
-            <label htmlFor="access-token">Password</label>
-            <input
-              id="access-token"
-              name="token"
-              type="password"
-              autoComplete="current-password"
-              autoCapitalize="none"
-              spellCheck={false}
-              required
-              aria-invalid={Boolean(pipeline.error)}
-              aria-describedby={`token-help${pipeline.error ? " pipeline-error" : ""}`}
-            />
-            <button type="submit">{busy ? "Signing in…" : "Sign in"}</button>
-          </fieldset>
-        </form>
+          )}
+          <p>This device stays signed in for a year of use.</p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              void pipeline.signIn();
+            }}
+          >
+            {busy ? "Opening Google…" : "Sign in with Google"}
+          </button>
+        </section>
       )}
       {session?.configured && session.authenticated && (
         <>
@@ -832,4 +816,7 @@ const Create = () => {
   );
 };
 
-export const Route = createFileRoute("/create")({ component: Create });
+export const Route = createFileRoute("/create")({
+  component: Create,
+  validateSearch: Schema.toStandardSchemaV1(CreateSearch),
+});

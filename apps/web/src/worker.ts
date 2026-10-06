@@ -1,12 +1,17 @@
 import serverEntry from "@tanstack/react-start/server-entry";
 
 import { pipelineApi } from "./pipeline/api";
+import { authFor } from "./pipeline/auth";
 import type { PipelineEnv } from "./pipeline/env";
 
 export { NarrationWorkflow } from "./pipeline/cloudflare";
 
 export default {
-  fetch(request: Request, env: PipelineEnv) {
+  async fetch(request: Request, env: PipelineEnv) {
+    const signIn = await authFor(env)?.handle(request);
+    if (signIn) {
+      return signIn;
+    }
     const { pathname } = new URL(request.url);
     if (pathname.startsWith("/api/pipeline/")) {
       return pipelineApi(request, env);

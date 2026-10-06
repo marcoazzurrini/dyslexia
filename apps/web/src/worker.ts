@@ -1,19 +1,23 @@
 import serverEntry from "@tanstack/react-start/server-entry";
 
-import { pipelineApi } from "./pipeline/api";
-import { authFor } from "./pipeline/auth";
 import type { PipelineEnv } from "./pipeline/env";
 
 export { NarrationWorkflow } from "./pipeline/cloudflare";
 
+// Cloudflare limits Worker startup time, so heavy server code (provider SDKs,
+// Effect, Better Auth) loads on the first request that needs it.
 export default {
   async fetch(request: Request, env: PipelineEnv) {
-    const signIn = await authFor(env)?.handle(request);
-    if (signIn) {
-      return signIn;
-    }
     const { pathname } = new URL(request.url);
+    if (pathname.startsWith("/api/auth/")) {
+      const { authFor } = await import("./pipeline/auth");
+      return (
+        (await authFor(env)?.handle(request)) ??
+        new Response("Sign-in is not configured", { status: 503 })
+      );
+    }
     if (pathname.startsWith("/api/pipeline/")) {
+      const { pipelineApi } = await import("./pipeline/api");
       return pipelineApi(request, env);
     }
     // Existing static files are served before this handler. Never return the

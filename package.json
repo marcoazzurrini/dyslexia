@@ -14,8 +14,6 @@
     "test": "bun run --if-present --workspaces test",
     "test:e2e": "bun run --cwd apps/web test:e2e",
     "check": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run build && bun run test:e2e",
-    "verify": "node tooling/verify/verify.mjs",
-    "verify:e2e": "node tooling/verify/verify.mjs e2e",
     "format": "oxfmt --write",
     "format:check": "oxfmt --check",
     "lint": "oxlint --deny-warnings",

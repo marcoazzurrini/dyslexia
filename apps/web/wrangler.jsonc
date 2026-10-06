@@ -29,9 +29,4 @@
       "class_name": "NarrationWorkflow",
     },
   ],
-  // Retired audio assembler container. Remove this entry once a deploy
-  // reports the tombstone as stale.
-  "exports": {
-    "AudioAssembler": { "type": "durable-object", "state": "deleted" },
-  },
 }

@@ -1,14 +1,8 @@
+import type { Auth } from "@dyslexia/auth";
 import { Effect, Schema } from "effect";
 
 import { serveAudioObject } from "../server/audio-response.ts";
-import {
-  authenticated,
-  configuredSecret,
-  matchesSecret,
-  sameOrigin,
-  sessionCookie,
-  signCapability,
-} from "./auth.ts";
+import { authFor, sameOrigin } from "./auth.ts";
 import {
   chunkNarration,
   InvalidInput,
@@ -30,7 +24,6 @@ import {
   readBoundedJson,
 } from "./storage.ts";
 
-const Login = Schema.Struct({ token: Schema.String });
 const Submission = Schema.Struct({ url: Schema.String });
 const SourceSelection = Schema.Struct({
   markdown: Schema.String,
@@ -47,15 +40,16 @@ const json = <T>(body: T, status = 200, extra?: HeadersInit) =>
     status,
   });
 const failure = (error: string, status: number) => json({ error }, status);
-const configured = (env: PipelineEnv) =>
-  Boolean(env.PIPELINE_ACCESS_TOKEN?.length) &&
-  configuredSecret(env.PIPELINE_SIGNING_SECRET ?? env.PIPELINE_ACCESS_TOKEN) &&
+const configured = (env: PipelineEnv, auth: Auth | undefined) =>
   Boolean(
+    auth &&
     env.FIRECRAWL_API_KEY &&
     env.OPENROUTER_API_KEY &&
     env.ELEVENLABS_API_KEY &&
     env.NARRATION
   );
+const signedIn = async (request: Request, auth: Auth | undefined) =>
+  Boolean(await auth?.user(request));
 const validTitle = (title: string) =>
   title.trim().length > 0 && title.length <= 300;
 const approveSource = async (
@@ -137,51 +131,17 @@ const approveDraft = async (request: Request, env: PipelineEnv, id: string) => {
   return json({ ok: true }, 202);
 };
 
-const session = async (request: Request, env: PipelineEnv) => {
-  const secret = env.PIPELINE_SIGNING_SECRET ?? env.PIPELINE_ACCESS_TOKEN;
-  if (request.method === "GET") {
-    return json({
-      authenticated:
-        configuredSecret(secret) && (await authenticated(request, secret)),
-      configured: configured(env),
-    });
-  }
-  if (!sameOrigin(request)) {
-    return failure("Cross-origin request rejected", 403);
-  }
-  if (request.method === "DELETE") {
-    return json({ authenticated: false }, 200, {
-      "Set-Cookie": sessionCookie(request, "", 0),
-    });
-  }
-  if (request.method !== "POST") {
+const session = async (
+  request: Request,
+  env: PipelineEnv,
+  auth: Auth | undefined
+) => {
+  if (request.method !== "GET") {
     return failure("Method not allowed", 405);
   }
-  if (!configuredSecret(secret) || !configured(env)) {
-    return failure("Pipeline secrets or bindings are not configured", 503);
-  }
-  const { token } = Schema.decodeUnknownSync(Login)(
-    await readBoundedJson(request, 4096)
-  );
-  const allowed = await env.PIPELINE_LOGIN_LIMIT?.limit({
-    key: "pipeline-login",
-  });
-  if (allowed && !allowed.success) {
-    return failure("Too many sign-in attempts. Wait one minute.", 429);
-  }
-  if (
-    token.length > 512 ||
-    !(await matchesSecret(token, env.PIPELINE_ACCESS_TOKEN ?? ""))
-  ) {
-    return failure("Invalid access token", 401);
-  }
-  const seconds = 7 * 24 * 60 * 60;
-  const cookie = await signCapability(secret, {
-    expires: Date.now() + seconds * 1000,
-    scope: "session",
-  });
-  return json({ authenticated: true }, 200, {
-    "Set-Cookie": sessionCookie(request, cookie, seconds),
+  return json({
+    authenticated: await signedIn(request, auth),
+    configured: configured(env, auth),
   });
 };
 
@@ -260,18 +220,21 @@ const readJob = async (
   return failure("Not found", 404);
 };
 
-const dispatch = async (request: Request, env: PipelineEnv) => {
+const dispatch = async (
+  request: Request,
+  env: PipelineEnv,
+  auth: Auth | undefined
+) => {
   const parts = new URL(request.url).pathname
     .slice("/api/pipeline/".length)
     .split("/");
   if (parts[0] === "session") {
-    return session(request, env);
+    return session(request, env, auth);
   }
-  const secret = env.PIPELINE_SIGNING_SECRET ?? env.PIPELINE_ACCESS_TOKEN;
-  if (!configuredSecret(secret) || !configured(env)) {
+  if (!configured(env, auth)) {
     return failure("Pipeline secrets or bindings are not configured", 503);
   }
-  if (!(await authenticated(request, secret))) {
+  if (!(await signedIn(request, auth))) {
     return failure("Sign in to create or view narrations", 401);
   }
   if (!["GET", "HEAD"].includes(request.method) && !sameOrigin(request)) {
@@ -301,10 +264,11 @@ const dispatch = async (request: Request, env: PipelineEnv) => {
 
 export const pipelineApi = async (
   request: Request,
-  env: PipelineEnv
+  env: PipelineEnv,
+  auth = authFor(env)
 ): Promise<Response> => {
   try {
-    return await dispatch(request, env);
+    return await dispatch(request, env, auth);
   } catch (error) {
     if (
       Schema.isSchemaError(error) ||

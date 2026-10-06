@@ -7,11 +7,11 @@ export interface PipelineParameters {
 export interface PipelineEnv {
   AUDIO: R2Bucket;
   NARRATION: Workflow<PipelineParameters>;
-  PIPELINE_ACCESS_TOKEN?: string;
-  PIPELINE_SIGNING_SECRET?: string;
-  PIPELINE_LOGIN_LIMIT?: {
-    limit: (options: { key: string }) => Promise<{ success: boolean }>;
-  };
+  AUTH_ALLOWED_EMAILS?: string;
+  BETTER_AUTH_SECRET?: string;
+  BETTER_AUTH_URL?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
   FIRECRAWL_API_KEY?: string;
   OPENROUTER_API_KEY?: string;
   ELEVENLABS_API_KEY?: string;

@@ -12,16 +12,14 @@
   "assets": {
     // Let the application handle missing paths; asset-level SPA fallback
     // would turn missing images/scripts into successful HTML responses.
-    "run_worker_first": ["/api/pipeline/*", "/audio/*"],
+    "run_worker_first": ["/api/auth/*", "/api/pipeline/*", "/audio/*"],
   },
   "r2_buckets": [{ "binding": "AUDIO", "bucket_name": "dyslexia-audio" }],
-  "ratelimits": [
-    {
-      "name": "PIPELINE_LOGIN_LIMIT",
-      "namespace_id": "19381",
-      "simple": { "limit": 5, "period": 60 },
-    },
-  ],
+  // Local development overrides these in .dev.vars.
+  "vars": {
+    "AUTH_ALLOWED_EMAILS": "marco.azzurrini.art@gmail.com",
+    "BETTER_AUTH_URL": "https://dyslexia.marcoazzurrini.com",
+  },
   "workflows": [
     {
       "binding": "NARRATION",

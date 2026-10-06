@@ -2,72 +2,110 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { pipelineApi } from "./api.ts";
-import { signCapability } from "./auth.ts";
 import { chunkNarration } from "./domain.ts";
 
 const origin = "https://dyslexia.marcoazzurrini.com";
-const environment = () => ({
-  AUDIO: { list: () => Promise.resolve({ objects: [] }) },
-  ELEVENLABS_API_KEY: "fake",
-  FIRECRAWL_API_KEY: "fake",
-  NARRATION: {},
-  OPENROUTER_API_KEY: "fake",
-  PIPELINE_ACCESS_TOKEN: "simple",
-  PIPELINE_SIGNING_SECRET: "test-only-signing-key-longer-than-32-characters",
-});
-const login = (env) =>
+const environment = () => {
+  const started = [];
+  return {
+    AUDIO: { list: () => Promise.resolve({ objects: [] }) },
+    ELEVENLABS_API_KEY: "fake",
+    FIRECRAWL_API_KEY: "fake",
+    NARRATION: {
+      create: (job) => {
+        started.push(job);
+        return Promise.resolve({});
+      },
+    },
+    OPENROUTER_API_KEY: "fake",
+    started,
+  };
+};
+// Stand-ins for Google sign-in; @dyslexia/auth has its own tests.
+const signedIn = {
+  handle: () => Promise.resolve(null),
+  user: () =>
+    Promise.resolve({ email: "me@example.com", image: null, name: "Me" }),
+};
+const signedOut = { ...signedIn, user: () => Promise.resolve(null) };
+
+const submit = (env, auth, from = origin) =>
   pipelineApi(
-    new Request(`${origin}/api/pipeline/session`, {
-      body: JSON.stringify({ token: "simple" }),
+    new Request(`${origin}/api/pipeline/jobs`, {
+      body: JSON.stringify({ url: "https://example.com/article" }),
+      headers: { "Content-Type": "application/json", Origin: from },
+      method: "POST",
+    }),
+    env,
+    auth
+  );
+const listJobs = (env, auth) =>
+  pipelineApi(new Request(`${origin}/api/pipeline/jobs`), env, auth);
+const session = async (env, auth, method = "GET") => {
+  const response = await pipelineApi(
+    new Request(`${origin}/api/pipeline/session`, { method }),
+    env,
+    auth
+  );
+  const body = response.status === 200 ? await response.json() : null;
+  return { body, status: response.status };
+};
+
+test("signed-out visitors cannot list or start jobs", async () => {
+  const env = environment();
+  const jobs = await listJobs(env, signedOut);
+  const created = await submit(env, signedOut);
+  assert.equal(jobs.status, 401);
+  assert.equal(created.status, 401);
+  assert.equal(env.started.length, 0);
+});
+
+test("a signed-in user can list jobs", async () => {
+  const jobs = await listJobs(environment(), signedIn);
+  assert.equal(jobs.status, 200);
+});
+
+test("cross-site requests cannot start paid jobs, even when signed in", async () => {
+  const env = environment();
+  const created = await submit(env, signedIn, "https://evil.example");
+  assert.equal(created.status, 403);
+  assert.equal(env.started.length, 0);
+});
+
+test("the session endpoint reports sign-in state and nothing else", async () => {
+  const env = environment();
+  assert.deepEqual(await session(env, signedIn), {
+    body: { authenticated: true, configured: true },
+    status: 200,
+  });
+  assert.deepEqual(await session(env, signedOut), {
+    body: { authenticated: false, configured: true },
+    status: 200,
+  });
+  const post = await session(env, signedIn, "POST");
+  assert.equal(post.status, 405);
+});
+
+test("missing sign-in configuration is reported, not bypassed", async () => {
+  // Without Google settings in the environment, the API has no sign-in.
+  const env = environment();
+  const state = await pipelineApi(
+    new Request(`${origin}/api/pipeline/session`),
+    env
+  );
+  const created = await pipelineApi(
+    new Request(`${origin}/api/pipeline/jobs`, {
+      body: JSON.stringify({ url: "https://example.com/article" }),
       headers: { "Content-Type": "application/json", Origin: origin },
       method: "POST",
     }),
     env
   );
-
-test("human password is separate from session signing", async () => {
-  const env = environment();
-  const response = await login(env);
-  assert.equal(response.status, 200);
-  const [cookie] = response.headers.get("Set-Cookie").split(";");
-  const jobs = await pipelineApi(
-    new Request(`${origin}/api/pipeline/jobs`, {
-      headers: { Cookie: cookie },
-    }),
-    env
-  );
-  assert.equal(jobs.status, 200);
-});
-
-test("a cookie signed with the human password is rejected", async () => {
-  const env = environment();
-  const forged = await signCapability(env.PIPELINE_ACCESS_TOKEN, {
-    expires: Date.now() + 60_000,
-    scope: "session",
+  assert.deepEqual(await state.json(), {
+    authenticated: false,
+    configured: false,
   });
-  const response = await pipelineApi(
-    new Request(`${origin}/api/pipeline/jobs`, {
-      headers: { Cookie: `narration_session=${forged}` },
-    }),
-    env
-  );
-  assert.equal(response.status, 401);
-});
-
-test("login enforces its rate limit", async () => {
-  const env = environment();
-  env.PIPELINE_LOGIN_LIMIT = {
-    limit: () => Promise.resolve({ success: false }),
-  };
-  const response = await login(env);
-  assert.equal(response.status, 429);
-});
-
-test("short passwords require an independent signing secret", async () => {
-  const env = environment();
-  delete env.PIPELINE_SIGNING_SECRET;
-  const response = await login(env);
-  assert.equal(response.status, 503);
+  assert.equal(created.status, 503);
 });
 
 test("blank speech chunks are rejected before generation", () => {

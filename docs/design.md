@@ -22,7 +22,7 @@ This file records decisions and constraints that should hold as the code changes
 ## Security
 
 - Provider keys stay on the server. The browser only receives an HttpOnly session cookie.
-- Paid actions require sign-in, a same-origin request, and rate-limited login.
+- Paid actions require Google sign-in with an allowed account and a same-origin request. Sign-in happens inside the app, never through emailed links, because installed iPhone apps do not share sessions with Safari.
 - An unlisted URL is not access control.
 
 ## Verification

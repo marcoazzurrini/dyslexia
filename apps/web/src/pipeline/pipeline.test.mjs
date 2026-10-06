@@ -3,15 +3,6 @@ import { test } from "node:test";
 
 import { Effect, Layer } from "effect";
 
-import { pipelineApi } from "./api.ts";
-import {
-  authenticated,
-  matchesSecret,
-  sameOrigin,
-  sessionCookie,
-  signCapability,
-  verifyCapability,
-} from "./auth.ts";
 import { ProviderFailure } from "./domain.ts";
 import { Extractor, NarrationAdapter, SpeechGenerator } from "./providers.ts";
 import { paidArtifact, runPipeline } from "./run.ts";
@@ -42,8 +33,6 @@ globalThis.FixedLengthStream = class extends TransformStream {
   }
 };
 
-const secret = "test-only-access-token-with-more-than-32-characters";
-const origin = "https://dyslexia.marcoazzurrini.com";
 const memoryBucket = () => {
   const values = new Map();
   return {
@@ -92,7 +81,6 @@ const makeEnv = (bucket = memoryBucket()) => ({
     get: () => Promise.resolve({ sendEvent: () => Promise.resolve() }),
   },
   OPENROUTER_API_KEY: "test",
-  PIPELINE_ACCESS_TOKEN: secret,
 });
 
 const fakeWorkflowStep = (id, gates = {}, payloads = {}) => ({
@@ -169,82 +157,6 @@ const providerLayer = (counts, shouldFail = false) =>
         }),
     })
   );
-
-test("capabilities expire and reject tampering", async () => {
-  const token = await signCapability(secret, {
-    expires: Date.now() + 60_000,
-    scope: "session",
-  });
-  assert.equal(await verifyCapability(token, secret, "session"), true);
-  assert.equal(await verifyCapability(`${token}x`, secret, "session"), false);
-  assert.equal(
-    await verifyCapability(token, "a-different-secret", "session"),
-    false
-  );
-  const expired = await signCapability(secret, {
-    expires: Date.now() - 1,
-    scope: "session",
-  });
-  assert.equal(await verifyCapability(expired, secret, "session"), false);
-});
-
-test("personal login checks the secret and issues a scoped HttpOnly cookie", async () => {
-  assert.equal(await matchesSecret(secret, secret), true);
-  assert.equal(await matchesSecret("wrong", secret), false);
-  const request = new Request(`${origin}/api/pipeline/session`, {
-    body: JSON.stringify({ token: secret }),
-    headers: { "Content-Type": "application/json", Origin: origin },
-    method: "POST",
-  });
-  const response = await pipelineApi(request, makeEnv());
-  assert.equal(response.status, 200);
-  const cookie = response.headers.get("set-cookie");
-  assert.match(cookie, /HttpOnly/u);
-  assert.match(cookie, /SameSite=Strict/u);
-  assert.match(cookie, /Secure/u);
-  assert.equal(cookie.includes(secret), false);
-  assert.equal(
-    await authenticated(
-      new Request(origin, { headers: { Cookie: cookie.split(";")[0] } }),
-      secret
-    ),
-    true
-  );
-  assert.match(sessionCookie(request, "", 0), /Max-Age=0/u);
-});
-
-test("unauthenticated and cross-origin requests cannot start paid jobs", async () => {
-  const env = makeEnv();
-  let started = 0;
-  env.NARRATION.create = () => {
-    started += 1;
-    return Promise.resolve({});
-  };
-  const response = await pipelineApi(
-    new Request(`${origin}/api/pipeline/jobs`, {
-      body: JSON.stringify({ url: "https://example.com/article" }),
-      method: "POST",
-    }),
-    env
-  );
-  assert.equal(response.status, 401);
-  assert.equal(started, 0);
-  assert.equal(
-    sameOrigin(
-      new Request(origin, { headers: { Origin: "https://evil.example" } })
-    ),
-    false
-  );
-  const crossOriginResponse = await pipelineApi(
-    new Request(`${origin}/api/pipeline/session`, {
-      body: JSON.stringify({ token: secret }),
-      headers: { Origin: "https://evil.example" },
-      method: "POST",
-    }),
-    env
-  );
-  assert.equal(crossOriginResponse.status, 403);
-});
 
 test("a persisted paid artifact is reused, and incomplete intent blocks retry", async () => {
   const bucket = memoryBucket();
@@ -460,8 +372,6 @@ test("identical source and speech approval safely recover saved outputs", async 
   const saved = new Map(env.AUDIO.values);
   // Simulate losing the assembly manifest after chunks and recording were saved.
   env.AUDIO.values.delete(artifactKey(job.id, "assembly.json"));
-  env.PIPELINE_SIGNING_SECRET =
-    "separate-test-signing-secret-not-the-human-access-token";
   await run();
   await run();
   assert.deepEqual(counts, { adapt: 1, extract: 1, speech: 1 });

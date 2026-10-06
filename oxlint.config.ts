@@ -5,5 +5,8 @@ import react from "ultracite/oxlint/react";
 
 export default defineConfig({
   extends: [core, react, antiSlop],
-  ignorePatterns: [...(core.ignorePatterns ?? []), "src/routeTree.gen.ts"],
+  ignorePatterns: [
+    ...(core.ignorePatterns ?? []),
+    "apps/web/src/routeTree.gen.ts",
+  ],
 });

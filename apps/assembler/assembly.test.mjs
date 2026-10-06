@@ -22,8 +22,8 @@ import {
   runCommand,
   validateAssembleInput,
   validateBaseUrl,
-} from "../containers/assembler/assembly.mjs";
-import { createAssemblyServer } from "../containers/assembler/server.mjs";
+} from "./assembly.mjs";
+import { createAssemblyServer } from "./server.mjs";
 
 const command = {
   baseUrl: "https://dyslexia.marcoazzurrini.com",

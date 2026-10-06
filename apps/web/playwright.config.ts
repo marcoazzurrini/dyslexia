@@ -9,13 +9,13 @@ export default defineConfig({
   ],
   reporter: "list",
   retries: process.env.CI ? 2 : 0,
-  testDir: "./tests",
+  testDir: "./e2e",
   use: {
     baseURL: "http://127.0.0.1:3000",
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "npm run preview",
+    command: "bun run preview",
     reuseExistingServer: false,
     timeout: 60_000,
     url: "http://127.0.0.1:3000",

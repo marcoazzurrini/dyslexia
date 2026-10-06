@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import { Effect, Layer } from "effect";
 
-import { pipelineApi } from "../src/pipeline/api.ts";
+import { pipelineApi } from "./api.ts";
 import {
   authenticated,
   matchesSecret,
@@ -11,21 +11,17 @@ import {
   sessionCookie,
   signCapability,
   verifyCapability,
-} from "../src/pipeline/auth.ts";
-import { ProviderFailure } from "../src/pipeline/domain.ts";
-import {
-  Extractor,
-  NarrationAdapter,
-  SpeechGenerator,
-} from "../src/pipeline/providers.ts";
-import { paidArtifact, runPipeline } from "../src/pipeline/run.ts";
+} from "./auth.ts";
+import { ProviderFailure } from "./domain.ts";
+import { Extractor, NarrationAdapter, SpeechGenerator } from "./providers.ts";
+import { paidArtifact, runPipeline } from "./run.ts";
 import {
   artifactKey,
   estimateTts,
   getJob,
   initializeJob,
   putJson,
-} from "../src/pipeline/storage.ts";
+} from "./storage.ts";
 
 const secret = "test-only-access-token-with-more-than-32-characters";
 const origin = "https://dyslexia.marcoazzurrini.com";

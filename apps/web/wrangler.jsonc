@@ -38,8 +38,8 @@
   "containers": [
     {
       "class_name": "AudioAssembler",
-      "image": "./containers/assembler/Dockerfile",
-      "image_build_context": "./containers/assembler",
+      "image": "../assembler/Dockerfile",
+      "image_build_context": "../assembler",
       "instance_type": "lite",
       "max_instances": 1,
     },

@@ -1,41 +1,35 @@
 # Allowlist build inputs; never send local credentials or narration to Docker.
 **
-!Dockerfile.verify
-!.dockerignore
+!.github/
+!.github/**
 !.gitignore
 !.node-version
+!README.md
 !package.json
-!package-lock.json
-!tsconfig.json
-!vite.config.ts
-!playwright.config.ts
-!wrangler.jsonc
+!bun.lock
+!tsconfig.base.json
 !lefthook.yml
 !oxfmt.config.ts
 !oxlint.config.ts
-!README.md
-!src/
-!src/**
-!public/
-!public/**
-!scripts/
-!scripts/**
-!containers/
-!containers/**
-!tests/
-!tests/**
+!apps/
+!apps/**
 !docs/
 !docs/**
-!.github/
-!.github/**
+!tooling/
+!tooling/**
 
-# These stay excluded even if placed inside an allowlisted directory.
+# These stay excluded even inside an allowlisted directory.
 **/.env
 **/.env.*
+!**/.env.example
 **/.dev.vars
 **/.dev.vars.*
 **/secrets/
 **/node_modules/
+**/.wrangler/
+**/.tanstack/
+**/dist/
+**/test-results/
 **/*.pem
 **/*.key
 **/*.mp3

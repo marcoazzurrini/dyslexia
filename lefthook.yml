@@ -4,19 +4,20 @@ pre-commit:
     - name: format
       glob: "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts,json,jsonc,css,html,md,mdx,yml,yaml}"
       exclude:
-        - src/routeTree.gen.ts
-        - package-lock.json
-      run: npm run format -- {staged_files}
+        - apps/web/src/routeTree.gen.ts
+        - "**/package-lock.json"
+        - bun.lock
+      run: bunx oxfmt --write {staged_files}
       stage_fixed: true
     - name: lint
       glob: "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}"
       exclude:
-        - src/routeTree.gen.ts
-      run: npm run lint -- {staged_files}
+        - apps/web/src/routeTree.gen.ts
+      run: bunx oxlint --deny-warnings {staged_files}
     - name: typecheck
-      run: npm run typecheck
+      run: bun run typecheck
 
 pre-push:
   jobs:
     - name: verification
-      run: npm run verify
+      run: bun run verify

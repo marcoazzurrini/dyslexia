@@ -23,6 +23,25 @@ import {
   putJson,
 } from "./storage.ts";
 
+// The Workers runtime provides FixedLengthStream, which fails when the bytes
+// written differ from the declared length.
+globalThis.FixedLengthStream = class extends TransformStream {
+  constructor(length) {
+    let written = 0;
+    super({
+      flush() {
+        if (written !== length) {
+          throw new Error("Stream length differs from its declared length");
+        }
+      },
+      transform(chunk, controller) {
+        written += chunk.byteLength;
+        controller.enqueue(chunk);
+      },
+    });
+  }
+};
+
 const secret = "test-only-access-token-with-more-than-32-characters";
 const origin = "https://dyslexia.marcoazzurrini.com";
 const memoryBucket = () => {
@@ -31,7 +50,12 @@ const memoryBucket = () => {
     get(key) {
       const value = values.get(key);
       return Promise.resolve(
-        value ? { json: () => new Response(value).json() } : null
+        value
+          ? {
+              arrayBuffer: () => new Response(value).arrayBuffer(),
+              json: () => new Response(value).json(),
+            }
+          : null
       );
     },
     head(key) {
@@ -94,29 +118,13 @@ const fakeWorkflowStep = (id, gates = {}, payloads = {}) => ({
   },
 });
 
-const fakeAssembler = (env, jobId) => ({
-  get: () => ({
-    fetch: async (_url, request) => {
-      const input = JSON.parse(request.body);
-      assert.equal(input.chunkCount, 1);
-      assert.equal(
-        await verifyCapability(
-          input.token,
-          env.PIPELINE_SIGNING_SECRET ?? secret,
-          "assembly",
-          jobId
-        ),
-        true
-      );
-      await env.AUDIO.put(
-        artifactKey(jobId, "recording.mp3"),
-        new Uint8Array([73, 68, 51, 0])
-      );
-      return Response.json({ bytes: 4, durationSeconds: 1 });
-    },
-  }),
-  idFromName: (name) => name,
-});
+// Two silent-length MPEG-1 Layer III frames: 128 kbps, 44.1 kHz, mono.
+const speechAudio = () => {
+  const frame = new Uint8Array(417);
+  new DataView(frame.buffer).setUint32(0, 0xff_fb_90_c0);
+  return Uint8Array.from([...frame, ...frame]);
+};
+const speechSeconds = (2 * 1152) / 44_100;
 
 const providerLayer = (counts, shouldFail = false) =>
   Layer.mergeAll(
@@ -155,24 +163,22 @@ const providerLayer = (counts, shouldFail = false) =>
                 })
               )
             : Effect.succeed({
-                audio: new Uint8Array([73, 68, 51, 0]),
+                audio: speechAudio(),
                 requestId: "test-request",
               });
         }),
     })
   );
 
-test("capabilities bind purpose, job and expiration and reject tampering", async () => {
+test("capabilities expire and reject tampering", async () => {
   const token = await signCapability(secret, {
     expires: Date.now() + 60_000,
-    jobId: "one",
-    scope: "assembly",
+    scope: "session",
   });
-  assert.equal(await verifyCapability(token, secret, "assembly", "one"), true);
-  assert.equal(await verifyCapability(token, secret, "assembly", "two"), false);
-  assert.equal(await verifyCapability(token, secret, "session"), false);
+  assert.equal(await verifyCapability(token, secret, "session"), true);
+  assert.equal(await verifyCapability(`${token}x`, secret, "session"), false);
   assert.equal(
-    await verifyCapability(`${token}x`, secret, "assembly", "one"),
+    await verifyCapability(token, "a-different-secret", "session"),
     false
   );
   const expired = await signCapability(secret, {
@@ -268,14 +274,13 @@ test("a persisted paid artifact is reused, and incomplete intent blocks retry", 
   assert.equal(uncertain.status, "uncertain");
 });
 
-test("workflow completes with fake providers and private assembly, without network", async () => {
+test("workflow completes with fake providers and joins audio, without network", async () => {
   const env = makeEnv();
   const job = await initializeJob(env.AUDIO, "https://example.com/article");
   const counts = { adapt: 0, extract: 0, speech: 0 };
-  env.ASSEMBLER = fakeAssembler(env, job.id);
   await runPipeline(
     env,
-    { jobId: job.id, origin },
+    { jobId: job.id },
     fakeWorkflowStep(job.id),
     providerLayer(counts)
   );
@@ -283,7 +288,11 @@ test("workflow completes with fake providers and private assembly, without netwo
   const completed = await getJob(env.AUDIO, job.id);
   assert.equal(completed.status, "ready");
   assert.equal(completed.completedChunks, 1);
-  assert.equal(completed.durationSeconds, 1);
+  assert.equal(completed.durationSeconds, speechSeconds);
+  assert.deepEqual(
+    env.AUDIO.values.get(artifactKey(job.id, "recording.mp3")),
+    speechAudio()
+  );
   assert.equal(completed.audioKey, artifactKey(job.id, "recording.mp3"));
 });
 
@@ -308,10 +317,9 @@ test("workflow waits for source approval before adaptation and draft approval be
   const draftEvent = {
     payload: { key: artifactKey(job.id, "draft.json"), maxCostUsd: 10 },
   };
-  env.ASSEMBLER = fakeAssembler(env, job.id);
   const running = runPipeline(
     env,
-    { jobId: job.id, origin },
+    { jobId: job.id },
     fakeWorkflowStep(job.id, {
       "draft-approved": draftGate,
       "source-approved": sourceGate,
@@ -356,7 +364,7 @@ test("workflow replay does not repeat an ambiguous paid speech call", async () =
   const run = () =>
     runPipeline(
       env,
-      { jobId: job.id, origin },
+      { jobId: job.id },
       fakeWorkflowStep(job.id),
       providerLayer(counts, true)
     );
@@ -371,11 +379,10 @@ const completedWorkflow = async () => {
   const env = makeEnv();
   const job = await initializeJob(env.AUDIO, "https://example.com/article");
   const counts = { adapt: 0, extract: 0, speech: 0 };
-  env.ASSEMBLER = fakeAssembler(env, job.id);
   const run = (payloads = {}) =>
     runPipeline(
       env,
-      { jobId: job.id, origin },
+      { jobId: job.id },
       fakeWorkflowStep(job.id, {}, payloads),
       providerLayer(counts)
     );
@@ -479,7 +486,7 @@ test("an existing speech plan cannot be overwritten even before any chunk is sav
   await assert.rejects(
     runPipeline(
       env,
-      { jobId: job.id, origin },
+      { jobId: job.id },
       fakeWorkflowStep(job.id),
       providerLayer(counts)
     )

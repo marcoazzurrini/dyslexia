@@ -29,22 +29,9 @@
       "class_name": "NarrationWorkflow",
     },
   ],
-  "durable_objects": {
-    "bindings": [{ "name": "ASSEMBLER", "class_name": "AudioAssembler" }],
-  },
+  // Retired audio assembler container. Remove this entry once a deploy
+  // reports the tombstone as stale.
   "exports": {
-    "AudioAssembler": { "type": "durable-object", "storage": "sqlite" },
+    "AudioAssembler": { "type": "durable-object", "state": "deleted" },
   },
-  "containers": [
-    {
-      "class_name": "AudioAssembler",
-      "image": "../assembler/Dockerfile",
-      "image_build_context": "../assembler",
-      "instance_type": "lite",
-      "max_instances": 1,
-    },
-  ],
-  // Browser CI uses fake provider APIs; it must not require a nested Docker daemon.
-  // Enable this option explicitly for full local container integration.
-  "dev": { "enable_containers": false },
 }

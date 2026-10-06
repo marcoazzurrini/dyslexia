@@ -3,7 +3,7 @@ import serverEntry from "@tanstack/react-start/server-entry";
 import { pipelineApi } from "./pipeline/api";
 import type { PipelineEnv } from "./pipeline/env";
 
-export { AudioAssembler, NarrationWorkflow } from "./pipeline/cloudflare";
+export { NarrationWorkflow } from "./pipeline/cloudflare";
 
 export default {
   fetch(request: Request, env: PipelineEnv) {

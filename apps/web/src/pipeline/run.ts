@@ -1,8 +1,11 @@
-import type { R2Bucket } from "@cloudflare/workers-types";
+import type {
+  FixedLengthStream as FixedLengthStreamType,
+  R2Bucket,
+} from "@cloudflare/workers-types";
+import { joinMp3 } from "@dyslexia/mp3";
 import type { WorkflowStep } from "cloudflare:workers";
 import { Effect, Schema } from "effect";
 
-import { signCapability } from "./auth.ts";
 import { chunkNarration } from "./domain.ts";
 import type { ProviderFailure } from "./domain.ts";
 import type { PipelineEnv, PipelineParameters } from "./env.ts";
@@ -20,6 +23,10 @@ import {
   patchJob,
   putJson,
 } from "./storage.ts";
+
+// A Workers runtime global: R2 stores a streamed upload only when its length
+// is declared up front.
+declare const FixedLengthStream: typeof FixedLengthStreamType;
 
 const Source = Schema.Struct({
   markdown: Schema.String,
@@ -165,54 +172,51 @@ const selectedKey = (id: string, key: string) => {
 };
 
 const assemble = async (
-  env: PipelineEnv,
-  params: PipelineParameters,
+  bucket: R2Bucket,
+  jobId: string,
   chunkCount: number
 ) => {
-  const manifestKey = artifactKey(params.jobId, "assembly.json");
-  const existing = await getJson(env.AUDIO, manifestKey);
-  if (
-    existing !== null &&
-    (await env.AUDIO.head(artifactKey(params.jobId, "recording.mp3")))
-  ) {
+  const recordingKey = artifactKey(jobId, "recording.mp3");
+  const manifestKey = artifactKey(jobId, "assembly.json");
+  const existing = await getJson(bucket, manifestKey);
+  if (existing !== null && (await bucket.head(recordingKey))) {
     return Schema.decodeUnknownSync(Assembly)(existing);
   }
-  // Production uses a separate signing secret; the fallback supports old fixtures.
-  const signingSecret =
-    env.PIPELINE_SIGNING_SECRET ?? env.PIPELINE_ACCESS_TOKEN;
-  if (!signingSecret) {
-    throw new Error("Assembly authorization is missing");
-  }
-  const token = await signCapability(signingSecret, {
-    expires: Date.now() + 15 * 60 * 1000,
-    jobId: params.jobId,
-    scope: "assembly",
-  });
-  const baseUrl = params.origin
-    .replace("http://localhost:", "http://host.docker.internal:")
-    .replace("http://127.0.0.1:", "http://host.docker.internal:");
-  const stub = env.ASSEMBLER.get(env.ASSEMBLER.idFromName("primary"));
-  const response = await stub.fetch("http://assembler/assemble", {
-    body: JSON.stringify({ baseUrl, chunkCount, jobId: params.jobId, token }),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-  });
-  if (!response.ok) {
-    throw new Error("Assembly container did not complete");
-  }
-  const result = Schema.decodeUnknownSync(Assembly)(await response.json());
-  const output = await env.AUDIO.head(
-    artifactKey(params.jobId, "recording.mp3")
-  );
-  if (
-    !Number.isFinite(result.durationSeconds) ||
-    result.durationSeconds <= 0 ||
-    !output ||
-    output.size !== result.bytes
-  ) {
-    throw new Error("Assembled recording validation failed");
-  }
-  await putJson(env.AUDIO, manifestKey, result);
+  // Hold one chunk at a time: a whole recording can exceed Worker memory.
+  const chunks = async function* chunks() {
+    for (let index = 0; index < chunkCount; index += 1) {
+      // eslint-disable-next-line no-await-in-loop -- Read chunks in playback order, one at a time.
+      const object = await bucket.get(
+        artifactKey(jobId, `chunks/${index}.mp3`)
+      );
+      if (!object) {
+        throw new Error("A saved speech chunk is missing");
+      }
+      // eslint-disable-next-line no-await-in-loop -- See above.
+      yield new Uint8Array(await object.arrayBuffer());
+    }
+  };
+  // R2 stores a stream only when its length is known, so measure first.
+  const { bytes } = await joinMp3(chunks(), () => Promise.resolve());
+  const { readable, writable } = new FixedLengthStream(bytes);
+  const writer = writable.getWriter();
+  const joining = (async () => {
+    try {
+      const summary = await joinMp3(chunks(), (audio) => writer.write(audio));
+      await writer.close();
+      return summary;
+    } catch (error) {
+      await writer.abort(error);
+      throw error;
+    }
+  })();
+  const [result] = await Promise.all([
+    joining,
+    bucket.put(recordingKey, readable, {
+      httpMetadata: { contentType: "audio/mpeg" },
+    }),
+  ]);
+  await putJson(bucket, manifestKey, result);
   return result;
 };
 
@@ -412,13 +416,14 @@ export const runPipeline = async (
       await patchJob(env.AUDIO, jobId, { status: "assembling" });
       return { ready: true };
     });
+    // Joining reuses saved audio and costs nothing, so it may retry.
     const result = await step.do(
       "assemble recording",
       {
-        retries: { backoff: "exponential", delay: "30 seconds", limit: 2 },
-        timeout: "8 minutes",
+        retries: { backoff: "exponential", delay: "10 seconds", limit: 2 },
+        timeout: "5 minutes",
       },
-      () => assemble(env, params, plan.count)
+      () => assemble(env.AUDIO, jobId, plan.count)
     );
     await step.do("publish recording", async () => {
       await patchJob(env.AUDIO, jobId, {

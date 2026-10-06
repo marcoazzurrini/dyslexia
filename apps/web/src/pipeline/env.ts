@@ -1,18 +1,12 @@
-import type {
-  DurableObjectNamespace,
-  R2Bucket,
-  Workflow,
-} from "@cloudflare/workers-types";
+import type { R2Bucket, Workflow } from "@cloudflare/workers-types";
 
 export interface PipelineParameters {
   jobId: string;
-  origin: string;
 }
 
 export interface PipelineEnv {
   AUDIO: R2Bucket;
   NARRATION: Workflow<PipelineParameters>;
-  ASSEMBLER: DurableObjectNamespace;
   PIPELINE_ACCESS_TOKEN?: string;
   PIPELINE_SIGNING_SECRET?: string;
   PIPELINE_LOGIN_LIMIT?: {

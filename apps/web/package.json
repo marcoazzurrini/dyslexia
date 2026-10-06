@@ -14,7 +14,7 @@
     "deploy": "wrangler deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
-    "@cloudflare/containers": "0.3.7",
+    "@dyslexia/mp3": "workspace:*",
     "@elevenlabs/elevenlabs-js": "2.70.0",
     "@openrouter/sdk": "1.4.18",
     "@tanstack/react-router": "1.170.40",

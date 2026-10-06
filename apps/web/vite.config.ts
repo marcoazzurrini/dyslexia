@@ -5,14 +5,7 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [
-    cloudflare({
-      // Browser tests mock paid APIs. Test real FFmpeg separately, without
-      // exposing the host Docker daemon inside the verification container.
-      config: (config) => ({
-        dev: { ...config.dev, enable_containers: process.env.CI !== "true" },
-      }),
-      viteEnvironment: { name: "ssr" },
-    }),
+    cloudflare({ viteEnvironment: { name: "ssr" } }),
     tanstackStart({
       spa: {
         enabled: true,
@@ -21,6 +14,6 @@ export default defineConfig({
     }),
     react(),
   ],
-  // Use the same loopback address for SPA prerendering in Linux containers.
+  // Prerender the SPA shell over loopback.
   preview: { host: "127.0.0.1" },
 });

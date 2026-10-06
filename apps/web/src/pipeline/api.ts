@@ -1,4 +1,3 @@
-import type { ReadableStream as WorkerReadableStream } from "@cloudflare/workers-types";
 import { Effect, Schema } from "effect";
 
 import { serveAudioObject } from "../server/audio-response.ts";
@@ -9,7 +8,6 @@ import {
   sameOrigin,
   sessionCookie,
   signCapability,
-  verifyCapability,
 } from "./auth.ts";
 import {
   chunkNarration,
@@ -60,81 +58,6 @@ const configured = (env: PipelineEnv) =>
   );
 const validTitle = (title: string) =>
   title.trim().length > 0 && title.length <= 300;
-// Cloudflare and DOM declarations describe the same runtime stream differently.
-const isWorkerStream = (value: unknown): value is WorkerReadableStream =>
-  value instanceof ReadableStream;
-
-const receiveRecording = async (
-  request: Request,
-  env: PipelineEnv,
-  id: string
-) => {
-  const length = Number(request.headers.get("Content-Length"));
-  if (
-    !Number.isSafeInteger(length) ||
-    length <= 0 ||
-    length > 128 * 1024 * 1024 ||
-    !isWorkerStream(request.body)
-  ) {
-    return failure("Invalid recording size", 413);
-  }
-  if (request.headers.get("Content-Type") !== "audio/mpeg") {
-    return failure("Expected MP3 audio", 415);
-  }
-  const key = artifactKey(id, "recording.mp3");
-  const saved = await env.AUDIO.put(key, request.body, {
-    httpMetadata: { contentType: "audio/mpeg" },
-    onlyIf: { etagDoesNotMatch: "*" },
-  });
-  const existing = saved ?? (await env.AUDIO.head(key));
-  if (existing?.size !== length) {
-    return failure("A different recording already exists", 409);
-  }
-  return json({ ok: true });
-};
-
-const internal = async (
-  request: Request,
-  env: PipelineEnv,
-  parts: string[]
-) => {
-  const [id, action, index] = parts.slice(2);
-  const secret = env.PIPELINE_SIGNING_SECRET ?? env.PIPELINE_ACCESS_TOKEN;
-  const token =
-    request.headers.get("Authorization")?.replace(/^Bearer /u, "") ?? "";
-  if (
-    !(
-      id &&
-      isJobId(id) &&
-      configuredSecret(secret) &&
-      (await verifyCapability(token, secret, "assembly", id))
-    )
-  ) {
-    return failure("Unauthorized", 401);
-  }
-  const job = await getJob(env.AUDIO, id);
-  if (!job || job.status !== "assembling") {
-    return failure("Assembly is not active", 409);
-  }
-  if (
-    action === "chunks" &&
-    request.method === "GET" &&
-    index &&
-    /^\d{1,2}$/u.test(index) &&
-    Number(index) < job.totalChunks
-  ) {
-    return serveAudioObject(
-      request,
-      artifactKey(id, `chunks/${Number(index)}.mp3`),
-      env.AUDIO
-    );
-  }
-  if (action === "audio" && request.method === "PUT") {
-    return receiveRecording(request, env, id);
-  }
-  return failure("Not found", 404);
-};
-
 const approveSource = async (
   request: Request,
   env: PipelineEnv,
@@ -292,7 +215,7 @@ const collection = async (request: Request, env: PipelineEnv) => {
   try {
     await env.NARRATION.create({
       id: job.id,
-      params: { jobId: job.id, origin: new URL(request.url).origin },
+      params: { jobId: job.id },
     });
   } catch {
     await patchJob(env.AUDIO, job.id, {
@@ -341,9 +264,6 @@ const dispatch = async (request: Request, env: PipelineEnv) => {
   const parts = new URL(request.url).pathname
     .slice("/api/pipeline/".length)
     .split("/");
-  if (parts[0] === "internal") {
-    return internal(request, env, parts);
-  }
   if (parts[0] === "session") {
     return session(request, env);
   }

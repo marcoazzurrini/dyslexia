@@ -12,5 +12,3 @@ export class NarrationWorkflow extends WorkflowEntrypoint<
     return runPipeline(this.env, event.payload, step);
   }
 }
-
-export { AudioAssembler } from "./assembler";

@@ -5,8 +5,7 @@ import { Schema } from "effect";
 const COOKIE = "narration_session";
 const ClaimsSchema = Schema.Struct({
   expires: Schema.Number,
-  jobId: Schema.optionalKey(Schema.String),
-  scope: Schema.Literals(["session", "assembly"]),
+  scope: Schema.Literal("session"),
 });
 type Claims = typeof ClaimsSchema.Type;
 const encoder = new TextEncoder();
@@ -54,8 +53,7 @@ export const signCapability = async (secret: string, claims: Claims) => {
 export const verifyCapability = async (
   token: string,
   secret: string,
-  scope: Claims["scope"],
-  jobId?: string
+  scope: Claims["scope"]
 ) => {
   if (token.length > 2048) {
     return false;
@@ -79,7 +77,6 @@ export const verifyCapability = async (
     );
     return (
       claims.scope === scope &&
-      claims.jobId === jobId &&
       Number.isFinite(claims.expires) &&
       claims.expires > Date.now()
     );

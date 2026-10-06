@@ -20,4 +20,4 @@ pre-commit:
 pre-push:
   jobs:
     - name: verification
-      run: bun run verify
+      run: bun run check

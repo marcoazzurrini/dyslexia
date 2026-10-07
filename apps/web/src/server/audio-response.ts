@@ -1,9 +1,5 @@
 import type { R2Bucket, R2Object } from "@cloudflare/workers-types";
 
-import { ARTICLE } from "../lib/article.ts";
-
-const AUDIO_KEY = ARTICLE.audioUrl.slice("/audio/".length);
-
 interface ByteRange {
   offset: number;
   length: number;
@@ -88,8 +84,7 @@ export const serveAudioObject = async (
   }
   const headers = new Headers({
     "Accept-Ranges": "bytes",
-    // Prevent shared caching. Authorization belongs to the calling route;
-    // the original demonstration recording remains public.
+    // Prevent shared caching. Authorization belongs to the calling route.
     "Cache-Control": "private, max-age=3600",
     "Content-Disposition": "inline",
     "Content-Type": "audio/mpeg",
@@ -142,17 +137,4 @@ export const serveAudioObject = async (
     headers,
     status: range ? 206 : 200,
   });
-};
-
-export const serveAudio = (
-  request: Request,
-  filename: string,
-  bucket: Pick<R2Bucket, "get" | "head">
-): Promise<Response> => {
-  if (filename !== AUDIO_KEY) {
-    return Promise.resolve(
-      new Response("Recording not found", { status: 404 })
-    );
-  }
-  return serveAudioObject(request, AUDIO_KEY, bucket);
 };

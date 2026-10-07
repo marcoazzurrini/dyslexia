@@ -1,4 +1,5 @@
 import { cloudflare } from "@cloudflare/vite-plugin";
+import stylex from "@stylexjs/unplugin/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -12,6 +13,7 @@ export default defineConfig({
         prerender: { outputPath: "/index.html" },
       },
     }),
+    stylex(),
     react(),
   ],
   // Prerender the SPA shell over loopback.

@@ -10,53 +10,43 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as CreateRouteImport } from './routes/create'
-import { Route as AudioFilenameRouteImport } from './routes/audio.$filename'
+import { Route as NarrationsIdRouteImport } from './routes/narrations.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreateRoute = CreateRouteImport.update({
-  id: '/create',
-  path: '/create',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AudioFilenameRoute = AudioFilenameRouteImport.update({
-  id: '/audio/$filename',
-  path: '/audio/$filename',
+const NarrationsIdRoute = NarrationsIdRouteImport.update({
+  id: '/narrations/$id',
+  path: '/narrations/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/create': typeof CreateRoute
-  '/audio/$filename': typeof AudioFilenameRoute
+  '/narrations/$id': typeof NarrationsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/create': typeof CreateRoute
-  '/audio/$filename': typeof AudioFilenameRoute
+  '/narrations/$id': typeof NarrationsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/create': typeof CreateRoute
-  '/audio/$filename': typeof AudioFilenameRoute
+  '/narrations/$id': typeof NarrationsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/create' | '/audio/$filename'
+  fullPaths: '/' | '/narrations/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/create' | '/audio/$filename'
-  id: '__root__' | '/' | '/create' | '/audio/$filename'
+  to: '/' | '/narrations/$id'
+  id: '__root__' | '/' | '/narrations/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CreateRoute: typeof CreateRoute
-  AudioFilenameRoute: typeof AudioFilenameRoute
+  NarrationsIdRoute: typeof NarrationsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,18 +58,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/create': {
-      id: '/create'
-      path: '/create'
-      fullPath: '/create'
-      preLoaderRoute: typeof CreateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/audio/$filename': {
-      id: '/audio/$filename'
-      path: '/audio/$filename'
-      fullPath: '/audio/$filename'
-      preLoaderRoute: typeof AudioFilenameRouteImport
+    '/narrations/$id': {
+      id: '/narrations/$id'
+      path: '/narrations/$id'
+      fullPath: '/narrations/$id'
+      preLoaderRoute: typeof NarrationsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -87,8 +70,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CreateRoute: CreateRoute,
-  AudioFilenameRoute: AudioFilenameRoute,
+  NarrationsIdRoute: NarrationsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

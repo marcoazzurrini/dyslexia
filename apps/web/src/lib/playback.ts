@@ -1,9 +1,13 @@
-import type { Article } from "./article";
-import { ARTICLE } from "./article";
 import { connectMediaSession } from "./playback-session";
+import type { Recording } from "./recording";
 
 export const PLAYBACK_RATES = [0.75, 1, 1.25, 1.5, 2] as const;
-export const PLAYBACK_STORAGE_KEY = `dyslexia:playback:${ARTICLE.id}:${ARTICLE.version}`;
+
+/** Where a recording's position and speed are saved on this device. */
+export const playbackKey = ({
+  id,
+  version,
+}: Pick<Recording, "id" | "version">) => `dyslexia:playback:${id}:${version}`;
 
 interface SavedPlayback {
   position: number;
@@ -42,9 +46,9 @@ const readPlayback = (storageKey: string): SavedPlayback => {
 export const connectPlayback = (
   audio: HTMLAudioElement,
   { onRate, play }: { onRate: (rate: number) => void; play: () => void },
-  article: Article = ARTICLE
+  recording: Recording
 ) => {
-  const storageKey = `dyslexia:playback:${article.id}:${article.version}`;
+  const storageKey = playbackKey(recording);
   const saved = readPlayback(storageKey);
   let pendingPosition = saved.position;
   let { rate } = saved;
@@ -80,19 +84,7 @@ export const connectPlayback = (
     }
   };
 
-  const mediaSession = connectMediaSession(audio, play);
-  // Keep the existing system controls and artwork, but name this recording.
-  try {
-    if (navigator.mediaSession && typeof MediaMetadata !== "undefined") {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        artist: article.author,
-        artwork: [...(navigator.mediaSession.metadata?.artwork ?? [])],
-        title: article.title,
-      });
-    }
-  } catch {
-    // Optional metadata must never interrupt playback.
-  }
+  const mediaSession = connectMediaSession(audio, play, recording);
   const sync = () => {
     save();
     mediaSession.update();

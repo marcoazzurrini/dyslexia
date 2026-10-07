@@ -1,234 +1,24 @@
 import type { Page, Route } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
-import { ARTICLE } from "../src/lib/article";
-import { PLAYBACK_STORAGE_KEY } from "../src/lib/playback";
-import type {
-  JobDetail,
-  JobStatus,
-  PipelineJob,
-} from "../src/pipeline/contracts";
+import { makeDetail, mockPipeline, readAudio, setVisibility } from "./fixtures";
 
-// The existing player fixture is private to player.spec.ts. Keep this small,
-// deterministic WAV local to this suite; no provider or real recording is used.
-const frames = 60 * 8000;
-const wav = Buffer.alloc(44 + frames, 128);
-wav.write("RIFF", 0);
-wav.writeUInt32LE(36 + frames, 4);
-wav.write("WAVEfmt ", 8);
-wav.writeUInt32LE(16, 16);
-wav.writeUInt16LE(1, 20);
-wav.writeUInt16LE(1, 22);
-wav.writeUInt32LE(8000, 24);
-wav.writeUInt32LE(8000, 28);
-wav.writeUInt16LE(1, 32);
-wav.writeUInt16LE(8, 34);
-wav.write("data", 36);
-wav.writeUInt32LE(frames, 40);
+const currentStep = (page: Page) => page.locator('[aria-current="step"]');
 
-const serveAudio = async (route: Route) => {
-  const range = route
-    .request()
-    .headers()
-    .range?.match(/^bytes=(?<start>\d+)-(?<end>\d*)$/u);
-  const start = Number(range?.groups?.start ?? 0);
-  const end = range?.groups?.end
-    ? Math.min(Number(range.groups.end), wav.length - 1)
-    : wav.length - 1;
-  await route.fulfill({
-    body: wav.subarray(start, end + 1),
-    contentType: "audio/wav",
-    headers: range
-      ? {
-          "Accept-Ranges": "bytes",
-          "Content-Range": `bytes ${start}-${end}/${wav.length}`,
-        }
-      : { "Accept-Ranges": "bytes" },
-    status: range ? 206 : 200,
-  });
-};
-
-const draftText = "A short narration worth hearing.";
-const makeDetail = (
-  status: JobStatus,
-  overrides: Partial<PipelineJob> = {}
-): JobDetail => ({
-  draft: {
-    sourceUrl: "https://example.com/article",
-    text: draftText,
-    title: "A new article",
-  },
-  job: {
-    characters: draftText.length,
-    completedChunks: 0,
-    createdAt: "2026-01-01T00:00:00Z",
-    durationSeconds: 60,
-    estimatedTtsUsd: 0.42,
-    id: "job-one",
-    status,
-    title: "A new article",
-    totalChunks: 2,
-    updatedAt: "2026-01-01T00:00:00Z",
-    url: "https://example.com/article",
-    ...overrides,
-  },
-  source: {
-    markdown:
-      "# A new article\n\nKeep this paragraph.\n\nDelete this navigation.",
-    sourceUrl: "https://example.com/article",
-    title: "A new article",
-  },
-});
-
-const mockPipeline = async (
-  page: Page,
-  options: {
-    authenticated?: boolean;
-    configured?: boolean;
-    details?: JobDetail[];
-  } = {}
-) => {
-  const mutations: { path: string; method: string; body: unknown }[] = [];
-  const authRequests: { path: string; body: unknown }[] = [];
-  const state = {
-    authRequests,
-    authenticated: options.authenticated ?? true,
-    configured: options.configured ?? true,
-    detailRequests: 0,
-    details: new Map(
-      (options.details ?? []).map((detail) => [detail.job.id, detail])
-    ),
-    jobsRequests: 0,
-    mutations,
-  };
-  // Stands in for Better Auth: Google immediately returns to the callback page.
-  await page.route("**/api/auth/**", async (route) => {
-    const request = route.request();
-    const path = new URL(request.url()).pathname.replace("/api/auth", "");
-    state.authRequests.push({ body: request.postDataJSON(), path });
-    if (path === "/sign-in/social") {
-      state.authenticated = true;
-      // SAFETY: the sign-in button always sends callbackURL; the sign-in
-      // test asserts the full request body.
-      const { callbackURL } = request.postDataJSON() as { callbackURL: string };
-      await route.fulfill({ json: { redirect: true, url: callbackURL } });
-    } else {
-      state.authenticated = false;
-      await route.fulfill({ json: { success: true } });
-    }
-  });
-  await page.route("**/api/pipeline/**", async (route) => {
-    const request = route.request();
-    const path = new URL(request.url()).pathname.replace("/api/pipeline", "");
-    const method = request.method();
-    if (method !== "GET") {
-      state.mutations.push({
-        body: request.postData() ? request.postDataJSON() : null,
-        method,
-        path,
-      });
-    }
-    if (path === "/session") {
-      await route.fulfill({
-        json: {
-          authenticated: state.authenticated,
-          configured: state.configured,
-        },
-      });
-      return;
-    }
-    if (!state.authenticated) {
-      await route.fulfill({
-        json: { error: "Sign in to continue." },
-        status: 401,
-      });
-      return;
-    }
-    if (path === "/jobs") {
-      if (method === "POST") {
-        const detail = makeDetail("extracting");
-        state.details.set(detail.job.id, detail);
-        await route.fulfill({ json: { job: detail.job }, status: 202 });
-      } else {
-        state.jobsRequests += 1;
-        await route.fulfill({
-          json: {
-            jobs: [...state.details.values()].map((detail) => detail.job),
-          },
-        });
-      }
-      return;
-    }
-    const [id, action] = path.split("/").slice(2);
-    const detail = state.details.get(id);
-    if (!detail) {
-      await route.fulfill({
-        json: { error: "Narration not found." },
-        status: 404,
-      });
-      return;
-    }
-    if (action === "audio") {
-      await serveAudio(route);
-    } else if (method === "POST") {
-      state.details.set(id, {
-        ...detail,
-        job: {
-          ...detail.job,
-          status: action === "source" ? "adapting" : "generating",
-        },
-      });
-      await route.fulfill({ json: { ok: true }, status: 202 });
-    } else {
-      state.detailRequests += 1;
-      await route.fulfill({ json: detail });
-    }
-  });
-  return state;
-};
-
-const selectJob = (page: Page, title = "A new article") =>
-  page.getByRole("button", { name: new RegExp(title, "u") }).click();
-
-const audioState = (page: Page) =>
-  page.locator("audio").evaluate((audio: HTMLAudioElement) => ({
-    duration: audio.duration,
-    paused: audio.paused,
-    position: audio.currentTime,
-    rate: audio.playbackRate,
-  }));
-
-const visible = (page: Page, state: "hidden" | "visible") =>
-  page.evaluate((value) => {
-    Object.defineProperty(document, "visibilityState", {
-      configurable: true,
-      value,
-    });
-    document.dispatchEvent(new Event("visibilitychange"));
-  }, state);
-
-test.beforeEach(async ({ page }) => {
-  await page.route(`**${ARTICLE.audioUrl}`, serveAudio);
-});
-
-test("Google sign-in returns to this page, and sign-out signs out", async ({
+test("Google sign-in returns to the app, and sign-out signs out", async ({
   page,
 }) => {
   const state = await mockPipeline(page, { authenticated: false });
   await page.goto("/");
-  await page.getByRole("link", { name: "Create narration" }).click();
   await page.getByRole("button", { name: "Sign in with Google" }).click();
-  await expect(page.getByLabel("Article URL", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Library" })).toBeVisible();
   expect(state.authRequests).toEqual([
     {
-      body: {
-        callbackURL: "/create",
-        errorCallbackURL: "/create",
-        provider: "google",
-      },
+      body: { callbackURL: "/", errorCallbackURL: "/", provider: "google" },
       path: "/sign-in/social",
     },
   ]);
+  await page.getByRole("button", { name: "Account" }).click();
   await page.getByRole("button", { exact: true, name: "Sign out" }).click();
   await expect(
     page.getByRole("button", { name: "Sign in with Google" })
@@ -238,7 +28,7 @@ test("Google sign-in returns to this page, and sign-out signs out", async ({
 
 test("a rejected Google account is explained", async ({ page }) => {
   await mockPipeline(page, { authenticated: false });
-  await page.goto("/create?error=account_not_allowed");
+  await page.goto("/?error=account_not_allowed");
   await expect(page.getByRole("alert")).toContainText(
     "That Google account cannot use this app"
   );
@@ -251,10 +41,8 @@ test("unconfigured service explains setup without offering sign-in", async ({
     authenticated: false,
     configured: false,
   });
-  await page.goto("/create");
-  await expect(
-    page.getByRole("heading", { name: "Narration setup needed" })
-  ).toBeVisible();
+  await page.goto("/");
+  await expect(page.getByText("Narration setup needed")).toBeVisible();
   await expect(page.getByText(/configure Google sign-in/u)).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Sign in with Google" })
@@ -262,24 +50,20 @@ test("unconfigured service explains setup without offering sign-in", async ({
   expect(state.jobsRequests).toBe(0);
 });
 
-test("submits an HTTPS link and displays source extraction progress", async ({
-  page,
-}) => {
+test("submits an HTTPS link and opens the new narration", async ({ page }) => {
   const state = await mockPipeline(page);
-  await page.goto("/create");
-  await page
-    .getByLabel("Article URL", { exact: true })
-    .fill("http://example.com/article");
+  await page.goto("/");
+  await expect(page.getByText("No narrations yet")).toBeVisible();
+  await page.getByRole("button", { name: "Add article" }).first().click();
+  const link = page.getByLabel("Article link", { exact: true });
+  await link.fill("http://example.com/article");
   await page.getByRole("button", { exact: true, name: "Create draft" }).click();
   await expect(page.getByRole("alert")).toContainText("HTTPS");
   expect(state.mutations).toHaveLength(0);
-  await page
-    .getByLabel("Article URL", { exact: true })
-    .fill("https://example.com/article");
+  await link.fill("https://example.com/article");
   await page.getByRole("button", { exact: true, name: "Create draft" }).click();
-  await expect(page.locator('[aria-current="step"]')).toHaveText(
-    "Extract source"
-  );
+  await expect(page).toHaveURL(/\/narrations\/job-one$/u);
+  await expect(currentStep(page)).toContainText("Extract source");
   expect(state.mutations).toEqual([
     {
       body: { url: "https://example.com/article" },
@@ -289,26 +73,24 @@ test("submits an HTTPS link and displays source extraction progress", async ({
   ]);
 });
 
-test("full extracted source is editable and only submitted deliberately", async ({
+test("the extracted source is editable and only submitted deliberately", async ({
   page,
 }) => {
   const state = await mockPipeline(page, {
     details: [makeDetail("source_ready")],
   });
-  await page.goto("/create");
-  await selectJob(page);
-  await expect(
-    page.getByLabel("Source Markdown", { exact: true })
-  ).toContainText("Delete this navigation.");
+  await page.goto("/");
+  await page.getByRole("link", { name: /A new article/u }).click();
+  const text = page.getByLabel("Article text", { exact: true });
+  await expect(text).toContainText("Delete this navigation.");
   await page
     .getByLabel("Article title", { exact: true })
     .fill("Selected article");
-  await page
-    .getByLabel("Source Markdown", { exact: true })
-    .fill("# Selected article\n\nKeep this paragraph.");
+  await text.fill("# Selected article\n\nKeep this paragraph.");
   expect(state.mutations).toHaveLength(0);
-  await page.getByRole("button", { name: "Adapt selected text" }).click();
-  await expect(page.locator('[aria-current="step"]')).toHaveText("Adapt text");
+  await page.getByRole("button", { name: "Adapt this text" }).click();
+  await expect(currentStep(page)).toContainText("Adapt text");
+  await expect(text).toHaveCount(0);
   expect(state.mutations).toEqual([
     {
       body: {
@@ -321,55 +103,48 @@ test("full extracted source is editable and only submitted deliberately", async 
   ]);
 });
 
-test("draft review shows per-job costs and needs explicit approval", async ({
+test("draft review shows the cost and needs explicit approval", async ({
   page,
 }) => {
   const state = await mockPipeline(page, {
     details: [makeDetail("draft_ready")],
   });
-  await page.goto("/create");
-  await selectJob(page);
-  await expect(page.getByText("$0.42 USD", { exact: true })).toBeVisible();
+  await page.goto("/narrations/job-one");
+  await expect(page.getByText("$0.42", { exact: true })).toBeVisible();
   await expect(
-    page.getByText(/Excludes LLM adaptation, extraction/u)
+    page.getByText(/Extraction and adaptation are billed separately/u)
   ).toBeVisible();
-  await expect(
-    page.getByLabel("Maximum approved speech cost (USD)", { exact: true })
-  ).toHaveValue("10");
-  await page
-    .getByRole("button", { name: "Confirm and generate audio" })
-    .click();
-  expect(state.mutations).toHaveLength(0);
+  const maximum = page.getByLabel("Maximum speech cost (USD)", {
+    exact: true,
+  });
+  await expect(maximum).toHaveValue("10");
+  const generate = page.getByRole("button", { name: "Generate audio" });
+  await expect(generate).toBeDisabled();
   await page
     .getByLabel("Narration title", { exact: true })
     .fill("My edited narration");
   await page
     .getByLabel("Narration text", { exact: true })
     .fill("Edited narration.");
-  await page
-    .getByLabel("Maximum approved speech cost (USD)", { exact: true })
-    .fill("0.01");
+  await maximum.fill("0.01");
   await expect(page.getByRole("alert")).toContainText(
     "covers the estimated speech cost"
   );
-  await page
-    .getByLabel("Maximum approved speech cost (USD)", { exact: true })
-    .fill("2");
-  await page
-    .getByRole("checkbox", { name: /I approve speech generation/u })
-    .check();
+  await maximum.fill("2");
+  const approval = page.getByRole("switch", {
+    name: /Approve speech generation/u,
+  });
+  await approval.check();
   await page
     .getByLabel("Narration text", { exact: true })
     .fill("Final edited narration.");
-  await expect(page.getByRole("checkbox")).not.toBeChecked();
+  // Any edit withdraws the approval.
+  await expect(approval).not.toBeChecked();
+  await expect(generate).toBeDisabled();
   expect(state.mutations).toHaveLength(0);
-  await page.getByRole("checkbox").check();
-  await page
-    .getByRole("button", { name: "Confirm and generate audio" })
-    .click();
-  await expect(page.locator('[aria-current="step"]')).toHaveText(
-    "Generate speech"
-  );
+  await approval.check();
+  await generate.click();
+  await expect(currentStep(page)).toContainText("Generate speech");
   expect(state.mutations).toEqual([
     {
       body: {
@@ -393,64 +168,54 @@ for (const status of ["failed", "uncertain"] as const) {
         makeDetail(status, { error: "Provider outcome requires review." }),
       ],
     });
-    await page.goto("/create");
-    await selectJob(page);
-    await expect(page.getByRole("alert")).toContainText("No automatic retry");
-    await expect(page.getByRole("alert")).toContainText(
-      "Provider outcome requires review."
-    );
+    await page.goto("/narrations/job-one");
+    await expect(
+      page.getByText("Nothing will be retried automatically", { exact: false })
+    ).toBeVisible();
+    await expect(
+      page.getByText("Provider outcome requires review.")
+    ).toBeVisible();
     if (status === "uncertain") {
-      await expect(page.getByRole("alert")).toContainText(
-        "generated or billed"
-      );
+      await expect(page.getByText(/generated or billed/u)).toBeVisible();
     }
-    const requests = state.jobsRequests;
+    const requests = state.detailRequests;
     await page.clock.fastForward(12_000);
-    expect(state.jobsRequests).toBe(requests);
+    expect(state.detailRequests).toBe(requests);
     expect(state.mutations).toHaveLength(0);
     await expect(
-      page.getByRole("button", { name: "Confirm and generate audio" })
+      page.getByRole("button", { name: "Generate audio" })
     ).toHaveCount(0);
   });
 }
 
-test("polls active jobs only while visible and stops after navigation", async ({
+test("polls active narrations only while visible and stops after leaving", async ({
   page,
 }) => {
   await page.clock.install();
   const state = await mockPipeline(page, {
     details: [makeDetail("extracting")],
   });
-  await page.goto("/create");
-  await selectJob(page);
-  await expect(page.locator('[aria-current="step"]')).toHaveText(
-    "Extract source"
-  );
-  const before = state.jobsRequests;
+  await page.goto("/narrations/job-one");
+  await expect(currentStep(page)).toContainText("Extract source");
+  const before = state.detailRequests;
   await page.clock.fastForward(3000);
-  await expect.poll(() => state.jobsRequests).toBeGreaterThan(before);
-  await visible(page, "hidden");
-  const hidden = state.jobsRequests;
+  await expect.poll(() => state.detailRequests).toBeGreaterThan(before);
+  await setVisibility(page, "hidden");
+  const hidden = state.detailRequests;
   await page.clock.fastForward(12_000);
-  expect(state.jobsRequests).toBe(hidden);
+  expect(state.detailRequests).toBe(hidden);
   state.details.set("job-one", makeDetail("source_ready"));
-  await visible(page, "visible");
-  await expect(
-    page.getByLabel("Source Markdown", { exact: true })
-  ).toBeVisible();
-  const idle = state.jobsRequests;
+  await setVisibility(page, "visible");
+  await expect(page.getByLabel("Article text", { exact: true })).toBeVisible();
+  const idle = state.detailRequests;
   await page.clock.fastForward(12_000);
-  expect(state.jobsRequests).toBe(idle);
+  expect(state.detailRequests).toBe(idle);
   state.details.set("job-one", makeDetail("adapting"));
-  await page.getByRole("button", { name: "Refresh jobs" }).click();
-  await expect(page.locator('[aria-current="step"]')).toHaveText("Adapt text");
-  await page.getByRole("link", { exact: true, name: "Home" }).click();
-  await expect(
-    page.getByRole("heading", { level: 1, name: ARTICLE.title })
-  ).toBeVisible();
-  const left = state.jobsRequests;
+  await page.getByRole("link", { name: "Library" }).click();
+  await expect(page.getByRole("heading", { name: "Library" })).toBeVisible();
+  const left = state.detailRequests;
   await page.clock.fastForward(12_000);
-  expect(state.jobsRequests).toBe(left);
+  expect(state.detailRequests).toBe(left);
 });
 
 test("slow polling never overlaps and hidden pages abort in-flight reads", async ({
@@ -469,9 +234,9 @@ test("slow polling never overlaps and hidden pages abort in-flight reads", async
     };
   });
   await mockPipeline(page, { details: [makeDetail("extracting")] });
-  await page.goto("/create");
+  await page.goto("/");
   await expect(
-    page.getByRole("button", { name: /A new article/u })
+    page.getByRole("link", { name: /A new article/u })
   ).toBeVisible();
   const pending: Route[] = [];
   await page.route("**/api/pipeline/jobs", (route) => {
@@ -481,7 +246,7 @@ test("slow polling never overlaps and hidden pages abort in-flight reads", async
   await expect.poll(() => pending.length).toBe(1);
   await page.clock.fastForward(12_000);
   expect(pending).toHaveLength(1);
-  await visible(page, "hidden");
+  await setVisibility(page, "hidden");
   await expect(page.locator("html")).toHaveAttribute(
     "data-jobs-aborted",
     "true"
@@ -491,79 +256,57 @@ test("slow polling never overlaps and hidden pages abort in-flight reads", async
   await Promise.all(pending.map((route) => route.abort()));
 });
 
-test("session expiry clears private jobs and offers sign-in", async ({
+test("session expiry clears private narrations and offers sign-in", async ({
   page,
 }) => {
   await page.clock.install();
   const state = await mockPipeline(page, {
     details: [makeDetail("extracting")],
   });
-  await page.goto("/create");
-  await selectJob(page);
-  await expect(page.locator('[aria-current="step"]')).toHaveText(
-    "Extract source"
-  );
+  await page.goto("/narrations/job-one");
+  await expect(currentStep(page)).toContainText("Extract source");
   state.authenticated = false;
   await page.clock.fastForward(3000);
   await expect(
     page.getByRole("button", { name: "Sign in with Google" })
   ).toBeVisible();
-  await expect(page.getByRole("alert")).toContainText("Sign in to continue.");
-  await expect(
-    page.getByRole("heading", { name: "A new article" })
-  ).toHaveCount(0);
+  await expect(page.getByRole("alert")).toContainText("signed out");
+  await expect(page.getByText("A new article")).toHaveCount(0);
 });
 
-test("selecting ready audio changes metadata and progress without navigation remounts", async ({
+test("playback survives navigation, and each recording keeps its own place", async ({
   page,
 }) => {
-  const detail = makeDetail("ready", { title: "My ready recording" });
-  await mockPipeline(page, { details: [detail] });
-  const selectedKey = "dyslexia:playback:job-one:job-one";
-  await page.addInitScript(
-    ({ original, selected }) => {
-      localStorage.setItem(
-        original,
-        JSON.stringify({ position: 8, rate: 1.25 })
-      );
-      localStorage.setItem(
-        selected,
-        JSON.stringify({ position: 24, rate: 1.5 })
-      );
-    },
-    { original: PLAYBACK_STORAGE_KEY, selected: selectedKey }
-  );
+  await mockPipeline(page, {
+    details: [
+      makeDetail("ready", { title: "First recording" }),
+      makeDetail("ready", { id: "job-two", title: "Second recording" }),
+      makeDetail("extracting", { id: "job-three", title: "Still working" }),
+    ],
+  });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "dyslexia:playback:job-one:job-one",
+      JSON.stringify({ position: 8, rate: 1.25 })
+    );
+    localStorage.setItem(
+      "dyslexia:playback:job-two:job-two",
+      JSON.stringify({ position: 24, rate: 1.5 })
+    );
+  });
   await page.goto("/");
-  await expect
-    .poll(() => audioState(page))
-    .toMatchObject({ duration: 60, position: 8 });
-  const originalAudio = await page.locator("audio").elementHandle();
-  await page.getByRole("link", { name: "Create narration" }).click();
-  expect(
-    await originalAudio?.evaluate(
-      (audio) => audio === document.querySelector("audio")
-    )
-  ).toBe(true);
-  await selectJob(page, "My ready recording");
-  await page.getByRole("link", { exact: true, name: "Listen" }).click();
+  await page.getByRole("button", { name: "Play First recording" }).click();
+  const player = page.getByRole("dialog", { name: "Now playing" });
   await expect(
-    page.getByRole("heading", { level: 1, name: "My ready recording" })
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Listen: My ready recording" })
+    player.getByRole("heading", { name: "First recording" })
   ).toBeVisible();
   await expect(page.locator("audio")).toHaveAttribute(
     "src",
     "/api/pipeline/jobs/job-one/audio"
   );
   await expect
-    .poll(() => audioState(page))
-    .toMatchObject({ duration: 60, paused: true, position: 24, rate: 1.5 });
-  expect(
-    await originalAudio?.evaluate(
-      (audio) => audio === document.querySelector("audio")
-    )
-  ).toBe(false);
+    .poll(() => readAudio(page))
+    .toMatchObject({ duration: 60, paused: true, position: 8, rate: 1.25 });
   const metadata = await page.evaluate(() =>
     navigator.mediaSession?.metadata
       ? {
@@ -574,42 +317,36 @@ test("selecting ready audio changes metadata and progress without navigation rem
   );
   if (metadata) {
     expect(metadata).toEqual({
-      artist: "Your narration",
-      title: "My ready recording",
+      artist: "example.com",
+      title: "First recording",
     });
   }
-  await page.getByRole("button", { name: "seek forward 15 seconds" }).click();
+
+  await player.getByRole("button", { exact: true, name: "play" }).click();
+  const first = await page.locator("audio").elementHandle();
+  await player.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("link", { name: /Still working/u }).click();
+  await expect(
+    page.getByRole("heading", { name: "Still working" })
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Library" }).click();
+  expect(
+    await first?.evaluate((audio) => audio === document.querySelector("audio"))
+  ).toBe(true);
+  await expect.poll(() => readAudio(page)).toMatchObject({ paused: false });
+
+  await page.getByRole("button", { name: "Play Second recording" }).click();
   await expect
-    .poll(() =>
-      page.evaluate(
-        (key) => JSON.parse(localStorage.getItem(key) ?? "null"),
-        selectedKey
+    .poll(() => readAudio(page))
+    .toMatchObject({ duration: 60, paused: true, position: 24, rate: 1.5 });
+  await expect(page.locator("audio")).toHaveCount(1);
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(
+        localStorage.getItem("dyslexia:playback:job-one:job-one") ?? "null"
       )
     )
-    .toEqual({ position: 39, rate: 1.5 });
-  expect(
-    await page.evaluate(
-      (key) => JSON.parse(localStorage.getItem(key) ?? "null"),
-      PLAYBACK_STORAGE_KEY
-    )
-  ).toEqual({ position: 8, rate: 1.25 });
-  await page.getByRole("button", { exact: true, name: "play" }).click();
-  const selectedAudio = await page.locator("audio").elementHandle();
-  await page.getByRole("link", { name: "Create narration" }).click();
-  await page.getByRole("link", { exact: true, name: "Home" }).click();
-  expect(
-    await selectedAudio?.evaluate(
-      (audio) => audio === document.querySelector("audio")
-    )
-  ).toBe(true);
-  await expect.poll(() => audioState(page)).toMatchObject({ paused: false });
-  await page
-    .getByRole("button", { name: "Listen to the original recording" })
-    .click();
-  await expect
-    .poll(() => audioState(page))
-    .toMatchObject({ duration: 60, paused: true, position: 8, rate: 1.25 });
-  await expect(page.locator("audio")).toHaveCount(1);
+  ).toMatchObject({ rate: 1.25 });
 });
 
 test("review forms fit narrow screens and expose labelled keyboard controls", async ({
@@ -624,8 +361,7 @@ test("review forms fit narrow screens and expose labelled keyboard controls", as
       }),
     ],
   });
-  await page.goto("/create");
-  await selectJob(page, "A".repeat(120));
+  await page.goto("/narrations/job-one");
   await expect(
     page.getByLabel("Narration text", { exact: true })
   ).toBeVisible();
@@ -636,16 +372,17 @@ test("review forms fit narrow screens and expose labelled keyboard controls", as
   ).toBe(true);
   await Promise.all(
     [
-      page.getByLabel("Article URL", { exact: true }),
+      page.getByRole("link", { name: "Library" }),
       page.getByLabel("Narration text", { exact: true }),
-      page.getByRole("button", { name: "Confirm and generate audio" }),
+      page.getByRole("button", { name: "Generate audio" }),
     ].map(async (control) => {
       const box = await control.boundingBox();
       expect(box?.width).toBeGreaterThanOrEqual(44);
       expect(box?.height).toBeGreaterThanOrEqual(44);
     })
   );
-  await page.getByRole("checkbox").focus();
+  const approval = page.getByRole("switch");
+  await approval.focus();
   await page.keyboard.press("Space");
-  await expect(page.getByRole("checkbox")).toBeChecked();
+  await expect(approval).toBeChecked();
 });

@@ -1,5 +1,4 @@
-import type { PipelineJob } from "../pipeline/contracts";
-import { audioUrl } from "./pipeline-client";
+import type { Narration } from "@dyslexia/narrations/client";
 
 /** A finished narration, ready to play. */
 export interface Recording {
@@ -12,13 +11,16 @@ export interface Recording {
   readonly version: string;
 }
 
-export const recordingOf = (job: PipelineJob): Recording => ({
-  audioUrl: audioUrl(job.id),
-  durationSeconds: job.durationSeconds ?? 0,
-  id: job.id,
-  sourceUrl: job.url,
-  title: job.title || job.url,
-  version: job.id,
+export const recordingOf = (
+  narration: Extract<Narration, { state: "ready" }>
+): Recording => ({
+  audioUrl: narration.audioUrl,
+  durationSeconds: narration.durationSeconds,
+  id: narration.id,
+  sourceUrl: narration.url,
+  title: narration.title,
+  // A narration's audio never changes; making it again gives a new id.
+  version: narration.id,
 });
 
 /** The site name of a link, such as "overreacted.io". */

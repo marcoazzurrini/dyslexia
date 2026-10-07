@@ -6,26 +6,22 @@
   "exports": {
     "./screens/*": "./src/screens/*.tsx",
     "./player/*": "./src/player/*.tsx",
-    "./lib/*": "./src/lib/*.ts",
-    "./contracts": "./src/pipeline/contracts.ts"
+    "./lib/*": "./src/lib/*.ts"
   },
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build",
-    "postbuild": "node scripts/check-bundle.mjs",
+    "postbuild": "node scripts/check-bundle.ts",
     "preview": "vite preview --host 0.0.0.0 --port 3000",
     "typecheck": "tsc --noEmit",
-    "test": "node --test \"src/**/*.test.mjs\"",
     "test:e2e": "playwright test",
-    "icons": "node scripts/generate-icons.mjs",
+    "icons": "node scripts/generate-icons.ts",
     "deploy": "wrangler deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
     "@dyslexia/auth": "workspace:*",
-    "@dyslexia/mp3": "workspace:*",
+    "@dyslexia/narrations": "workspace:*",
     "@dyslexia/ui": "workspace:*",
-    "@elevenlabs/elevenlabs-js": "2.70.0",
-    "@openrouter/sdk": "1.4.18",
     "@stylexjs/stylex": "0.19.1",
     "@tanstack/react-router": "1.170.40",
     "@tanstack/react-start": "1.168.59",

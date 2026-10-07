@@ -1,97 +1,137 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  listNarrations,
+  removeNarration,
+  retryNarration,
+  startNarration,
+} from "@dyslexia/narrations/client";
+import type { Narration } from "@dyslexia/narrations/client";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { play } from "../lib/now-playing";
-import { createJob, fetchJobs } from "../lib/pipeline-client";
 import { recordingOf } from "../lib/recording";
 import { expireIfUnauthorized, signOut } from "../lib/session";
-import { ACTIVE_STATES } from "../lib/stages";
 import { usePolling } from "../lib/use-polling";
-import type { PipelineJob } from "../pipeline/contracts";
 import { usePlayerInset } from "../player/inset";
 import { AccountSheet } from "../screens/account-sheet";
+import { FailedSheet } from "../screens/failed-sheet";
 import { LibraryScreen } from "../screens/library-screen";
 import { NewNarrationSheet } from "../screens/new-narration-sheet";
 
+type Failed = Extract<Narration, { state: "failed" }>;
+
 const Library = () => {
-  const navigate = useNavigate();
-  const [jobs, setJobs] = useState<readonly PipelineJob[] | null>(null);
+  const [narrations, setNarrations] = useState<readonly Narration[] | null>(
+    null
+  );
   const [loadError, setLoadError] = useState("");
   const [sheet, setSheet] = useState<"add" | "account" | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [submitError, setSubmitError] = useState("");
+  const [failed, setFailed] = useState<Failed | null>(null);
+  const [busy, setBusy] = useState<
+    "add" | "retry" | "remove" | "account" | null
+  >(null);
+  const [actionError, setActionError] = useState("");
 
-  const reload = usePolling(fetchJobs, {
-    enabled: !busy,
-    keepPolling: (list) => list.some((job) => ACTIVE_STATES.has(job.status)),
+  const reload = usePolling(listNarrations, {
+    enabled: busy === null,
+    keepPolling: (list) => list.some((item) => item.state === "making"),
     onData: (list) => {
-      setJobs(list);
+      setNarrations(list);
       setLoadError("");
     },
-    onError: (failure) => {
-      if (!expireIfUnauthorized(failure)) {
-        setLoadError(failure.message);
+    onError: (error) => {
+      if (!expireIfUnauthorized(error)) {
+        setLoadError(error.message);
       }
     },
   });
 
-  const create = async (url: string) => {
-    setBusy(true);
-    setSubmitError("");
+  /** Runs an action, then closes its sheet and shows the new library. */
+  const act = async (
+    kind: "add" | "retry" | "remove",
+    action: () => Promise<void>
+  ) => {
+    setBusy(kind);
+    setActionError("");
     try {
-      const job = await createJob(url);
+      await action();
       setSheet(null);
-      await navigate({ params: { id: job.id }, to: "/narrations/$id" });
+      setFailed(null);
+      reload();
     } catch (error) {
       const failure =
         error instanceof Error ? error : new Error("The request failed.");
       if (!expireIfUnauthorized(failure)) {
-        setSubmitError(failure.message);
+        setActionError(failure.message);
       }
     }
-    setBusy(false);
+    setBusy(null);
   };
 
   const leave = async () => {
-    setBusy(true);
+    setBusy("account");
     try {
       await signOut();
     } catch {
       // Still signed in; the account sheet stays open to try again.
-      setBusy(false);
+      setBusy(null);
     }
   };
 
   return (
     <>
       <LibraryScreen
-        jobs={jobs}
+        narrations={narrations}
         error={loadError || undefined}
         bottomInset={usePlayerInset()}
-        onRetry={() => {
+        onReload={() => {
           setLoadError("");
           reload();
         }}
         onAdd={() => {
-          setSubmitError("");
+          setActionError("");
           setSheet("add");
         }}
         onAccount={() => setSheet("account")}
-        onPlay={(job) => play(recordingOf(job))}
+        onPlay={(narration) => play(recordingOf(narration))}
+        onOpenFailed={(narration) => {
+          setActionError("");
+          setFailed(narration);
+        }}
       />
       <NewNarrationSheet
         open={sheet === "add"}
         onClose={() => setSheet(null)}
-        busy={busy}
-        error={submitError || undefined}
+        busy={busy === "add"}
+        error={(sheet === "add" && actionError) || undefined}
         onSubmit={(url) => {
-          void create(url);
+          void act("add", async () => {
+            await startNarration(url);
+          });
+        }}
+      />
+      <FailedSheet
+        narration={failed}
+        onClose={() => setFailed(null)}
+        busy={busy === "retry" || busy === "remove" ? busy : null}
+        error={(failed && actionError) || undefined}
+        onRetry={() => {
+          if (failed) {
+            void act("retry", async () => {
+              await retryNarration(failed.id);
+            });
+          }
+        }}
+        onRemove={() => {
+          if (failed) {
+            void act("remove", () => removeNarration(failed.id));
+          }
         }}
       />
       <AccountSheet
         open={sheet === "account"}
         onClose={() => setSheet(null)}
-        busy={busy}
+        busy={busy === "account"}
         onSignOut={() => {
           void leave();
         }}

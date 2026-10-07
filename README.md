@@ -7,14 +7,14 @@ An audio-first web app for people who find reading hard. Give it an article and 
 - Listening comes first. The app is built around a player that works well on a phone, including from the home screen and with the screen locked.
 - Narration stays faithful to the source. Adaptation makes text easier to listen to; it does not summarize or change the meaning.
 - The original article is always one tap away, so nothing visual or factual is lost.
-- A person reviews the work before money is spent. Paid steps such as text-to-speech run only after approval.
+- Paste a link and get audio. There is nothing to review or approve along the way, and a narration that fails leaves nothing behind but the reason.
 
 ## How it works
 
 1. You submit an article link.
-2. The app extracts the article and shows it for review.
-3. A language model adapts the text for listening, and you review the draft.
-4. A text-to-speech service narrates the approved draft.
+2. The app extracts the article's text.
+3. A language model adapts the text for listening.
+4. A text-to-speech service narrates it.
 5. The audio is stored and played back in the web app.
 
 ## Working on the project

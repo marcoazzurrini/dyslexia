@@ -1,10 +1,5 @@
+import type { Narration } from "@dyslexia/narrations/client";
 import type { Page, Route } from "@playwright/test";
-
-import type {
-  JobDetail,
-  JobStatus,
-  PipelineJob,
-} from "../src/pipeline/contracts";
 
 // One minute of deterministic, silent 8-bit PCM. Tests use the browser's
 // native decoder, never a provider or a real recording.
@@ -45,48 +40,54 @@ export const serveAudio = async (route: Route) => {
   });
 };
 
-export const draftText = "A short narration worth hearing.";
-export const makeDetail = (
-  status: JobStatus,
-  overrides: Partial<PipelineJob> = {}
-): JobDetail => ({
-  draft: {
-    sourceUrl: "https://example.com/article",
-    text: draftText,
-    title: "A new article",
-  },
-  job: {
-    characters: draftText.length,
-    completedChunks: 0,
-    createdAt: "2026-01-01T00:00:00Z",
-    durationSeconds: 60,
-    estimatedTtsUsd: 0.42,
-    id: "job-one",
-    status,
-    title: "A new article",
-    totalChunks: 2,
-    updatedAt: "2026-01-01T00:00:00Z",
-    url: "https://example.com/article",
-    ...overrides,
-  },
-  source: {
-    markdown:
-      "# A new article\n\nKeep this paragraph.\n\nDelete this navigation.",
-    sourceUrl: "https://example.com/article",
-    title: "A new article",
-  },
-});
+const BASE = {
+  createdAt: "2026-01-01T00:00:00Z",
+  id: "job-one",
+  title: "A new article",
+  url: "https://example.com/article",
+};
+
+/** A narration in the given state, as the API returns it. */
+export const makeNarration = (
+  state: Narration["state"],
+  overrides: Partial<typeof BASE> & {
+    durationSeconds?: number;
+    reason?: string;
+  } = {}
+): Narration => {
+  const { durationSeconds = 60, reason, ...base } = overrides;
+  const fields = { ...BASE, ...base };
+  if (state === "ready") {
+    return {
+      ...fields,
+      audioUrl: `/api/narrations/${fields.id}/audio`,
+      durationSeconds,
+      state,
+    };
+  }
+  if (state === "failed") {
+    return {
+      ...fields,
+      reason:
+        reason ??
+        "This page could not be read as an article. It may be blocked, behind a paywall, or not an article.",
+      state,
+    };
+  }
+  return { ...fields, stage: "reading", state };
+};
 
 /**
- * Stands in for the server: the session, Better Auth, and the pipeline API,
- * with jobs held in memory. Returns the state so tests can inspect requests.
+ * Stands in for the server: the session, Better Auth, and the narrations
+ * API, with narrations held in memory. Returns the state so tests can
+ * inspect requests and change narrations.
  */
-export const mockPipeline = async (
+export const mockNarrations = async (
   page: Page,
   options: {
     authenticated?: boolean;
     configured?: boolean;
-    details?: JobDetail[];
+    narrations?: Narration[];
   } = {}
 ) => {
   const mutations: { path: string; method: string; body: unknown }[] = [];
@@ -95,12 +96,11 @@ export const mockPipeline = async (
     authRequests,
     authenticated: options.authenticated ?? true,
     configured: options.configured ?? true,
-    detailRequests: 0,
-    details: new Map(
-      (options.details ?? []).map((detail) => [detail.job.id, detail])
-    ),
-    jobsRequests: 0,
+    listRequests: 0,
     mutations,
+    narrations: new Map(
+      (options.narrations ?? []).map((narration) => [narration.id, narration])
+    ),
   };
   // Stands in for Better Auth: Google immediately returns to the callback page.
   await page.route("**/api/auth/**", async (route) => {
@@ -118,9 +118,17 @@ export const mockPipeline = async (
       await route.fulfill({ json: { success: true } });
     }
   });
-  await page.route("**/api/pipeline/**", async (route) => {
+  await page.route("**/api/session", async (route) => {
+    await route.fulfill({
+      json: {
+        authenticated: state.authenticated,
+        configured: state.configured,
+      },
+    });
+  });
+  await page.route(/\/api\/narrations(?:\/|$)/u, async (route) => {
     const request = route.request();
-    const path = new URL(request.url()).pathname.replace("/api/pipeline", "");
+    const path = new URL(request.url()).pathname.replace("/api/narrations", "");
     const method = request.method();
     if (method !== "GET") {
       state.mutations.push({
@@ -129,60 +137,44 @@ export const mockPipeline = async (
         path,
       });
     }
-    if (path === "/session") {
-      await route.fulfill({
-        json: {
-          authenticated: state.authenticated,
-          configured: state.configured,
-        },
-      });
-      return;
-    }
     if (!state.authenticated) {
-      await route.fulfill({
-        json: { error: "Sign in to continue." },
-        status: 401,
-      });
+      await route.fulfill({ json: { _tag: "Unauthorized" }, status: 401 });
       return;
     }
-    if (path === "/jobs") {
+    if (path === "" || path === "/") {
       if (method === "POST") {
-        const detail = makeDetail("extracting");
-        state.details.set(detail.job.id, detail);
-        await route.fulfill({ json: { job: detail.job }, status: 202 });
+        const narration = makeNarration("making", { id: "job-new" });
+        state.narrations = new Map([
+          [narration.id, narration],
+          ...state.narrations,
+        ]);
+        await route.fulfill({ json: narration });
       } else {
-        state.jobsRequests += 1;
-        await route.fulfill({
-          json: {
-            jobs: [...state.details.values()].map((detail) => detail.job),
-          },
-        });
+        state.listRequests += 1;
+        await route.fulfill({ json: [...state.narrations.values()] });
       }
       return;
     }
-    const [id, action] = path.split("/").slice(2);
-    const detail = state.details.get(id);
-    if (!detail) {
-      await route.fulfill({
-        json: { error: "Narration not found." },
-        status: 404,
-      });
-      return;
-    }
-    if (action === "audio") {
+    const [, id = "", action] = path.split("/");
+    const narration = state.narrations.get(id);
+    if (!narration) {
+      await route.fulfill({ json: { _tag: "NarrationNotFound" }, status: 404 });
+    } else if (action === "audio") {
       await serveAudio(route);
-    } else if (method === "POST") {
-      state.details.set(id, {
-        ...detail,
-        job: {
-          ...detail.job,
-          status: action === "source" ? "adapting" : "generating",
-        },
+    } else if (action === "retry" && method === "POST") {
+      const next = makeNarration("making", {
+        id: `${id}-again`,
+        title: narration.title,
+        url: narration.url,
       });
-      await route.fulfill({ json: { ok: true }, status: 202 });
+      state.narrations.delete(id);
+      state.narrations = new Map([[next.id, next], ...state.narrations]);
+      await route.fulfill({ json: next });
+    } else if (method === "DELETE") {
+      state.narrations.delete(id);
+      await route.fulfill({ status: 204 });
     } else {
-      state.detailRequests += 1;
-      await route.fulfill({ json: detail });
+      await route.fulfill({ json: { _tag: "NarrationNotFound" }, status: 404 });
     }
   });
   return state;
@@ -218,9 +210,11 @@ export const openPlayer = async (
   page: Page,
   audio?: (route: Route) => Promise<void>
 ) => {
-  const state = await mockPipeline(page, { details: [makeDetail("ready")] });
+  const state = await mockNarrations(page, {
+    narrations: [makeNarration("ready")],
+  });
   if (audio) {
-    await page.route("**/api/pipeline/jobs/job-one/audio", audio);
+    await page.route("**/api/narrations/job-one/audio", audio);
   }
   await page.goto("/");
   await page.getByRole("button", { name: "Play A new article" }).click();

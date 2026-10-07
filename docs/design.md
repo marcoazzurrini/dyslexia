@@ -2,21 +2,23 @@
 
 This file records decisions and constraints that should hold as the code changes. It does not describe the implementation; read the code for that.
 
-## Narration pipeline
+## Making narrations
 
-- **Review before paying.** Each paid step waits for explicit approval of its input: the extracted source before adaptation, and the narration draft before speech. Show a cost estimate before speech.
-- **No blind paid retries.** A paid request can time out after the provider has already charged. Record an intent before each paid call, reuse saved results, and stop for a human decision when the outcome is uncertain. Free steps, such as joining saved audio, may retry.
-- **One retry owner per operation.** Do not stack SDK, library, and workflow retries on the same call.
-- **Approved inputs are pinned.** A restarted job must not reuse paid results for changed input.
-- **Extracted pages are untrusted data.** The adaptation model gets no tools or credentials, and its output is validated for completeness before review.
-- **Cost estimates are not limits.** Set hard spending caps in each provider account.
+- **A link in, a recording out.** Nobody reviews or approves anything along the way. A narration is either being made, ready to play, or failed with a reason.
+- **Failure leaves nothing behind.** When a narration fails, everything it made is deleted and only the reason is kept, so the listener can try again or remove it.
+- **Length caps the cost.** Articles longer than 100,000 characters of extracted text are refused, which caps one narration at about $8 of speech.
+- **Retry only what may pass.** Network errors and timeouts are retried a few times. A page that cannot be read, a refused API key, or an article that is too long is not.
+- **One retry owner per failure.** The app retries expected failures; the platform retries only crashes. Do not stack retries on the same call.
+- **Finished steps are not repeated.** A run that restarts continues from its last finished step, so paid work is not done twice.
+- **Extracted pages are untrusted data.** The adaptation model gets no tools or credentials, and a script that leaves out part of the article is written again.
+- **Hard limits live with the providers.** Set spending caps in each provider account.
 
 ## Interface
 
 - **It should feel like an iPhone app.** Follow iOS patterns people already know: large titles, inset grouped lists, sheets, and a player that stays in reach on every screen.
 - **Comfortable to read.** Use a soft background and never pure black text, at least 1.5 line spacing for running text, sentence case rather than capitals, and the system font at the size the reader chose in iOS settings.
-- **One main action per screen.** The next step is the most visible control. Paid steps sit behind a deliberate approval.
-- **Every state explains itself.** Loading, empty, failed, and waiting-for-review states say what happened and what to do next.
+- **One main action per screen.** The next step is the most visible control.
+- **Every state explains itself.** Loading, empty, in-progress, and failed states say what happened and what to do next.
 - **Design system first.** Screens are built from the shared components and tokens, and each component and screen state has a story to review it in isolation.
 
 ## Playback

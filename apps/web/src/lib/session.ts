@@ -2,10 +2,23 @@ import {
   signIn as googleSignIn,
   signOut as googleSignOut,
 } from "@dyslexia/auth/client";
+import { NarrationsError } from "@dyslexia/narrations/client";
+import { Schema } from "effect";
 import { useSyncExternalStore } from "react";
 
-import type { PipelineSession } from "../pipeline/contracts";
-import { fetchSession, PipelineError } from "./pipeline-client";
+const SessionSchema = Schema.Struct({
+  authenticated: Schema.Boolean,
+  configured: Schema.Boolean,
+});
+type Session = typeof SessionSchema.Type;
+
+const fetchSession = async (signal: AbortSignal): Promise<Session> => {
+  const response = await fetch("/api/session", { cache: "no-store", signal });
+  if (!response.ok) {
+    throw new Error("Could not check whether you are signed in.");
+  }
+  return Schema.decodeUnknownSync(SessionSchema)(await response.json());
+};
 
 export type SessionState =
   | { readonly status: "checking" }
@@ -29,10 +42,7 @@ const set = (next: SessionState) => {
   }
 };
 
-const fromSession = ({
-  authenticated,
-  configured,
-}: PipelineSession): SessionState => {
+const fromSession = ({ authenticated, configured }: Session): SessionState => {
   if (!configured) {
     return { status: "unconfigured" };
   }
@@ -65,7 +75,7 @@ export const checkSession = async () => {
  * so private data leaves the screen. Returns whether it did.
  */
 export const expireIfUnauthorized = (error: Error) => {
-  if (error instanceof PipelineError && error.status === 401) {
+  if (error instanceof NarrationsError && error.kind === "signed-out") {
     set({ expired: true, status: "signed-out" });
     return true;
   }

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { makeDetail, mockPipeline } from "./fixtures";
+import { makeNarration, mockNarrations } from "./fixtures";
 
 for (const authenticated of [false, true]) {
   test(`${authenticated ? "library" : "welcome"} loads without browser errors and fits the viewport`, async ({
@@ -8,10 +8,10 @@ for (const authenticated of [false, true]) {
   }) => {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    await mockPipeline(page, {
+    await mockNarrations(page, {
       authenticated,
-      details: [
-        makeDetail("ready", {
+      narrations: [
+        makeNarration("ready", {
           title: "A".repeat(120),
           url: `https://example.com/${"long-path".repeat(20)}`,
         }),
@@ -42,7 +42,7 @@ test("keyboard users can skip to the main content", async ({
   page,
   browserName,
 }) => {
-  await mockPipeline(page);
+  await mockNarrations(page);
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Library" })).toBeVisible();
   // WebKit on macOS uses Option+Tab to include links in keyboard navigation.
@@ -119,7 +119,7 @@ test("unknown navigation shows a not-found page and can return home", async ({
   page,
   baseURL,
 }) => {
-  await mockPipeline(page);
+  await mockNarrations(page);
   await page.goto("/not-a-real-page");
   await expect(
     page.getByRole("heading", { name: "Page not found" })

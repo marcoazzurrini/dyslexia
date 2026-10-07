@@ -1,0 +1,22 @@
+{
+  "name": "@dyslexia/narrations",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "effect": "4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261001.1",
+    "bun-types": "1.4.2",
+    "typescript": "7.0.2"
+  }
+}

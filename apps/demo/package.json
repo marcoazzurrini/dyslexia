@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@dyslexia/narrations": "workspace:*",
     "@dyslexia/ui": "workspace:*",
     "@dyslexia/web": "workspace:*",
     "@stylexjs/stylex": "0.19.1",

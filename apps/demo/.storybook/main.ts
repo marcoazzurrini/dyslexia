@@ -13,7 +13,9 @@ const config: StorybookConfig = {
 <script type="module" src="/@id/virtual:stylex:runtime"></script>`
       : head,
   // A short MP3 for player stories, shared with the MP3 package tests.
-  staticDirs: [{ from: "../../../packages/mp3/test/fixtures", to: "/audio" }],
+  staticDirs: [
+    { from: "../../../packages/narrations/test/fixtures", to: "/audio" },
+  ],
   stories: ["../src/**/*.stories.tsx"],
   viteFinal: (vite) => ({
     ...vite,

@@ -43,7 +43,7 @@ secrets/
 *.opus
 *.flac
 # Small synthetic test fixtures are source files.
-!packages/mp3/test/fixtures/*.mp3
+!packages/narrations/test/fixtures/*.mp3
 
 # Test output and local caches
 coverage/

@@ -70,7 +70,7 @@ export const NewNarrationSheet = ({
           value={value}
           disabled={busy}
           error={invalid || undefined}
-          description="Extracting and adapting the text may cost a little. Audio is only made after you approve the draft."
+          description="The article is read, rewritten for listening, and recorded. It takes a few minutes, and you can leave the app meanwhile."
           onChange={(event) => {
             setValue(event.target.value);
             setInvalid("");
@@ -78,7 +78,7 @@ export const NewNarrationSheet = ({
         />
         {error && (
           <Notice tone="danger" announce title="Could not start the narration">
-            {error} Nothing will be resubmitted automatically.
+            {error}
           </Notice>
         )}
         <Button
@@ -88,7 +88,7 @@ export const NewNarrationSheet = ({
           loading={busy}
           icon={<LinkIcon />}
         >
-          {busy ? "Starting…" : "Create draft"}
+          {busy ? "Starting…" : "Make narration"}
         </Button>
       </form>
     </Sheet>

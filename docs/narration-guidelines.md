@@ -15,7 +15,7 @@ How to turn an article into narration, based on accessible-publishing guidance a
 6. **Keep the original available.** Describing a visual helps someone listening; it does not replace access to the image.
 7. **Use established rules for maths.** Speech styles such as MathSpeak and ClearSpeak, and tools such as Speech Rule Engine, already exist. Prefer them to ad hoc rewording.
 8. **Code has no settled rule.** Preserve exact code where the article's point depends on it. Do not present a summary as equivalent to the code.
-9. **Review before generating audio.** Check the whole draft, not an excerpt.
+9. **Check the whole narration before generating audio.** Compare all of it with the article, not an excerpt, and write it again if anything is missing.
 
 ## What the evidence supports
 

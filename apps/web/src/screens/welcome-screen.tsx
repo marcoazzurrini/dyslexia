@@ -72,8 +72,8 @@ export const WelcomeScreen = ({
         Dyslexia
       </Text>
       <Text variant="body" tone="secondary" style={styles.lead}>
-        Turn articles into narrations you can listen to. You review the text
-        before any audio is made.
+        Paste an article link and listen to it, read aloud in a clear, calm
+        voice.
       </Text>
     </div>
 

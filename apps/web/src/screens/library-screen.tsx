@@ -1,10 +1,11 @@
+import type { Narration } from "@dyslexia/narrations/client";
 import {
   ActivityIndicator,
   Button,
   EmptyState,
   IconButton,
-  InfoIcon,
   ListButton,
+  ListRow,
   ListSection,
   Notice,
   PersonIcon,
@@ -17,10 +18,7 @@ import {
 import { space } from "@dyslexia/ui/tokens.stylex";
 import * as stylex from "@stylexjs/stylex";
 
-import { RouterListLink } from "../components/links";
 import { formatDuration, siteOf } from "../lib/recording";
-import { ACTIVE_STATES, REVIEW_STATES, stageLabel } from "../lib/stages";
-import type { PipelineJob } from "../pipeline/contracts";
 import { RowIcon } from "./row-icon";
 
 const styles = stylex.create({
@@ -31,69 +29,58 @@ const styles = stylex.create({
   },
 });
 
+type Making = Extract<Narration, { state: "making" }>;
+type Ready = Extract<Narration, { state: "ready" }>;
+type Failed = Extract<Narration, { state: "failed" }>;
+
 export interface LibraryScreenProps {
   /** `null` while the first load is in flight. */
-  readonly jobs: readonly PipelineJob[] | null;
+  readonly narrations: readonly Narration[] | null;
   readonly error?: string;
-  readonly onRetry: () => void;
+  readonly onReload: () => void;
   readonly onAdd: () => void;
   readonly onAccount: () => void;
-  readonly onPlay: (job: PipelineJob) => void;
+  readonly onPlay: (narration: Ready) => void;
+  readonly onOpenFailed: (narration: Failed) => void;
   readonly bottomInset?: string;
 }
 
-const isStopped = (job: PipelineJob) =>
-  job.status === "failed" || job.status === "uncertain";
-
-const iconFor = (job: PipelineJob) => {
-  if (isStopped(job)) {
-    return (
-      <RowIcon tone="danger">
-        <WarningIcon />
-      </RowIcon>
-    );
+/** What a narration in progress is doing, such as "Recording 3 of 8". */
+export const progressOf = ({ progress, stage }: Making) => {
+  if (stage === "reading") {
+    return "Reading the article…";
   }
-  if (REVIEW_STATES.has(job.status)) {
-    return (
-      <RowIcon tone="accent">
-        <InfoIcon />
-      </RowIcon>
-    );
+  if (stage === "writing") {
+    return "Writing the narration…";
   }
-  return (
-    <RowIcon tone="neutral">
-      <ActivityIndicator />
-    </RowIcon>
-  );
+  return progress
+    ? `Recording ${progress.done} of ${progress.total}…`
+    : "Recording…";
 };
 
-const JobLink = ({ job }: { job: PipelineJob }) => {
-  const icon = iconFor(job);
-  return (
-    <RouterListLink
-      to="/narrations/$id"
-      params={{ id: job.id }}
-      leading={icon}
-      title={job.title || siteOf(job.url)}
-      subtitle={stageLabel(job.status)}
-    />
-  );
-};
-
-/** Every narration, grouped by what it needs next. */
+/** Every narration: those being made, those ready to play, and failures. */
 export const LibraryScreen = ({
   bottomInset,
   error,
-  jobs,
+  narrations,
   onAccount,
   onAdd,
+  onOpenFailed,
   onPlay,
-  onRetry,
+  onReload,
 }: LibraryScreenProps) => {
-  const review = jobs?.filter((job) => REVIEW_STATES.has(job.status)) ?? [];
-  const working = jobs?.filter((job) => ACTIVE_STATES.has(job.status)) ?? [];
-  const ready = jobs?.filter((job) => job.status === "ready") ?? [];
-  const stopped = jobs?.filter(isStopped) ?? [];
+  const making: Making[] = [];
+  const ready: Ready[] = [];
+  const failed: Failed[] = [];
+  for (const narration of narrations ?? []) {
+    if (narration.state === "making") {
+      making.push(narration);
+    } else if (narration.state === "ready") {
+      ready.push(narration);
+    } else {
+      failed.push(narration);
+    }
+  }
   return (
     <Screen
       title="Library"
@@ -111,24 +98,24 @@ export const LibraryScreen = ({
           announce
           title="Could not load narrations"
           action={
-            <Button variant="tinted" onClick={onRetry}>
+            <Button variant="tinted" onClick={onReload}>
               Try again
             </Button>
           }
         >
-          {error} Nothing was resubmitted.
+          {error}
         </Notice>
       )}
-      {!jobs && !error && (
+      {!narrations && !error && (
         <div {...stylex.props(styles.loading)}>
           <ActivityIndicator size="large" label="Loading narrations" />
         </div>
       )}
-      {jobs?.length === 0 && (
+      {narrations?.length === 0 && (
         <EmptyState
           icon={<WaveformIcon />}
           title="No narrations yet"
-          description="Add an article link to make your first narration."
+          description="Add an article link and it will be read aloud for you."
           action={
             <Button icon={<PlusIcon />} onClick={onAdd}>
               Add article
@@ -136,50 +123,58 @@ export const LibraryScreen = ({
           }
         />
       )}
-      {review.length > 0 && (
-        <ListSection header="Needs your review" withIcons>
-          {review.map((job) => (
-            <JobLink key={job.id} job={job} />
-          ))}
-        </ListSection>
-      )}
-      {working.length > 0 && (
+      {making.length > 0 && (
         <ListSection
-          header="In progress"
+          header="Being made"
           withIcons
           footer="You can leave the app while narrations are made."
         >
-          {working.map((job) => (
-            <JobLink key={job.id} job={job} />
+          {making.map((narration) => (
+            <ListRow
+              key={narration.id}
+              leading={
+                <RowIcon tone="neutral">
+                  <ActivityIndicator />
+                </RowIcon>
+              }
+              title={narration.title}
+              subtitle={progressOf(narration)}
+            />
           ))}
         </ListSection>
       )}
       {ready.length > 0 && (
         <ListSection header="Ready to listen" withIcons>
-          {ready.map((job) => (
+          {ready.map((narration) => (
             <ListButton
-              key={job.id}
-              aria-label={`Play ${job.title || siteOf(job.url)}`}
+              key={narration.id}
+              aria-label={`Play ${narration.title}`}
               leading={
                 <RowIcon tone="accent">
                   <PlayIcon />
                 </RowIcon>
               }
-              title={job.title || siteOf(job.url)}
-              subtitle={
-                job.durationSeconds
-                  ? `${siteOf(job.url)} · ${formatDuration(job.durationSeconds)}`
-                  : siteOf(job.url)
-              }
-              onClick={() => onPlay(job)}
+              title={narration.title}
+              subtitle={`${siteOf(narration.url)} · ${formatDuration(narration.durationSeconds)}`}
+              onClick={() => onPlay(narration)}
             />
           ))}
         </ListSection>
       )}
-      {stopped.length > 0 && (
-        <ListSection header="Stopped" withIcons>
-          {stopped.map((job) => (
-            <JobLink key={job.id} job={job} />
+      {failed.length > 0 && (
+        <ListSection header="Could not be made" withIcons>
+          {failed.map((narration) => (
+            <ListButton
+              key={narration.id}
+              leading={
+                <RowIcon tone="danger">
+                  <WarningIcon />
+                </RowIcon>
+              }
+              title={narration.title}
+              subtitle={siteOf(narration.url)}
+              onClick={() => onOpenFailed(narration)}
+            />
           ))}
         </ListSection>
       )}

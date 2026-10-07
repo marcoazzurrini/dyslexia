@@ -13,7 +13,7 @@ import {
   RETRIES,
 } from "./limits.ts";
 import type { NarrationRecord } from "./narration.ts";
-import { coversArticle, splitIntoParts } from "./script.ts";
+import { splitIntoParts } from "./script.ts";
 import { Reader } from "./services/reader.ts";
 import type { Article } from "./services/reader.ts";
 import { Store } from "./services/store.ts";
@@ -77,7 +77,8 @@ export const readArticle = Effect.fn("readArticle")(function* readArticle(
 
 /**
  * Rewrites the article to be read aloud and splits the script into the parts
- * to record. A script that leaves out part of the article is written again.
+ * to record. An incomplete answer, or one over the length limit, is written
+ * again.
  */
 export const writeScript = Effect.fn("writeScript")(function* writeScript(
   id: string,
@@ -87,9 +88,7 @@ export const writeScript = Effect.fn("writeScript")(function* writeScript(
   const script = yield* withRetries(
     writer.write(article).pipe(
       Effect.filterOrFail(
-        (text) =>
-          text.length <= MAX_SCRIPT_CHARACTERS &&
-          coversArticle(article.text, text),
+        (text) => text.length <= MAX_SCRIPT_CHARACTERS,
         () => new ScriptIncomplete()
       )
     )

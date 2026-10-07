@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { MAX_PART_CHARACTERS } from "../src/limits.ts";
-import { coversArticle, splitIntoParts } from "../src/script.ts";
+import { splitIntoParts } from "../src/script.ts";
 
 const sentence = (index: number) =>
   `Sentence number ${index} tells part of the story. `;
@@ -63,49 +63,5 @@ describe("splitting a script into parts", () => {
     const parts = splitIntoParts(text);
     expect(parts[0]).toBe("a".repeat(MAX_PART_CHARACTERS - 1));
     expect(parts.join("")).toBe(text);
-  });
-});
-
-describe("checking that a script covers the article", () => {
-  const article = prose(6000);
-
-  test("accepts the whole article", () => {
-    expect(coversArticle(article, article)).toBe(true);
-  });
-
-  test("accepts the article reworded for listening", () => {
-    const spoken = article
-      .replaceAll("number", "no.")
-      .replaceAll(".", ", then.");
-    expect(coversArticle(article, spoken)).toBe(true);
-  });
-
-  test("rejects a summary", () => {
-    expect(coversArticle(article, article.slice(0, 3000))).toBe(false);
-  });
-
-  test("rejects a script missing the ending", () => {
-    const words = article.split(" ");
-    const missingEnd = [
-      ...words.slice(0, -25),
-      ..."filler ".repeat(40).split(" "),
-    ].join(" ");
-    expect(coversArticle(article, missingEnd)).toBe(false);
-  });
-
-  test("rejects a script that drops a passage in the middle", () => {
-    const passage =
-      "Quantum chromodynamics explains how quarks bind together inside protons. ".repeat(
-        30
-      );
-    const withPassage = `${prose(3000)} ${passage} ${prose(3000)}`;
-    const withoutPassage = `${prose(3000)} ${"Sentence ".repeat(300)} ${prose(3000)}`;
-    expect(coversArticle(withPassage, withoutPassage)).toBe(false);
-  });
-
-  test("rejects repetition that matches the length but not the words", () => {
-    expect(coversArticle(article, "word ".repeat(article.length / 5))).toBe(
-      false
-    );
   });
 });

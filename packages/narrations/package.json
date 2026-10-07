@@ -9,6 +9,7 @@
   },
   "scripts": {
     "test": "bun test",
+    "try": "bun --env-file=../../apps/web/.dev.vars scripts/try-narration.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

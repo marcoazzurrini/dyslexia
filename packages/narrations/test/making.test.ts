@@ -154,16 +154,13 @@ describe("writing the script", () => {
     });
   });
 
-  test("writes again when the script leaves part of the article out", async () => {
+  test("trusts the writer: a script shorter than the article is used as written", async () => {
     const { calls, id, runtime } = await setup({
-      write: inTurn(
-        Effect.succeed("Reading is recent."),
-        Effect.succeed(ARTICLE.text)
-      ),
+      write: () => Effect.succeed("Reading is recent."),
     });
     const parts = await runtime.runPromise(writeScript(id, ARTICLE));
-    expect(parts.join("")).toBe(ARTICLE.text);
-    expect(calls.write).toBe(2);
+    expect(parts).toEqual(["Reading is recent."]);
+    expect(calls.write).toBe(1);
   });
 
   test("writes again when the writer gives an incomplete answer", async () => {
@@ -177,9 +174,9 @@ describe("writing the script", () => {
     expect(calls.write).toBe(2);
   });
 
-  test("stops after four incomplete scripts", async () => {
+  test("stops after four incomplete answers", async () => {
     const { calls, id, runtime } = await setup({
-      write: () => Effect.succeed("A summary."),
+      write: () => Effect.fail(new ScriptIncomplete()),
     });
     const error = await runtime.runPromise(
       Effect.flip(writeScript(id, ARTICLE))

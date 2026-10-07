@@ -9,6 +9,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --cwd apps/web dev",
+    "storybook": "bun run --cwd apps/demo dev",
     "build": "bun run --if-present --workspaces build",
     "typecheck": "bun run --if-present --workspaces typecheck",
     "test": "bun run --if-present --workspaces test",

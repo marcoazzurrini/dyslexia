@@ -21,7 +21,7 @@ export class ArticleTooLong extends Schema.TaggedError<ArticleTooLong>()(
   { characters: Schema.Number }
 ) {}
 
-/** The script left out part of the article, or the writer gave up. */
+/** The writer's answer was cut off, unreadable, or too long. */
 export class ScriptIncomplete extends Schema.TaggedError<ScriptIncomplete>()(
   "ScriptIncomplete",
   {}
@@ -47,8 +47,8 @@ export type MakingError =
   | ServiceRejected;
 
 /**
- * Failures that may pass on another attempt. A writer that left text out
- * often succeeds when asked again.
+ * Failures that may pass on another attempt. A writer whose answer was cut
+ * off often finishes when asked again.
  */
 export const isTransient = (error: MakingError) =>
   error._tag === "ServiceUnavailable" || error._tag === "ScriptIncomplete";
@@ -68,7 +68,7 @@ export const reasonFor: (error: MakingError) => string =
       ArticleUnreadable: () =>
         "This page could not be read as an article. It may be blocked, behind a paywall, or not an article.",
       ScriptIncomplete: () =>
-        "The narration kept leaving parts of the article out, so it was stopped.",
+        "The writing service kept giving incomplete answers, even after several tries.",
       ServiceRejected: ({ service, status }) =>
         `${SERVICE_NAMES[service]} refused the request (status ${status}). Check its API key and credit.`,
       ServiceUnavailable: ({ service }) =>

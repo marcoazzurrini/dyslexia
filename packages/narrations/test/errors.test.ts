@@ -16,7 +16,7 @@ describe("failure reasons", () => {
     expect(reasonFor(new ArticleTooLong({ characters: 123_456 }))).toBe(
       "This article is too long to narrate: 123,456 characters, and the limit is 100,000."
     );
-    expect(reasonFor(new ScriptIncomplete())).toContain("leaving parts");
+    expect(reasonFor(new ScriptIncomplete())).toContain("incomplete answers");
     expect(reasonFor(new ServiceUnavailable({ service: "voice" }))).toBe(
       "The voice service did not respond, even after several tries."
     );

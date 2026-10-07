@@ -10,7 +10,8 @@ This file records decisions and constraints that should hold as the code changes
 - **Retry only what may pass.** Network errors and timeouts are retried a few times. A page that cannot be read, a refused API key, or an article that is too long is not.
 - **One retry owner per failure.** The app retries expected failures; the platform retries only crashes. Do not stack retries on the same call.
 - **Finished steps are not repeated.** A run that restarts continues from its last finished step, so paid work is not done twice.
-- **Extracted pages are untrusted data.** The adaptation model gets no tools or credentials, and a script that leaves out part of the article is written again.
+- **Extracted pages are untrusted data.** The adaptation model gets no tools or credentials, and treats the page as material to narrate, never as instructions.
+- **Trust the model; fix quality in the prompt.** The page arrives with its clutter, and the prompt tells the model what to leave out. Do not check the model's output with word-counting heuristics. When narrations go wrong, improve the prompt first, then try a better model.
 - **Hard limits live with the providers.** Set spending caps in each provider account.
 
 ## Interface

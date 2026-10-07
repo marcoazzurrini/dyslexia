@@ -21,6 +21,7 @@ export type {
   ListSectionProps,
 } from "./list.tsx";
 export { ListButton, ListLink, ListRow, ListSection } from "./list.tsx";
+export type { SwipeAction } from "./swipe.ts";
 export type { NoticeProps, NoticeTone } from "./notice.tsx";
 export { Notice } from "./notice.tsx";
 export type { ActivityIndicatorProps, ProgressBarProps } from "./progress.tsx";

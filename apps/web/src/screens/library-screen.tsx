@@ -2,6 +2,7 @@ import type { Narration } from "@dyslexia/narrations/client";
 import {
   ActivityIndicator,
   Button,
+  EllipsisIcon,
   EmptyState,
   IconButton,
   ListButton,
@@ -42,6 +43,11 @@ export interface LibraryScreenProps {
   readonly onAccount: () => void;
   readonly onPlay: (narration: Ready) => void;
   readonly onOpenFailed: (narration: Failed) => void;
+  /** Opens the options for a ready narration, such as Delete. */
+  readonly onOptions: (narration: Ready) => void;
+  readonly onDelete: (narration: Ready | Failed) => void;
+  /** Why the last deletion failed. */
+  readonly deleteError?: string;
   readonly bottomInset?: string;
 }
 
@@ -61,11 +67,14 @@ export const progressOf = ({ progress, stage }: Making) => {
 /** Every narration: those being made, those ready to play, and failures. */
 export const LibraryScreen = ({
   bottomInset,
+  deleteError,
   error,
   narrations,
   onAccount,
   onAdd,
+  onDelete,
   onOpenFailed,
+  onOptions,
   onPlay,
   onReload,
 }: LibraryScreenProps) => {
@@ -104,6 +113,11 @@ export const LibraryScreen = ({
           }
         >
           {error}
+        </Notice>
+      )}
+      {deleteError && (
+        <Notice tone="danger" announce title="Could not delete the narration">
+          {deleteError}
         </Notice>
       )}
       {!narrations && !error && (
@@ -157,6 +171,18 @@ export const LibraryScreen = ({
               title={narration.title}
               subtitle={`${siteOf(narration.url)} · ${formatDuration(narration.durationSeconds)}`}
               onClick={() => onPlay(narration)}
+              swipeAction={{
+                label: "Delete",
+                onAction: () => onDelete(narration),
+              }}
+              trailing={
+                <IconButton
+                  label={`Options for ${narration.title}`}
+                  icon={<EllipsisIcon />}
+                  variant="plain"
+                  onClick={() => onOptions(narration)}
+                />
+              }
             />
           ))}
         </ListSection>
@@ -174,6 +200,10 @@ export const LibraryScreen = ({
               title={narration.title}
               subtitle={siteOf(narration.url)}
               onClick={() => onOpenFailed(narration)}
+              swipeAction={{
+                label: "Delete",
+                onAction: () => onDelete(narration),
+              }}
             />
           ))}
         </ListSection>

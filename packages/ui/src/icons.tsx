@@ -123,3 +123,17 @@ export const SpeedIcon = icon(
     <path d="m12 13 4-4.5" />
   </>
 );
+export const EllipsisIcon = icon(
+  <>
+    <circle cx="5" cy="12" r="1.75" />
+    <circle cx="12" cy="12" r="1.75" />
+    <circle cx="19" cy="12" r="1.75" />
+  </>,
+  true
+);
+export const TrashIcon = icon(
+  <>
+    <path d="M4 7h16M10 3.5h4M6.5 7l.8 11.6A2 2 0 0 0 9.3 20.5h5.4a2 2 0 0 0 2-1.9L17.5 7" />
+    <path d="M10 11v5.5M14 11v5.5" />
+  </>
+);

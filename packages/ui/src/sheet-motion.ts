@@ -3,11 +3,11 @@
 // and can be interrupted at any moment.
 
 // A critically damped spring, sampled for the Web Animations API.
-const SPRING =
+export const SPRING =
   "linear(0, 0.227, 0.536, 0.75, 0.873, 0.938, 0.971, 0.986, 0.994, 0.997, 1)";
 const SETTLE_MS = 500;
 
-const reducedMotion = () =>
+export const reducedMotion = () =>
   globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
 /** Where a flick would come to rest, as iOS scroll deceleration projects it. */

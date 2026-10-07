@@ -1,10 +1,11 @@
 import { FailedSheet } from "@dyslexia/web/screens/failed-sheet";
 import { LibraryScreen } from "@dyslexia/web/screens/library-screen";
+import { NarrationOptionsSheet } from "@dyslexia/web/screens/narration-options-sheet";
 import { NewNarrationSheet } from "@dyslexia/web/screens/new-narration-sheet";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 
-import { failed, library } from "../fixtures";
+import { failed, library, ready } from "../fixtures";
 import { withRouter } from "../with-router";
 
 const meta = {
@@ -12,7 +13,9 @@ const meta = {
     narrations: library,
     onAccount: fn(),
     onAdd: fn(),
+    onDelete: fn(),
     onOpenFailed: fn(),
+    onOptions: fn(),
     onPlay: fn(),
     onReload: fn(),
   },
@@ -93,4 +96,24 @@ export const FailedNarrationTooLong: Story = {
       />
     </>
   ),
+};
+
+/** The options behind a ready narration's more button. */
+export const NarrationOptions: Story = {
+  render: (args) => (
+    <>
+      <LibraryScreen {...args} />
+      <NarrationOptionsSheet
+        narration={ready()}
+        onClose={fn()}
+        onDelete={fn()}
+      />
+    </>
+  ),
+};
+
+export const DeleteRefused: Story = {
+  args: {
+    deleteError: "The narration service could not be reached. Try again.",
+  },
 };

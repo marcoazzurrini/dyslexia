@@ -37,6 +37,8 @@ export const color = stylex.defineVars({
     default: "rgb(179 38 30 / 0.1)",
     [DARK]: "rgb(255 122 110 / 0.14)",
   },
+  /** Behind white text on destructive actions, such as a swiped Delete. */
+  destructive: { default: "#b3261e", [DARK]: "#c4362c" },
   /** Sheets, which sit above the background. */
   elevated: { default: "#fcfbf7", [DARK]: "#1b1c1a" },
   /** Gray control fills, such as the gray button and switch track. */

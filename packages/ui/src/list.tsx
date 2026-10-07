@@ -3,13 +3,40 @@ import type { StyleXStyles } from "@stylexjs/stylex";
 import type { ComponentProps, ReactNode } from "react";
 
 import { ChevronRightIcon } from "./icons.tsx";
+import { useSwipe } from "./swipe.ts";
+import type { SwipeAction } from "./swipe.ts";
 import { color, font, media, radius, size, space } from "./tokens.stylex.ts";
+
+/** How far a row slides to reveal its swipe action, in pixels. */
+const ACTION_WIDTH = 88;
 
 const styles = stylex.create({
   accessory: {
     color: color.tertiaryLabel,
     display: "flex",
     flexShrink: 0,
+  },
+  // Fills the row behind it, so an overswipe shows red, not a gap.
+  action: {
+    alignItems: "stretch",
+    backgroundColor: color.destructive,
+    borderStyle: "none",
+    color: color.onAccent,
+    cursor: "pointer",
+    display: "flex",
+    fontFamily: font.family,
+    fontSize: font.body,
+    fontWeight: 600,
+    inset: 0,
+    justifyContent: "flex-end",
+    padding: 0,
+    position: "absolute",
+  },
+  actionLabel: {
+    alignItems: "center",
+    display: "flex",
+    justifyContent: "center",
+    width: `${ACTION_WIDTH}px`,
   },
   detail: {
     color: color.secondaryLabel,
@@ -18,11 +45,25 @@ const styles = stylex.create({
     textAlign: "end",
   },
   disabled: { cursor: "not-allowed", opacity: 0.5 },
+  draggable: {
+    // The row owns horizontal drags; the page keeps vertical scrolling.
+    touchAction: "pan-y",
+    userSelect: "none",
+  },
   footer: {
     color: color.secondaryLabel,
     fontSize: font.footnote,
     lineHeight: 1.4,
     paddingInline: space.lg,
+  },
+  // Slides over the swipe action, carrying the row's controls.
+  foreground: {
+    alignItems: "center",
+    backgroundColor: color.surface,
+    display: "flex",
+    flexGrow: 1,
+    minWidth: 0,
+    position: "relative",
   },
   header: {
     color: color.secondaryLabel,
@@ -38,6 +79,8 @@ const styles = stylex.create({
   item: {
     backgroundColor: color.surface,
     display: "flex",
+    overflow: "hidden",
+    position: "relative",
   },
   leading: {
     color: color.accentText,
@@ -105,6 +148,11 @@ const styles = stylex.create({
   title: {
     fontWeight: 500,
     lineHeight: 1.35,
+  },
+  trailing: {
+    display: "flex",
+    flexShrink: 0,
+    paddingInlineEnd: space.sm,
   },
 });
 
@@ -182,7 +230,16 @@ export const ListRow = (props: ListRowProps) => (
 export interface ListButtonProps
   extends
     RowContent,
-    Omit<ComponentProps<"button">, "className" | "style" | "title"> {}
+    Omit<ComponentProps<"button">, "className" | "style" | "title"> {
+  /**
+   * Revealed by swiping the row left, as iOS reveals Delete. A swipe is easy
+   * to miss and needs a finger, so also offer the action through a visible
+   * control, such as a `trailing` more button.
+   */
+  readonly swipeAction?: SwipeAction;
+  /** A control after the row's own button, such as a more button. */
+  readonly trailing?: ReactNode;
+}
 
 /** A row that performs an action. */
 export const ListButton = ({
@@ -190,30 +247,61 @@ export const ListButton = ({
   detail,
   leading,
   subtitle,
+  swipeAction,
   title,
+  trailing,
   type = "button",
   ...props
-}: ListButtonProps) => (
-  <li {...stylex.props(styles.item)}>
-    <button
-      type={type === "submit" ? "submit" : "button"}
-      {...props}
-      {...stylex.props(
-        styles.row,
-        styles.pressable,
-        props.disabled && styles.disabled
+}: ListButtonProps) => {
+  const { close, handlers, rowRef } = useSwipe(
+    swipeAction !== undefined,
+    ACTION_WIDTH
+  );
+  return (
+    <li {...stylex.props(styles.item)}>
+      {swipeAction && (
+        // Hidden from assistive technology and the keyboard: the visible
+        // control offers the same action to them.
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-hidden="true"
+          onClick={() => {
+            close();
+            swipeAction.onAction();
+          }}
+          {...stylex.props(styles.action)}
+        >
+          <span {...stylex.props(styles.actionLabel)}>{swipeAction.label}</span>
+        </button>
       )}
-    >
-      <Content
-        accessory={accessory}
-        detail={detail}
-        leading={leading}
-        subtitle={subtitle}
-        title={title}
-      />
-    </button>
-  </li>
-);
+      <div
+        ref={rowRef}
+        {...handlers}
+        {...stylex.props(styles.foreground, swipeAction && styles.draggable)}
+      >
+        <button
+          type={type === "submit" ? "submit" : "button"}
+          {...props}
+          {...stylex.props(
+            styles.row,
+            styles.pressable,
+            props.disabled && styles.disabled
+          )}
+        >
+          <Content
+            accessory={accessory}
+            detail={detail}
+            leading={leading}
+            subtitle={subtitle}
+            title={title}
+          />
+        </button>
+        {trailing && <span {...stylex.props(styles.trailing)}>{trailing}</span>}
+      </div>
+    </li>
+  );
+};
 
 export interface ListLinkProps
   extends

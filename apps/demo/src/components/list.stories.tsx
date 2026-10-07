@@ -1,5 +1,7 @@
 import {
   ChevronRightIcon,
+  EllipsisIcon,
+  IconButton,
   ListButton,
   ListLink,
   ListRow,
@@ -49,6 +51,36 @@ export const LongText: Story = {
         subtitle="Failed"
         accessory={<ChevronRightIcon />}
       />
+    </ListSection>
+  ),
+};
+
+/**
+ * Swipe a row left to reveal Delete; tap the row or anywhere else to close
+ * it. The more button offers the same action without a gesture.
+ */
+export const SwipeToDelete: Story = {
+  render: () => (
+    <ListSection header="Ready to listen">
+      {["How the brain learns to read", "A field guide to clouds"].map(
+        (title) => (
+          <ListButton
+            key={title}
+            title={title}
+            subtitle="example.org · 13 min"
+            onClick={fn()}
+            swipeAction={{ label: "Delete", onAction: fn() }}
+            trailing={
+              <IconButton
+                label={`Options for ${title}`}
+                icon={<EllipsisIcon />}
+                variant="plain"
+                onClick={fn()}
+              />
+            }
+          />
+        )
+      )}
     </ListSection>
   ),
 };

@@ -11,6 +11,14 @@ This file records decisions and constraints that should hold as the code changes
 - **Extracted pages are untrusted data.** The adaptation model gets no tools or credentials, and its output is validated for completeness before review.
 - **Cost estimates are not limits.** Set hard spending caps in each provider account.
 
+## Interface
+
+- **It should feel like an iPhone app.** Follow iOS patterns people already know: large titles, inset grouped lists, sheets, and a player that stays in reach on every screen.
+- **Comfortable to read.** Use a soft background and never pure black text, at least 1.5 line spacing for running text, sentence case rather than capitals, and the system font at the size the reader chose in iOS settings.
+- **One main action per screen.** The next step is the most visible control. Paid steps sit behind a deliberate approval.
+- **Every state explains itself.** Loading, empty, failed, and waiting-for-review states say what happened and what to do next.
+- **Design system first.** Screens are built from the shared components and tokens, and each component and screen state has a story to review it in isolation.
+
 ## Playback
 
 - **The browser owns the media.** Use one native audio element and let it fetch the file directly. Never load whole recordings into application state.

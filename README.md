@@ -25,6 +25,6 @@ Changes go through pull requests to `main`. Checks must pass before merging, and
 
 ## Secrets and content
 
-Keep API keys in local environment files. Never commit them or expose them to the browser. `.env.example` lists the variables the app expects.
+Keep API keys in local environment files. Never commit them or expose them to the browser. The web app's example environment file lists the variables it expects.
 
 Publishing this source code does not grant permission to redistribute source articles or generated recordings.

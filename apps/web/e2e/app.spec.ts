@@ -1,50 +1,50 @@
 import { expect, test } from "@playwright/test";
 
-import { ARTICLE } from "../src/lib/article";
+import { makeDetail, mockPipeline } from "./fixtures";
 
-test.beforeEach(async ({ page }) => {
-  // Layout tests must never download the full production narration.
-  await page.route(`**${ARTICLE.audioUrl}`, (route) =>
-    route.fulfill({ body: "Not found", contentType: "text/plain", status: 404 })
-  );
-});
+for (const authenticated of [false, true]) {
+  test(`${authenticated ? "library" : "welcome"} loads without browser errors and fits the viewport`, async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await mockPipeline(page, {
+      authenticated,
+      details: [
+        makeDetail("ready", {
+          title: "A".repeat(120),
+          url: `https://example.com/${"long-path".repeat(20)}`,
+        }),
+      ],
+    });
 
-test("home loads without browser errors and fits the viewport", async ({
-  page,
-}) => {
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto("/");
 
-  await page.goto("/");
+    await expect(page).toHaveTitle("Dyslexia");
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: authenticated ? "Library" : "Dyslexia",
+      })
+    ).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
 
-  await expect(page).toHaveTitle("Dyslexia — Article listening");
-  await expect(
-    page.getByRole("heading", { level: 1, name: ARTICLE.title })
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Listen to the article" })
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Add to your Home Screen" })
-  ).toBeVisible();
-  await expect(page.locator("html")).toHaveAttribute("lang", "en");
-
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= window.innerWidth
-    )
-  ).toBe(true);
-  expect(errors).toEqual([]);
-});
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth
+      )
+    ).toBe(true);
+    expect(errors).toEqual([]);
+  });
+}
 
 test("keyboard users can skip to the main content", async ({
   page,
   browserName,
 }) => {
+  await mockPipeline(page);
   await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: ARTICLE.title })
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Library" })).toBeVisible();
   // WebKit on macOS uses Option+Tab to include links in keyboard navigation.
   await page.keyboard.press(browserName === "webkit" ? "Alt+Tab" : "Tab");
   await expect(
@@ -119,15 +119,14 @@ test("unknown navigation shows a not-found page and can return home", async ({
   page,
   baseURL,
 }) => {
+  await mockPipeline(page);
   await page.goto("/not-a-real-page");
   await expect(
     page.getByRole("heading", { name: "Page not found" })
   ).toBeVisible();
   await page.getByRole("link", { name: "Return home" }).click();
   await expect(page).toHaveURL(`${baseURL}/`);
-  await expect(
-    page.getByRole("heading", { name: ARTICLE.title })
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Library" })).toBeVisible();
 });
 
 test("missing non-navigation assets return 404 rather than the app shell", async ({

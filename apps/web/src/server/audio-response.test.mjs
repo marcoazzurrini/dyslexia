@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { serveAudio } from "./audio-response.ts";
+import { serveAudioObject } from "./audio-response.ts";
 
-const filename = "conway-b2ac2e01fb55c21c.mp3";
+const filename = "recording.mp3";
 const bytes = new TextEncoder().encode("0123456789");
 const metadata = {
   etag: "recording-v1",
@@ -24,7 +24,7 @@ const makeBucket = () => ({
   head: () => Promise.resolve(metadata),
 });
 const fetchAudio = (headers = {}, method = "GET", bucket = makeBucket()) =>
-  serveAudio(
+  serveAudioObject(
     new Request(`https://example.com/audio/${filename}`, { headers, method }),
     filename,
     bucket
@@ -133,13 +133,7 @@ for (const validator of [
   });
 }
 
-test("unknown keys and missing objects return 404, not the app HTML", async () => {
-  const unknown = await serveAudio(
-    new Request("https://example.com/audio/unknown.mp3"),
-    "unknown.mp3",
-    makeBucket()
-  );
-  assert.equal(unknown.status, 404);
+test("missing objects return 404, not the app HTML", async () => {
   const missing = await fetchAudio({}, "GET", {
     ...makeBucket(),
     head: () => Promise.resolve(null),

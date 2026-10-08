@@ -38,6 +38,6 @@ const { article, script } = await Effect.runPromise(
 );
 
 console.error(
-  `${article.title}: article ${article.text.length} characters, script ${script.length} characters\n`
+  `${script.title} (page title: ${article.title}): article ${article.text.length} characters, script ${script.text.length} characters\n`
 );
-console.log(script);
+console.log(script.text);

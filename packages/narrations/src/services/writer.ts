@@ -32,7 +32,11 @@ Make it work when heard
 - Mention an image only when its caption or description tells the listener something the article needs, and say that it is an image.
 - Keep code and mathematical expressions exact. Say briefly that code or a formula follows before reading it.
 
-Return a JSON object with one property, text, holding the complete script.`;
+Name the article
+- Also give the article's title, as the listener will see it in their library: its own headline, in its language, without the site's name.
+- The title you are given may be only the site's name, or a label such as "Post by @someone". When it is, use the article's headline from its text instead. When the article has no headline, write a short, plain title that says what it is about.
+
+Return a JSON object with two properties: text, holding the complete script, and title, holding the article's title.`;
 
 const Completion = Schema.Struct({
   choices: Schema.Array(
@@ -53,7 +57,14 @@ const Completion = Schema.Struct({
   ),
 });
 
-const Script = Schema.fromJsonString(Schema.Struct({ text: Schema.String }));
+/** A narration script and the title to show it under. */
+export const ScriptSchema = Schema.Struct({
+  text: Schema.String,
+  title: Schema.String,
+});
+export type Script = typeof ScriptSchema.Type;
+
+const Answer = Schema.fromJsonString(ScriptSchema);
 
 /** Rewrites an article as a script to be read aloud. */
 export class Writer extends Context.Service<
@@ -62,7 +73,7 @@ export class Writer extends Context.Service<
     readonly write: (
       article: Article
     ) => Effect.Effect<
-      string,
+      Script,
       ScriptIncomplete | ServiceUnavailable | ServiceRejected
     >;
   }
@@ -100,8 +111,11 @@ export class Writer extends Context.Service<
                   name: "narration",
                   schema: {
                     additionalProperties: false,
-                    properties: { text: { type: "string" } },
-                    required: ["text"],
+                    properties: {
+                      text: { type: "string" },
+                      title: { type: "string" },
+                    },
+                    required: ["text", "title"],
                     type: "object",
                   },
                   strict: true,
@@ -133,11 +147,12 @@ export class Writer extends Context.Service<
         ) {
           return yield* new ScriptIncomplete();
         }
-        const { text } = yield* Schema.decodeUnknownEffect(Script)(
+        const { text, title } = yield* Schema.decodeUnknownEffect(Answer)(
           choice.message.content
         ).pipe(Effect.mapError(() => new ScriptIncomplete()));
         yield* Effect.annotateCurrentSpan("script.characters", text.length);
-        return text;
+        // The page's own title is still better than none.
+        return { text, title: title.trim() || article.title };
       });
       return { write };
     })

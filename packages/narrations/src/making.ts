@@ -76,9 +76,9 @@ export const readArticle = Effect.fn("readArticle")(function* readArticle(
 });
 
 /**
- * Rewrites the article to be read aloud and splits the script into the parts
- * to record. An incomplete answer, or one over the length limit, is written
- * again.
+ * Rewrites the article to be read aloud, saves the title the writer gave it,
+ * and splits the script into the parts to record. An incomplete answer, or
+ * one over the length limit, is written again.
  */
 export const writeScript = Effect.fn("writeScript")(function* writeScript(
   id: string,
@@ -88,16 +88,17 @@ export const writeScript = Effect.fn("writeScript")(function* writeScript(
   const script = yield* withRetries(
     writer.write(article).pipe(
       Effect.filterOrFail(
-        (text) => text.length <= MAX_SCRIPT_CHARACTERS,
+        ({ text }) => text.length <= MAX_SCRIPT_CHARACTERS,
         () => new ScriptIncomplete()
       )
     )
   );
-  const parts = splitIntoParts(script);
+  const parts = splitIntoParts(script.text);
   yield* Effect.annotateCurrentSpan("script.parts", parts.length);
   yield* advance(id, {
     progress: { done: 0, total: parts.length },
     stage: "recording",
+    title: script.title,
   });
   return parts;
 });

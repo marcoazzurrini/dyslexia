@@ -249,12 +249,12 @@ describe("the article reader (Firecrawl)", () => {
 });
 
 describe("the writer (OpenRouter)", () => {
-  test("asks the model for the whole article as JSON, with the article as data", async () => {
+  test("asks the model for the whole article and its title as JSON, with the article as data", async () => {
     const { fetch, requests } = fakeFetch(
-      completion(JSON.stringify({ text: "Spoken." }))
+      completion(JSON.stringify({ text: "Spoken.", title: " Headline " }))
     );
     const result = await run(write("Article body."), fetch);
-    expect(result).toEqual({ value: "Spoken." });
+    expect(result).toEqual({ value: { text: "Spoken.", title: "Headline" } });
     const [request] = requests;
     expect(request?.url).toBe("https://openrouter.ai/api/v1/chat/completions");
     expect(request?.headers.get("authorization")).toBe(
@@ -265,13 +265,18 @@ describe("the writer (OpenRouter)", () => {
       model: "openai/gpt-6.1-sol",
       reasoning: { effort: "medium" },
       response_format: {
-        json_schema: { name: "narration", strict: true },
+        json_schema: {
+          name: "narration",
+          schema: { required: ["text", "title"] },
+          strict: true,
+        },
         type: "json_schema",
       },
       stream: false,
     });
     expect(body.messages[0].role).toBe("system");
     expect(body.messages[0].content).toContain("not a summary");
+    expect(body.messages[0].content).toContain("Name the article");
     expect(body.messages[1]).toEqual({
       content: JSON.stringify({ text: "Article body.", title: "Title" }),
       role: "user",
@@ -295,6 +300,10 @@ describe("the writer (OpenRouter)", () => {
     ],
     ["returned JSON without text", completion(JSON.stringify({ title: "x" }))],
     [
+      "returned JSON without a title",
+      completion(JSON.stringify({ text: "x" })),
+    ],
+    [
       "returned two answers",
       Response.json({
         choices: [
@@ -317,6 +326,14 @@ describe("the writer (OpenRouter)", () => {
       });
     }
   );
+
+  test("keeps the page's title when the model gives an empty one", async () => {
+    const { fetch } = fakeFetch(
+      completion(JSON.stringify({ text: "Spoken.", title: "  " }))
+    );
+    const result = await run(write("Article."), fetch);
+    expect(result).toEqual({ value: { text: "Spoken.", title: "Title" } });
+  });
 
   test.each([
     [400, "ServiceRejected"],
@@ -402,7 +419,7 @@ describe("traces of the outside services", () => {
     const { spans, tracer } = recordingTracer();
     const { fetch } = fakeFetch(
       scraped({ markdown: "Body.", metadata: { title: "Title" } }),
-      completion(JSON.stringify({ text: "Body." })),
+      completion(JSON.stringify({ text: "Body.", title: "Title" })),
       new Response(speech())
     );
     await run(
@@ -429,7 +446,9 @@ describe("traces of the outside services", () => {
         choices: [
           {
             finish_reason: "stop",
-            message: { content: JSON.stringify({ text: "Body." }) },
+            message: {
+              content: JSON.stringify({ text: "Body.", title: "Title" }),
+            },
           },
         ],
         usage: { completion_tokens: 20, cost: 0.002, prompt_tokens: 100 },

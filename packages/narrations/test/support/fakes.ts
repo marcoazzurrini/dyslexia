@@ -15,6 +15,7 @@ import type { Article } from "../../src/services/reader.ts";
 import { Store } from "../../src/services/store.ts";
 import { Voice } from "../../src/services/voice.ts";
 import { Writer } from "../../src/services/writer.ts";
+import type { Script as WrittenScript } from "../../src/services/writer.ts";
 import { speech } from "./audio.ts";
 
 export const ARTICLE: Article = {
@@ -30,13 +31,13 @@ export interface Script {
   ) => Effect.Effect<Article, ArticleUnreadable | ServiceError>;
   readonly write?: (
     article: Article
-  ) => Effect.Effect<string, ScriptIncomplete | ServiceError>;
+  ) => Effect.Effect<WrittenScript, ScriptIncomplete | ServiceError>;
   readonly speak?: (text: string) => Effect.Effect<Uint8Array, ServiceError>;
 }
 
 /**
  * Stand-ins for the outside services. By default they read `ARTICLE`, write
- * it back word for word, and speak two frames of audio per part. `calls`
+ * it back word for word under its own title, and speak two frames of audio per part. `calls`
  * counts what was asked of them.
  */
 export const fakeServices = (script: Script = {}) => {
@@ -55,7 +56,7 @@ export const fakeServices = (script: Script = {}) => {
       write: (article) =>
         Effect.suspend(() => {
           calls.write += 1;
-          return script.write?.(article) ?? Effect.succeed(article.text);
+          return script.write?.(article) ?? Effect.succeed(article);
         }),
     }),
     Layer.succeed(Voice, {

@@ -42,7 +42,12 @@ const services = (reader: () => Response) => {
           choices: [
             {
               finish_reason: "stop",
-              message: { content: JSON.stringify({ text: ARTICLE }) },
+              message: {
+                content: JSON.stringify({
+                  text: ARTICLE,
+                  title: "How reading began",
+                }),
+              },
             },
           ],
         })
@@ -127,7 +132,7 @@ describe("narrations, from link to recording", () => {
         durationSeconds: secondsOf(3),
         id,
         state: "ready",
-        title: "Reading",
+        title: "How reading began",
         url: "https://example.org/reading",
       }),
     ]);

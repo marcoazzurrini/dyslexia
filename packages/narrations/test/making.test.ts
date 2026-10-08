@@ -22,6 +22,7 @@ import {
   stop,
   writeScript,
 } from "../src/making.ts";
+import type { Script as WrittenScript } from "../src/services/writer.ts";
 import { secondsOf, speech } from "./support/audio.ts";
 import { memoryBucket } from "./support/bucket.ts";
 import { ARTICLE, fakeServices, runtimeWith } from "./support/fakes.ts";
@@ -151,12 +152,23 @@ describe("writing the script", () => {
       progress: { done: 0, total: parts.length },
       stage: "recording",
       state: "making",
+      title: ARTICLE.title,
     });
+  });
+
+  test("saves the title the writer gave the article", async () => {
+    const { id, runtime, stored } = await setup({
+      write: (article) =>
+        Effect.succeed({ text: article.text, title: "Reading is recent" }),
+    });
+    await runtime.runPromise(writeScript(id, ARTICLE));
+    expect(await stored()).toMatchObject({ title: "Reading is recent" });
   });
 
   test("trusts the writer: a script shorter than the article is used as written", async () => {
     const { calls, id, runtime } = await setup({
-      write: () => Effect.succeed("Reading is recent."),
+      write: () =>
+        Effect.succeed({ text: "Reading is recent.", title: ARTICLE.title }),
     });
     const parts = await runtime.runPromise(writeScript(id, ARTICLE));
     expect(parts).toEqual(["Reading is recent."]);
@@ -165,9 +177,9 @@ describe("writing the script", () => {
 
   test("writes again when the writer gives an incomplete answer", async () => {
     const { calls, id, runtime } = await setup({
-      write: inTurn<string, ScriptIncomplete>(
+      write: inTurn<WrittenScript, ScriptIncomplete>(
         Effect.fail(new ScriptIncomplete()),
-        Effect.succeed(ARTICLE.text)
+        Effect.succeed(ARTICLE)
       ),
     });
     await runtime.runPromise(writeScript(id, ARTICLE));
@@ -188,11 +200,12 @@ describe("writing the script", () => {
   test("refuses a script over its limit", async () => {
     const { id, runtime } = await setup({
       write: (article) =>
-        Effect.succeed(
-          article.text.repeat(
+        Effect.succeed({
+          text: article.text.repeat(
             Math.ceil((MAX_SCRIPT_CHARACTERS + 1) / article.text.length)
-          )
-        ),
+          ),
+          title: article.title,
+        }),
     });
     expect(
       await runtime.runPromise(Effect.flip(writeScript(id, ARTICLE)))

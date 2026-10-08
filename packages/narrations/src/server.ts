@@ -1,5 +1,6 @@
 import { Effect, Layer, ManagedRuntime } from "effect";
 import {
+  HttpMiddleware,
   HttpRouter,
   HttpServer,
   HttpServerRequest,
@@ -25,12 +26,16 @@ export interface Access {
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 const guardFor = (env: NarrationsEnv, access: Access) =>
-  Layer.succeed(Guard)((endpoint) =>
+  Layer.succeed(Guard)((endpoint, { endpoint: route }) =>
     Effect.gen(function* guard() {
+      const { method, source } = yield* HttpServerRequest.HttpServerRequest;
+      yield* Effect.annotateCurrentSpan({
+        "http.request.method": method,
+        "http.route": route.path,
+      });
       if (!isConfigured(env)) {
         return yield* new NotConfigured();
       }
-      const { method, source } = yield* HttpServerRequest.HttpServerRequest;
       if (!(source instanceof Request)) {
         return yield* Effect.die(new TypeError("Expected a Fetch request"));
       }
@@ -46,8 +51,20 @@ const guardFor = (env: NarrationsEnv, access: Access) =>
         return yield* new HttpApiError.Forbidden();
       }
       return yield* endpoint;
-    })
+    }).pipe(
+      Effect.tap((response) =>
+        Effect.annotateCurrentSpan("http.response.status_code", response.status)
+      ),
+      Effect.withSpan(`narrations.${route.identifier}`, { kind: "server" })
+    )
   );
+
+// Effect closes its own span for a request only after handing back the
+// answer, too late to be sent with it. The guard's span, which ends before
+// the answer, stands in for it.
+const noRequestSpans = Layer.succeed(HttpMiddleware.TracerDisabledWhen)(
+  () => true
+);
 
 const Handlers = HttpApiBuilder.group(NarrationsApi, "narrations", (handlers) =>
   Effect.gen(function* buildHandlers() {
@@ -93,6 +110,7 @@ const apiFor = (env: NarrationsEnv, access: Access): Api => {
       Layer.provide(guardFor(env, access)),
       Layer.provide(storageFor(env)),
       Layer.provide(HttpServer.layerServices),
+      Layer.provideMerge(noRequestSpans),
       Layer.provideMerge(tracing)
     ),
     { disableLogger: true, memoMap }

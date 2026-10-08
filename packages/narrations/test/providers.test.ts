@@ -105,6 +105,20 @@ describe("the article reader (Firecrawl)", () => {
     });
   });
 
+  test("asks for the link of a site that needs help", async () => {
+    const { fetch, requests } = fakeFetch(
+      scraped({ markdown: "Body.", metadata: {} })
+    );
+    const result = await run(
+      read("https://x.com/poteto/article/2094457600259842065"),
+      fetch
+    );
+    expect(result).toEqual({ value: { text: "Body.", title: "x.com" } });
+    expect(await requests[0]?.json()).toMatchObject({
+      url: "https://x.com/poteto/status/2094457600259842065",
+    });
+  });
+
   test("names an untitled article after its site", async () => {
     const { fetch } = fakeFetch(scraped({ markdown: "Body.", metadata: {} }));
     const result = await run(read("https://www.example.org/a"), fetch);

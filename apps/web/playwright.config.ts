@@ -21,5 +21,6 @@ export default defineConfig({
     timeout: 60_000,
     url: "http://127.0.0.1:4173",
   },
-  workers: process.env.CI ? 4 : undefined,
+  // One worker per core, locally and on the 4-core CI runners.
+  workers: "100%",
 });

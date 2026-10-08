@@ -41,14 +41,15 @@ jobs:
     name: Browser tests (${{ matrix.project }})
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
+    # Browsers and their system libraries come in the image. Its version must
+    # match @playwright/test in apps/web/package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - project: chromium
-            browser: chromium
-          - project: mobile-webkit
-            browser: webkit
+        project: [chromium, mobile-webkit]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -56,17 +57,12 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
+      # setup-bun unpacks Bun with unzip, which the image lacks.
+      - run: apt-get update -qq && apt-get install -qq -y --no-install-recommends unzip
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.arch }}-${{ matrix.browser }}-${{ hashFiles('bun.lock') }}
-      # Downloads the browser only on a cache miss; system libraries are always installed.
-      - run: bunx playwright install --with-deps ${{ matrix.browser }}
-        working-directory: apps/web
       - run: bun run build
       - run: bunx playwright test --project=${{ matrix.project }}
         working-directory: apps/web

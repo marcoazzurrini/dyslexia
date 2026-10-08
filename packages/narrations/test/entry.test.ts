@@ -78,7 +78,10 @@ const setup = () => {
         method,
       }),
       env,
-      access
+      access,
+      (promise) => {
+        void promise;
+      }
     );
   const make = async (id: string) => {
     // SAFETY: a Workflow reads nothing from its execution context.

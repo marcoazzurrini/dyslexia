@@ -11,6 +11,8 @@ export interface NarrationsEnv {
   readonly FIRECRAWL_API_KEY?: string;
   readonly OPENROUTER_API_KEY?: string;
   readonly ELEVENLABS_API_KEY?: string;
+  /** Optional. Without it, traces are not sent anywhere. */
+  readonly HONEYCOMB_API_KEY?: string;
 }
 
 /** Whether every service key is set. */

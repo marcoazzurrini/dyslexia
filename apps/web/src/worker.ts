@@ -1,3 +1,4 @@
+import type { ExecutionContext } from "@cloudflare/workers-types";
 import { API_PATH, handleNarrations } from "@dyslexia/narrations";
 import type { NarrationsEnv } from "@dyslexia/narrations";
 import serverEntry from "@tanstack/react-start/server-entry";
@@ -11,7 +12,7 @@ type Env = AuthEnv & NarrationsEnv;
 // Cloudflare limits Worker startup time, so heavy server code (Effect,
 // Better Auth) loads on the first request that needs it.
 export default {
-  async fetch(request: Request, env: Env) {
+  async fetch(request: Request, env: Env, context: ExecutionContext) {
     const { pathname } = new URL(request.url);
     if (pathname.startsWith("/api/auth/")) {
       const { authFor } = await import("./server/auth");
@@ -25,12 +26,17 @@ export default {
       return session(request, env);
     }
     if (pathname === API_PATH || pathname.startsWith(`${API_PATH}/`)) {
-      return handleNarrations(request, env, {
-        isSignedIn: async (signedRequest) => {
-          const auth = await import("./server/auth");
-          return auth.isSignedIn(env, signedRequest);
+      return handleNarrations(
+        request,
+        env,
+        {
+          isSignedIn: async (signedRequest) => {
+            const auth = await import("./server/auth");
+            return auth.isSignedIn(env, signedRequest);
+          },
         },
-      });
+        (promise) => context.waitUntil(promise)
+      );
     }
     // Existing static files are served before this handler. Never return the
     // SPA document for a missing icon or bundled asset.

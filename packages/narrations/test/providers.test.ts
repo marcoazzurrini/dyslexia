@@ -10,6 +10,7 @@ import type { Reader } from "../src/services/reader.ts";
 import type { Voice } from "../src/services/voice.ts";
 import type { Writer } from "../src/services/writer.ts";
 import { speech } from "./support/audio.ts";
+import { recordingTracer } from "./support/fakes.ts";
 import { withReader, withVoice, withWriter } from "./support/services.ts";
 
 const KEYS = {
@@ -379,5 +380,55 @@ describe("the voice (ElevenLabs)", () => {
       }),
     });
     expect(JSON.stringify(result)).not.toContain("eleven-secret");
+  });
+});
+
+describe("traces of the outside services", () => {
+  test("never record a service key", async () => {
+    const { spans, tracer } = recordingTracer();
+    const { fetch } = fakeFetch(
+      scraped({ markdown: "Body.", metadata: { title: "Title" } }),
+      completion(JSON.stringify({ text: "Body." })),
+      new Response(speech())
+    );
+    await run(
+      Effect.all([
+        read("https://example.org/a"),
+        write("Body."),
+        speak("Hi"),
+      ]).pipe(Effect.withTracer(tracer)),
+      fetch
+    );
+    const recorded = JSON.stringify(
+      spans.map((span) => Object.fromEntries(span.attributes))
+    );
+    expect(recorded).toContain("http.request.header.xi-api-key");
+    for (const key of Object.values(KEYS)) {
+      expect(recorded).not.toContain(key);
+    }
+  });
+
+  test("record the writer's model and token usage", async () => {
+    const { named, tracer } = recordingTracer();
+    const { fetch } = fakeFetch(
+      Response.json({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: { content: JSON.stringify({ text: "Body." }) },
+          },
+        ],
+        usage: { completion_tokens: 20, cost: 0.002, prompt_tokens: 100 },
+      })
+    );
+    await run(write("Body.").pipe(Effect.withTracer(tracer)), fetch);
+    const [span] = named("Writer.write");
+    expect(Object.fromEntries(span?.attributes ?? [])).toMatchObject({
+      "gen_ai.request.model": expect.any(String),
+      "gen_ai.usage.cost": 0.002,
+      "gen_ai.usage.input_tokens": 100,
+      "gen_ai.usage.output_tokens": 20,
+      "script.characters": 5,
+    });
   });
 });

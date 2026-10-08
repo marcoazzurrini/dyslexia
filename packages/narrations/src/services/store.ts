@@ -7,6 +7,7 @@ import { Array as Arr, Clock, Context, Effect, Layer, Schema } from "effect";
 import { serveAudioObject } from "../audio.ts";
 import { NarrationNotFound } from "../errors.ts";
 import { MAX_LISTED } from "../limits.ts";
+import { siteOf } from "../link.ts";
 import { joinMp3 } from "../mp3.ts";
 import { NarrationRecordSchema } from "../narration.ts";
 import type { NarrationRecord } from "../narration.ts";
@@ -32,8 +33,6 @@ const newId = (now: number) =>
   `${String(9_999_999_999_999 - now).padStart(13, "0")}-${crypto
     .randomUUID()
     .slice(0, 8)}`;
-
-const siteOf = (url: string) => new URL(url).hostname.replace(/^www\./u, "");
 
 const r2 = <A>(operation: () => Promise<A>) => Effect.promise(operation);
 

@@ -34,9 +34,14 @@ export const apiSetup = (
   };
   const access = { signedIn: true };
   const handle = (request: Request) =>
-    handleNarrations(request, env, {
-      isSignedIn: () => Promise.resolve(access.signedIn),
-    });
+    handleNarrations(
+      request,
+      env,
+      { isSignedIn: () => Promise.resolve(access.signedIn) },
+      () => {
+        // Nothing continues after the answer: no tracing key is set.
+      }
+    );
   const call = (
     method: string,
     path = "",

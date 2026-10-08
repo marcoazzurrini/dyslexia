@@ -3,6 +3,7 @@ import { HttpClient, HttpClientRequest } from "effect/http";
 
 import { ArticleUnreadable } from "../errors.ts";
 import type { ServiceRejected, ServiceUnavailable } from "../errors.ts";
+import { siteOf } from "../link.ts";
 import { decodeJson, send } from "./send.ts";
 
 /** The readable text of a web page. */
@@ -24,8 +25,6 @@ const Scraped = Schema.Struct({
   success: Schema.Literal(true),
 });
 
-const siteOf = (url: string) => new URL(url).hostname.replace(/^www\./u, "");
-
 /** Reads the article on a web page. */
 export class Reader extends Context.Service<
   Reader,
@@ -45,6 +44,7 @@ export class Reader extends Context.Service<
       const key = yield* Config.Redacted("FIRECRAWL_API_KEY");
       const client = yield* HttpClient.HttpClient;
       const read = Effect.fn("Reader.read")(function* readerRead(url: string) {
+        yield* Effect.annotateCurrentSpan("article.site", siteOf(url));
         const body = yield* send(
           "reader",
           HttpClientRequest.post("https://api.firecrawl.dev/v2/scrape").pipe(
@@ -75,8 +75,10 @@ export class Reader extends Context.Service<
         if (status < 200 || status >= 300 || !data.markdown.trim()) {
           return yield* new ArticleUnreadable();
         }
+        const text = data.markdown.trim();
+        yield* Effect.annotateCurrentSpan("article.characters", text.length);
         return {
-          text: data.markdown.trim(),
+          text,
           title: data.metadata.title?.trim() || siteOf(url),
         };
       });

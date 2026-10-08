@@ -1,7 +1,7 @@
 import "./support/workers.ts";
 import { describe, expect, test } from "bun:test";
 
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
 
 import {
   ArticleUnreadable,
@@ -11,7 +11,12 @@ import {
 import { makeNarration } from "../src/workflow.ts";
 import { secondsOf, speech } from "./support/audio.ts";
 import { memoryBucket } from "./support/bucket.ts";
-import { fakeServices, fakeSteps, runtimeWith } from "./support/fakes.ts";
+import {
+  fakeServices,
+  fakeSteps,
+  recordingTracer,
+  runtimeWith,
+} from "./support/fakes.ts";
 import type { Script } from "./support/fakes.ts";
 import { withStore } from "./support/services.ts";
 
@@ -29,12 +34,13 @@ const setup = async (script: Script = {}) => {
     read: () => Effect.succeed(LONG_ARTICLE),
     ...script,
   });
-  const runtime = runtimeWith(services, memory.bucket);
+  const traces = recordingTracer();
+  const runtime = runtimeWith(services, memory.bucket, traces.tracer);
   const { id } = await runtime.runPromise(
     withStore((store) => store.create("https://example.org/article"))
   );
   const stored = () => runtime.runPromise(withStore((store) => store.get(id)));
-  return { ...memory, calls: services.calls, id, runtime, stored };
+  return { ...memory, calls: services.calls, id, runtime, stored, traces };
 };
 
 describe("making a narration", () => {
@@ -171,5 +177,49 @@ describe("when making a narration fails", () => {
     });
     await makeNarration(id, fakeSteps().step, runtime);
     expect(await stored()).toMatchObject({ state: "ready" });
+  });
+});
+
+describe("tracing a narration", () => {
+  test("puts a run's steps in one trace, under a span named for the narration", async () => {
+    const { id, runtime, traces } = await setup();
+    const before = traces.spans.length;
+    await makeNarration(id, fakeSteps().step, runtime);
+    const [root] = traces.named("make narration");
+    expect(root?.attributes.get("narration.id")).toBe(id);
+    const steps = traces.spans.filter(
+      (span) => Option.getOrUndefined(span.parent)?.spanId === root?.spanId
+    );
+    expect(steps.map((span) => span.name)).toEqual([
+      "read the article",
+      "write the script",
+      "record part 1",
+      "record part 2",
+      "save progress 2",
+      "record part 3",
+      "save progress 3",
+      "publish the recording",
+    ]);
+    for (const span of traces.spans.slice(before)) {
+      expect(span.traceId).toBe(root?.traceId ?? "");
+    }
+  });
+
+  test("records why a step stopped the narration", async () => {
+    const { id, runtime, traces } = await setup({
+      read: () => Effect.fail(new ArticleUnreadable()),
+    });
+    await makeNarration(id, fakeSteps().step, runtime).catch(() => {
+      // The failure is checked in the trace.
+    });
+    const [read] = traces.named("read the article");
+    expect(read?.attributes.get("narration.reason")).toEqual(
+      expect.stringContaining("could not be read")
+    );
+    const [root] = traces.named("make narration");
+    expect(root?.status).toMatchObject({
+      _tag: "Ended",
+      exit: { _tag: "Failure" },
+    });
   });
 });

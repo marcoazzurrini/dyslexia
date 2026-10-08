@@ -94,6 +94,7 @@ export const writeScript = Effect.fn("writeScript")(function* writeScript(
     )
   );
   const parts = splitIntoParts(script);
+  yield* Effect.annotateCurrentSpan("script.parts", parts.length);
   yield* advance(id, {
     progress: { done: 0, total: parts.length },
     stage: "recording",
@@ -126,6 +127,10 @@ export const publish = Effect.fn("publish")(function* publish(
 ) {
   const store = yield* Store;
   const durationSeconds = yield* store.joinParts(id, count);
+  yield* Effect.annotateCurrentSpan(
+    "narration.duration_seconds",
+    durationSeconds
+  );
   const record = yield* store.get(id).pipe(Effect.orDie);
   yield* store.save({ ...basics(record), durationSeconds, state: "ready" });
   return durationSeconds;

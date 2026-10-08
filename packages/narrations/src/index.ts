@@ -15,14 +15,16 @@ export type { Access } from "./server.ts";
 
 /**
  * Serves a request under `API_PATH`, for people `access` lets in. Changes
- * must also come from the same site.
+ * must also come from the same site. Work that continues after the answer,
+ * such as sending traces, goes to `waitUntil`.
  */
 export const handleNarrations = async (
   request: Request,
   env: NarrationsEnv,
-  access: Access
+  access: Access,
+  waitUntil: (promise: Promise<unknown>) => void
 ): Promise<Response> => {
   // Loaded on first use to keep Worker startup within Cloudflare's limit.
   const server = await import("./server.ts");
-  return server.handleNarrations(request, env, access);
+  return server.handleNarrations(request, env, access, waitUntil);
 };

@@ -4,6 +4,7 @@ import { HttpClient, HttpClientRequest } from "effect/http";
 import { ArticleUnreadable } from "../errors.ts";
 import type { ServiceRejected, ServiceUnavailable } from "../errors.ts";
 import { siteOf } from "../link.ts";
+import { linkToRead } from "./reader-sites.ts";
 import { decodeJson, send } from "./send.ts";
 
 /** The readable text of a web page. */
@@ -52,7 +53,7 @@ export class Reader extends Context.Service<
             HttpClientRequest.bodyJsonUnsafe({
               formats: ["markdown"],
               onlyMainContent: true,
-              url,
+              url: linkToRead(url),
             })
           ),
           { limit: 2 * 1024 * 1024, timeout: "2 minutes" }

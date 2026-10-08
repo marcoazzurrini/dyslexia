@@ -44,6 +44,13 @@ const Completion = Schema.Struct({
       }),
     })
   ),
+  usage: Schema.optional(
+    Schema.Struct({
+      completion_tokens: Schema.Number,
+      cost: Schema.optional(Schema.Number),
+      prompt_tokens: Schema.Number,
+    })
+  ),
 });
 
 const Script = Schema.fromJsonString(Schema.Struct({ text: Schema.String }));
@@ -69,6 +76,11 @@ export class Writer extends Context.Service<
       const write = Effect.fn("Writer.write")(function* writerWrite(
         article: Article
       ) {
+        yield* Effect.annotateCurrentSpan({
+          "article.characters": article.text.length,
+          "gen_ai.provider.name": "openrouter",
+          "gen_ai.request.model": MODEL,
+        });
         const body = yield* send(
           "writer",
           HttpClientRequest.post(
@@ -101,11 +113,17 @@ export class Writer extends Context.Service<
           ),
           { limit: 4 * 1024 * 1024, timeout: "10 minutes" }
         ).pipe(Effect.provideService(HttpClient.HttpClient, client));
-        const { choices } = yield* decodeJson(Completion)(
+        const { choices, usage } = yield* decodeJson(Completion)(
           body,
           () => new ScriptIncomplete()
         );
         const [choice] = choices;
+        yield* Effect.annotateCurrentSpan({
+          "gen_ai.response.finish_reason": choice?.finish_reason ?? undefined,
+          "gen_ai.usage.cost": usage?.cost,
+          "gen_ai.usage.input_tokens": usage?.prompt_tokens,
+          "gen_ai.usage.output_tokens": usage?.completion_tokens,
+        });
         // A cut-off answer ends for another reason than "stop".
         if (
           choices.length !== 1 ||
@@ -118,6 +136,7 @@ export class Writer extends Context.Service<
         const { text } = yield* Schema.decodeUnknownEffect(Script)(
           choice.message.content
         ).pipe(Effect.mapError(() => new ScriptIncomplete()));
+        yield* Effect.annotateCurrentSpan("script.characters", text.length);
         return text;
       });
       return { write };

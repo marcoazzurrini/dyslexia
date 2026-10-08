@@ -52,3 +52,7 @@ export const normalizeLink = (
     ? Effect.fail(new InvalidLink())
     : Effect.succeed(link);
 };
+
+/** The site a link points to, such as `example.org`. */
+export const siteOf = (url: string) =>
+  new URL(url).hostname.replace(/^www\./u, "");

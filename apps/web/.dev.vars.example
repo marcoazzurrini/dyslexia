@@ -3,6 +3,9 @@
 FIRECRAWL_API_KEY=
 OPENROUTER_API_KEY=
 ELEVENLABS_API_KEY=
+# Optional. A Honeycomb ingest key for the development environment, so local
+# traces stay apart from production's.
+HONEYCOMB_API_KEY=
 # Google sign-in: the OAuth client's ID and secret.
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=

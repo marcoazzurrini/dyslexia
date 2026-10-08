@@ -8,6 +8,7 @@ import { Effect } from "effect";
 import { servicesFor } from "../src/layers.ts";
 import { Reader } from "../src/services/reader.ts";
 import { Writer } from "../src/services/writer.ts";
+import { tracingFor } from "../src/telemetry.ts";
 
 const [url] = process.argv.slice(2);
 if (!url) {
@@ -21,12 +22,17 @@ const { article, script } = await Effect.runPromise(
     const written = yield* (yield* Writer).write(read);
     return { article: read, script: written };
   }).pipe(
+    Effect.withSpan("try narration", { attributes: { "article.url": url } }),
     Effect.provide(
       servicesFor({
         ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
         FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
         OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
       })
+    ),
+    // Sends the trace before exiting, when a Honeycomb key is set.
+    Effect.provide(
+      tracingFor({ HONEYCOMB_API_KEY: process.env.HONEYCOMB_API_KEY })
     )
   )
 );

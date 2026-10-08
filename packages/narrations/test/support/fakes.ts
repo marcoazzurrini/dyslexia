@@ -1,6 +1,6 @@
 import type { Workflow } from "@cloudflare/workers-types";
 import type { WorkflowStep } from "cloudflare:workers";
-import { Effect, Layer, ManagedRuntime, Schedule } from "effect";
+import { Effect, Layer, ManagedRuntime, Schedule, Tracer } from "effect";
 
 import type {
   ArticleUnreadable,
@@ -72,13 +72,39 @@ export const fakeServices = (script: Script = {}) => {
 /** Retries without waiting, so tests run instantly. */
 export const instantRetries = Layer.succeed(RetrySchedule, Schedule.spaced(0));
 
+/** A tracer that keeps every span it starts, to inspect after a run. */
+export const recordingTracer = () => {
+  const spans: Tracer.NativeSpan[] = [];
+  const tracer = Tracer.make({
+    span: (options) => {
+      const span = new Tracer.NativeSpan(options);
+      spans.push(span);
+      return span;
+    },
+  });
+  return {
+    /** The spans with this name, in the order they started. */
+    named: (name: string) => spans.filter((span) => span.name === name),
+    spans,
+    tracer,
+  };
+};
+
 /** A runtime with the given services, a bucket, and instant retries. */
 export const runtimeWith = (
   services: ReturnType<typeof fakeServices>,
-  bucket: Parameters<typeof Store.layer>[0]
+  bucket: Parameters<typeof Store.layer>[0],
+  tracer: Tracer.Tracer = Tracer.make({
+    span: (options) => new Tracer.NativeSpan(options),
+  })
 ) =>
   ManagedRuntime.make(
-    Layer.mergeAll(services.layer, Store.layer(bucket), instantRetries)
+    Layer.mergeAll(
+      services.layer,
+      Store.layer(bucket),
+      instantRetries,
+      Layer.succeed(Tracer.Tracer)(tracer)
+    )
   );
 
 interface StepCall {

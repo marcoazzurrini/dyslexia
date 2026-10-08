@@ -1,10 +1,20 @@
 import { Effect, Schema, Stream } from "effect";
 import type { Duration } from "effect";
-import { HttpClient } from "effect/http";
+import { Headers, HttpClient } from "effect/http";
 import type { HttpClientRequest } from "effect/http";
 
 import { ServiceRejected, ServiceUnavailable } from "../errors.ts";
 import type { Service } from "../errors.ts";
+
+// Traces record request headers. ElevenLabs takes its key in one that Effect
+// does not hide by default.
+const REDACTED_HEADERS = [
+  "authorization",
+  "cookie",
+  "set-cookie",
+  "x-api-key",
+  "xi-api-key",
+];
 
 const concat = (parts: readonly Uint8Array[], length: number) => {
   const bytes = new Uint8Array(length);
@@ -56,7 +66,8 @@ export const send = (
       duration: options.timeout,
       orElse: () => Effect.fail(unavailable),
     }),
-    Effect.withSpan(`narrations.send.${service}`)
+    Effect.withSpan(`narrations.send.${service}`),
+    Effect.provideService(Headers.CurrentRedactedNames, REDACTED_HEADERS)
   );
 };
 

@@ -29,6 +29,11 @@ export class Voice extends Context.Service<
       const speak = Effect.fn("Voice.speak")(function* voiceSpeak(
         text: string
       ) {
+        // ElevenLabs charges by the character.
+        yield* Effect.annotateCurrentSpan({
+          "voice.characters": text.length,
+          "voice.model": MODEL,
+        });
         const audio = yield* send(
           "voice",
           HttpClientRequest.post(
@@ -43,6 +48,10 @@ export class Voice extends Context.Service<
         if (audio.byteLength === 0) {
           return yield* new ServiceUnavailable({ service: "voice" });
         }
+        yield* Effect.annotateCurrentSpan(
+          "voice.audio_bytes",
+          audio.byteLength
+        );
         return audio;
       });
       return { speak };

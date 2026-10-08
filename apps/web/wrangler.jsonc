@@ -14,6 +14,17 @@
     // would turn missing images/scripts into successful HTML responses.
     "run_worker_first": ["/api/*"],
   },
+  // Logs also stay in Cloudflare's dashboard, the only place crash stack
+  // traces reach. Traces go to Honeycomb only. Both destinations are set up
+  // in the Cloudflare dashboard under Observability > Destinations.
+  "observability": {
+    "logs": { "destinations": ["honeycomb-logs"], "enabled": true },
+    "traces": {
+      "destinations": ["honeycomb-traces"],
+      "enabled": true,
+      "persist": false,
+    },
+  },
   "r2_buckets": [{ "binding": "AUDIO", "bucket_name": "dyslexia-audio" }],
   // Local development overrides these in .dev.vars.
   "vars": {

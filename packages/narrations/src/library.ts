@@ -8,7 +8,7 @@ import {
   WrongState,
 } from "./errors.ts";
 import { MAX_IN_PROGRESS } from "./limits.ts";
-import { normalizeLink } from "./link.ts";
+import { normalizeLink, siteOf } from "./link.ts";
 import { stop } from "./making.ts";
 import type { Narration, NarrationRecord } from "./narration.ts";
 import { Engine } from "./services/engine.ts";
@@ -56,6 +56,10 @@ export const start = Effect.fn("library.start")(function* libraryStart(
   }
   const store = yield* Store;
   const record = yield* store.create(url);
+  yield* Effect.annotateCurrentSpan({
+    "article.site": siteOf(record.url),
+    "narration.id": record.id,
+  });
   yield* (yield* Engine)
     .start(record.id)
     .pipe(Effect.tapError(() => store.remove(record.id)));

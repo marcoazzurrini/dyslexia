@@ -8,6 +8,7 @@ import { servicesFor } from "../src/layers.ts";
 import { MAX_PART_CHARACTERS } from "../src/limits.ts";
 import type { Reader } from "../src/services/reader.ts";
 import type { Voice } from "../src/services/voice.ts";
+import { WriterSettings } from "../src/services/writer.ts";
 import type { Writer } from "../src/services/writer.ts";
 import { speech } from "./support/audio.ts";
 import { recordingTracer } from "./support/fakes.ts";
@@ -329,6 +330,31 @@ describe("the writer (OpenRouter)", () => {
       });
     }
   );
+
+  test("uses the model and prompt it is given, for comparing them", async () => {
+    const { fetch, requests } = fakeFetch(
+      completion(JSON.stringify({ text: "Spoken.", title: "Title" }))
+    );
+    await run(
+      write("Article.").pipe(
+        Effect.provideService(WriterSettings, {
+          model: "anthropic/claude-sonnet-5.5",
+          prompt: "Another prompt.",
+          reasoning: "high",
+        })
+      ),
+      fetch
+    );
+    const body = await requests[0]?.json();
+    expect(body).toMatchObject({
+      model: "anthropic/claude-sonnet-5.5",
+      reasoning: { effort: "high" },
+    });
+    expect(body.messages[0]).toEqual({
+      content: "Another prompt.",
+      role: "system",
+    });
+  });
 
   test("keeps the page's title when the model gives an empty one", async () => {
     const { fetch } = fakeFetch(

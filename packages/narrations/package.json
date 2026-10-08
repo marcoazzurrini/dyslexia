@@ -8,6 +8,8 @@
     "./client": "./src/client.ts"
   },
   "scripts": {
+    "eval": "bun --env-file=../../apps/web/.dev.vars evals/run.ts",
+    "eval:dataset": "bun --env-file=../../apps/web/.dev.vars evals/dataset.ts",
     "test": "bun test",
     "try": "bun --env-file=../../apps/web/.dev.vars scripts/try-narration.ts",
     "typecheck": "tsc --noEmit"

@@ -6,7 +6,10 @@ import type { Article } from "../src/services/reader.ts";
 import { decodeJson, send } from "../src/services/send.ts";
 import type { Script } from "../src/services/writer.ts";
 
-export const JUDGE_MODEL = "anthropic/claude-opus-5.5";
+const JUDGE_MODEL = "anthropic/claude-opus-5.5";
+
+/** The name of the judge's answer format, which marks its requests. */
+export const VERDICT = "verdict";
 
 /** The checks, in the order they are reported, with what each one asks. */
 export const CHECKS = {
@@ -92,7 +95,7 @@ export const judge = Effect.fn("judge")(function* judge(
         reasoning: { effort: "medium" },
         response_format: {
           json_schema: {
-            name: "verdict",
+            name: VERDICT,
             schema: {
               additionalProperties: false,
               properties: {

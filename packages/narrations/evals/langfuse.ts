@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { Duration, Effect, Schema } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 
 import type { Shown } from "../src/observation.ts";
@@ -30,13 +30,27 @@ const request = (method: "GET" | "POST", path: string) =>
     )
   );
 
+// Langfuse's free plan answers at most 30 API calls a minute, and a run saves
+// four scores per article, so it waits when told to.
+const MAX_WAITS = 10;
+
 /** Sends a request and decodes its JSON answer, or `null` for a 404. */
 const call = <S extends Schema.Top>(
   schema: S,
   req: HttpClientRequest.HttpClientRequest
 ) =>
   Effect.gen(function* callLangfuse() {
-    const response = yield* (yield* HttpClient.HttpClient).execute(req);
+    const client = yield* HttpClient.HttpClient;
+    let response = yield* client.execute(req);
+    for (
+      let waits = 0;
+      response.status === 429 && waits < MAX_WAITS;
+      waits += 1
+    ) {
+      const seconds = Number(response.headers["retry-after"]) || 15;
+      yield* Effect.sleep(Duration.seconds(seconds + 1));
+      response = yield* client.execute(req);
+    }
     if (response.status === 404) {
       return null;
     }

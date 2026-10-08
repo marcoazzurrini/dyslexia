@@ -21,7 +21,7 @@ import { observationInput, observationOutput } from "../src/observation.ts";
 import { Writer, WriterSettings } from "../src/services/writer.ts";
 import type { WritingSettings } from "../src/services/writer.ts";
 import { flushTraces, narrationTracingFor } from "../src/telemetry.ts";
-import { CHECK_NAMES, CHECKS, JUDGE_MODEL, judge } from "./judge.ts";
+import { CHECK_NAMES, CHECKS, judge } from "./judge.ts";
 import type { Findings } from "./judge.ts";
 import { ensureDataset, listItems, saveScore } from "./langfuse.ts";
 import type { Item } from "./langfuse.ts";
@@ -205,15 +205,7 @@ const runOnce = (
       ).length;
       console.log(`${check}: ${passed}/${results.length} passed`);
     }
-    let writing = 0;
-    let judging = 0;
-    for (const [model, cost] of spending.take()) {
-      if (model.startsWith(JUDGE_MODEL)) {
-        judging += cost;
-      } else {
-        writing += cost;
-      }
-    }
+    const { judging, writing } = spending.take();
     console.log(
       `cost: writing $${writing.toFixed(2)}, judging $${judging.toFixed(2)}`
     );

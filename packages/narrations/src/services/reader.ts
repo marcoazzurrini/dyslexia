@@ -4,6 +4,11 @@ import { HttpClient, HttpClientRequest } from "effect/http";
 import { ArticleUnreadable } from "../errors.ts";
 import type { ServiceRejected, ServiceUnavailable } from "../errors.ts";
 import { siteOf } from "../link.ts";
+import {
+  observationInput,
+  observationOutput,
+  observationType,
+} from "../observation.ts";
 import { linkToRead } from "./reader-sites.ts";
 import { decodeJson, send } from "./send.ts";
 
@@ -45,7 +50,12 @@ export class Reader extends Context.Service<
       const key = yield* Config.Redacted("FIRECRAWL_API_KEY");
       const client = yield* HttpClient.HttpClient;
       const read = Effect.fn("Reader.read")(function* readerRead(url: string) {
-        yield* Effect.annotateCurrentSpan("article.site", siteOf(url));
+        const link = linkToRead(url);
+        yield* Effect.annotateCurrentSpan({
+          "article.site": siteOf(url),
+          ...observationType("tool"),
+          ...observationInput({ link, ...(link !== url && { pasted: url }) }),
+        });
         const body = yield* send(
           "reader",
           HttpClientRequest.post("https://api.firecrawl.dev/v2/scrape").pipe(
@@ -53,7 +63,7 @@ export class Reader extends Context.Service<
             HttpClientRequest.bodyJsonUnsafe({
               formats: ["markdown"],
               onlyMainContent: true,
-              url: linkToRead(url),
+              url: link,
             })
           ),
           { limit: 2 * 1024 * 1024, timeout: "2 minutes" }
@@ -76,12 +86,19 @@ export class Reader extends Context.Service<
         if (status < 200 || status >= 300 || !data.markdown.trim()) {
           return yield* new ArticleUnreadable();
         }
-        const text = data.markdown.trim();
-        yield* Effect.annotateCurrentSpan("article.characters", text.length);
-        return {
-          text,
+        const article = {
+          text: data.markdown.trim(),
           title: data.metadata.title?.trim() || siteOf(url),
         };
+        // The text itself is the writer's input, so it is not repeated here.
+        yield* Effect.annotateCurrentSpan({
+          "article.characters": article.text.length,
+          ...observationOutput({
+            characters: article.text.length,
+            title: article.title,
+          }),
+        });
+        return article;
       });
       return { read };
     })

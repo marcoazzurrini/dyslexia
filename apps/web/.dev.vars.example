@@ -6,6 +6,13 @@ ELEVENLABS_API_KEY=
 # Optional. A Honeycomb ingest key for the development environment, so local
 # traces stay apart from production's.
 HONEYCOMB_API_KEY=
+# Optional. Langfuse project keys, to trace narration runs. Without them,
+# narrations are not traced.
+LANGFUSE_PUBLIC_KEY=
+LANGFUSE_SECRET_KEY=
+LANGFUSE_BASE_URL=https://cloud.langfuse.com
+# Keeps local runs apart from production in Langfuse.
+LANGFUSE_TRACING_ENVIRONMENT=development
 # Google sign-in: the OAuth client's ID and secret.
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=

@@ -73,6 +73,9 @@ interface Scraped {
   readonly metadata: { readonly statusCode?: number; readonly title?: string };
 }
 
+/** A span attribute holding JSON, read back. */
+const parsed = (attribute: string) => JSON.parse(attribute);
+
 const scraped = (data: Scraped, status = 200) =>
   Response.json({ data, success: true }, { status });
 const completion = (content: string | null, finishReason = "stop") =>
@@ -437,6 +440,88 @@ describe("traces of the outside services", () => {
     for (const key of Object.values(KEYS)) {
       expect(recorded).not.toContain(key);
     }
+  });
+
+  test("show Langfuse each service call: what it was given and what it returned", async () => {
+    const { named, tracer } = recordingTracer();
+    const { fetch } = fakeFetch(
+      scraped({ markdown: "Body.", metadata: { title: "Title" } }),
+      Response.json({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({ text: "Spoken.", title: "Title" }),
+              reasoning: "Read it all.",
+            },
+          },
+        ],
+        model: "openai/gpt-6.1-sol-20261001",
+      }),
+      new Response(speech())
+    );
+    await run(
+      Effect.all([
+        read("https://x.com/poteto/article/1"),
+        write("Body."),
+        speak("Hi"),
+      ]).pipe(Effect.withTracer(tracer)),
+      fetch
+    );
+    const attributes = (name: string) =>
+      Object.fromEntries(named(name)[0]?.attributes ?? []);
+
+    const reader = attributes("Reader.read");
+    expect(reader["langfuse.observation.type"]).toBe("tool");
+    expect(parsed(String(reader["langfuse.observation.input"]))).toEqual({
+      link: "https://x.com/poteto/status/1",
+      pasted: "https://x.com/poteto/article/1",
+    });
+    expect(parsed(String(reader["langfuse.observation.output"]))).toEqual({
+      characters: 5,
+      title: "Title",
+    });
+
+    const writer = attributes("Writer.write");
+    expect(writer["langfuse.observation.type"]).toBe("generation");
+    const [system, user] = parsed(String(writer["langfuse.observation.input"]));
+    expect(system).toMatchObject({ role: "system" });
+    expect(system.content).toContain("not a summary");
+    expect(user).toEqual({
+      content: JSON.stringify({ text: "Body.", title: "Title" }),
+      role: "user",
+    });
+    expect(parsed(String(writer["langfuse.observation.output"]))).toEqual({
+      content: "Spoken.",
+      reasoning: "Read it all.",
+      role: "assistant",
+      title: "Title",
+    });
+    expect(
+      parsed(String(writer["langfuse.observation.model.parameters"]))
+    ).toEqual({
+      max_completion_tokens: 64_000,
+      reasoning_effort: "medium",
+    });
+    expect(writer["gen_ai.response.model"]).toBe("openai/gpt-6.1-sol-20261001");
+
+    const voice = attributes("Voice.speak");
+    expect(voice["langfuse.observation.type"]).toBe("generation");
+    expect(voice["gen_ai.request.model"]).toBe("eleven_v4");
+    expect(parsed(String(voice["langfuse.observation.input"]))).toBe("Hi");
+    expect(parsed(String(voice["langfuse.observation.output"]))).toEqual({
+      audioBytes: speech().byteLength,
+    });
+  });
+
+  test("show the writer's raw answer when it is not a whole script", async () => {
+    const { named, tracer } = recordingTracer();
+    const { fetch } = fakeFetch(completion('{"text": "Half', "length"));
+    await run(write("Body.").pipe(Effect.withTracer(tracer)), fetch);
+    const [span] = named("Writer.write");
+    expect(
+      JSON.parse(String(span?.attributes.get("langfuse.observation.output")))
+    ).toEqual({ content: '{"text": "Half', role: "assistant" });
   });
 
   test("record the writer's model and token usage", async () => {

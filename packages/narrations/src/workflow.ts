@@ -17,19 +17,25 @@ import {
   writeScript,
 } from "./making.ts";
 import type { Outcome } from "./making.ts";
+import {
+  failedObservation,
+  narrationOf,
+  observationInput,
+  observationOutput,
+} from "./observation.ts";
 import { ArticleSchema } from "./services/reader.ts";
 import type { Reader } from "./services/reader.ts";
-import type { Store } from "./services/store.ts";
+import { Store } from "./services/store.ts";
 import type { Voice } from "./services/voice.ts";
 import type { Writer } from "./services/writer.ts";
-import { flushTraces, tracingFor } from "./telemetry.ts";
+import { flushTraces, narrationTracingFor } from "./telemetry.ts";
 
 type Services = Reader | Writer | Voice | Store;
 
 /** Everything a run needs, from the Worker's environment. */
 export const runtimeFor = (env: NarrationsEnv) =>
   ManagedRuntime.make(
-    Layer.mergeAll(servicesFor(env), storageFor(env), tracingFor(env))
+    Layer.mergeAll(servicesFor(env), storageFor(env), narrationTracingFor(env))
   );
 
 // Expected failures come back as results. Cloudflare retries a step only
@@ -47,6 +53,27 @@ class StoppedError extends Error {
   override name = "StoppedError";
 }
 
+type Attributes = Readonly<Record<string, string | number | boolean>>;
+
+/** How a step shows up in traces. */
+interface Trace {
+  /**
+   * The span's name. Cloudflare needs a unique name for each step of a run;
+   * traces need the same name for the same kind of step, such as every
+   * recorded part, so they can be grouped and compared.
+   */
+  readonly span?: string;
+  readonly attributes?: Attributes;
+}
+
+const annotate = (span: Tracer.AnySpan, attributes: Attributes) => {
+  if (span._tag === "Span") {
+    for (const [key, value] of Object.entries(attributes)) {
+      span.attribute(key, value);
+    }
+  }
+};
+
 const makeSteps = async (
   id: string,
   step: WorkflowStep,
@@ -54,10 +81,17 @@ const makeSteps = async (
   parent: Tracer.AnySpan
 ) => {
   // Each step's spans are sent when it ends, in case the run stops there.
-  const traced = <A, E>(name: string, effect: Effect.Effect<A, E, Services>) =>
+  const traced = <A, E>(
+    name: string,
+    effect: Effect.Effect<A, E, Services>,
+    trace: Trace = {}
+  ) =>
     runtime.runPromise(
       effect.pipe(
-        Effect.withSpan(name, { attributes: { "narration.id": id }, parent }),
+        Effect.withSpan(trace.span ?? name, {
+          attributes: { ...narrationOf(id), ...trace.attributes },
+          parent,
+        }),
         Effect.ensuring(flushTraces)
       )
     );
@@ -65,7 +99,8 @@ const makeSteps = async (
   const run = async <A, I>(
     name: string,
     schema: Schema.Codec<A, I>,
-    program: Effect.Effect<A, MakingError, Services>
+    program: Effect.Effect<A, MakingError, Services>,
+    trace: Trace = {}
   ): Promise<A> => {
     const json = Schema.fromJsonString(schema);
     const save = (outcome: Outcome<A>): Effect.Effect<Saved> =>
@@ -82,10 +117,14 @@ const makeSteps = async (
           Effect.tap((outcome) =>
             outcome.ok
               ? Effect.void
-              : Effect.annotateCurrentSpan("narration.reason", outcome.reason)
+              : Effect.annotateCurrentSpan({
+                  "narration.reason": outcome.reason,
+                  ...failedObservation(outcome.reason),
+                })
           ),
           Effect.flatMap(save)
-        )
+        ),
+        trace
       )
     );
     if ("reason" in saved) {
@@ -114,7 +153,11 @@ const makeSteps = async (
           run(
             `record part ${start + offset + 1}`,
             Schema.Number,
-            recordPart(id, start + offset, text)
+            recordPart(id, start + offset, text),
+            {
+              attributes: { "narration.part": start + offset + 1 },
+              span: "record part",
+            }
           )
         )
       );
@@ -127,16 +170,29 @@ const makeSteps = async (
       await run(
         `save progress ${done}`,
         Schema.Number,
-        reportProgress(id, done, parts.length)
+        reportProgress(id, done, parts.length),
+        { attributes: { "narration.parts_done": done }, span: "save progress" }
       );
     }
-    await run(
+    const durationSeconds = await run(
       "publish the recording",
       Schema.Number,
       publish(id, parts.length)
     );
+    annotate(
+      parent,
+      observationOutput({
+        durationSeconds,
+        parts: parts.length,
+        state: "ready",
+      })
+    );
   } catch (error) {
     const reason = error instanceof StoppedError ? error.message : INTERRUPTED;
+    annotate(parent, {
+      ...observationOutput({ reason, state: "failed" }),
+      ...failedObservation(reason),
+    });
     await step.do("clean up", STEP, async () => {
       await traced("clean up", stop(id, reason));
       return reason;
@@ -157,17 +213,25 @@ export const makeNarration = (
   step: WorkflowStep,
   runtime: ManagedRuntime.ManagedRuntime<Services, unknown>
 ): Promise<void> =>
-  // One trace per run, so a run's steps can be read as one story.
+  // One trace per run, so a run's steps can be read as one story. Its input
+  // is the article link; its output is the recording or the reason it failed.
   runtime.runPromise(
-    Effect.currentSpan.pipe(
-      Effect.flatMap((span) =>
-        Effect.tryPromise({
-          catch: (error) => error,
-          try: () => makeSteps(id, step, runtime, span),
-        })
-      ),
+    Effect.gen(function* makeNarrationTrace() {
+      const span = yield* Effect.currentSpan;
+      // Only to label the trace, so the lookup itself is not traced.
+      const record = yield* (yield* Store)
+        .get(id)
+        .pipe(Effect.option, Effect.withTracerEnabled(false));
+      if (record._tag === "Some") {
+        annotate(span, observationInput({ link: record.value.url }));
+      }
+      yield* Effect.tryPromise({
+        catch: (error) => error,
+        try: () => makeSteps(id, step, runtime, span),
+      });
+    }).pipe(
       Effect.withSpan("make narration", {
-        attributes: { "narration.id": id },
+        attributes: narrationOf(id),
         root: true,
       }),
       Effect.ensuring(flushTraces)

@@ -3,6 +3,12 @@ import { HttpClient, HttpClientRequest } from "effect/http";
 
 import { ServiceUnavailable } from "../errors.ts";
 import type { ServiceRejected } from "../errors.ts";
+import {
+  modelParameters,
+  observationInput,
+  observationOutput,
+  observationType,
+} from "../observation.ts";
 import { send } from "./send.ts";
 
 const VOICE = "JBFqnCBsd6RMkjVDRZzb";
@@ -31,8 +37,13 @@ export class Voice extends Context.Service<
       ) {
         // ElevenLabs charges by the character.
         yield* Effect.annotateCurrentSpan({
+          "gen_ai.provider.name": "elevenlabs",
+          "gen_ai.request.model": MODEL,
           "voice.characters": text.length,
           "voice.model": MODEL,
+          ...observationType("generation"),
+          ...observationInput(text),
+          ...modelParameters({ output_format: FORMAT, voice_id: VOICE }),
         });
         const audio = yield* send(
           "voice",
@@ -48,10 +59,10 @@ export class Voice extends Context.Service<
         if (audio.byteLength === 0) {
           return yield* new ServiceUnavailable({ service: "voice" });
         }
-        yield* Effect.annotateCurrentSpan(
-          "voice.audio_bytes",
-          audio.byteLength
-        );
+        yield* Effect.annotateCurrentSpan({
+          "voice.audio_bytes": audio.byteLength,
+          ...observationOutput({ audioBytes: audio.byteLength }),
+        });
         return audio;
       });
       return { speak };

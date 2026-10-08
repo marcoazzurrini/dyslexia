@@ -190,19 +190,48 @@ describe("tracing a narration", () => {
     const steps = traces.spans.filter(
       (span) => Option.getOrUndefined(span.parent)?.spanId === root?.spanId
     );
+    // The same kind of step keeps one name, so runs can be compared.
     expect(steps.map((span) => span.name)).toEqual([
       "read the article",
       "write the script",
-      "record part 1",
-      "record part 2",
-      "save progress 2",
-      "record part 3",
-      "save progress 3",
+      "record part",
+      "record part",
+      "save progress",
+      "record part",
+      "save progress",
       "publish the recording",
     ]);
+    expect(
+      traces
+        .named("record part")
+        .map((span) => span.attributes.get("narration.part"))
+    ).toEqual([1, 2, 3]);
     for (const span of traces.spans.slice(before)) {
       expect(span.traceId).toBe(root?.traceId ?? "");
     }
+    // Langfuse filters on the narration in every step, not only the root.
+    for (const span of [root, ...steps]) {
+      expect(span?.attributes.get("langfuse.trace.metadata.narration_id")).toBe(
+        id
+      );
+    }
+  });
+
+  test("shows the article link going in and the recording coming out", async () => {
+    const { id, runtime, traces } = await setup();
+    await makeNarration(id, fakeSteps().step, runtime);
+    const [root] = traces.named("make narration");
+    expect(
+      JSON.parse(String(root?.attributes.get("langfuse.observation.input")))
+    ).toEqual({ link: "https://example.org/article" });
+    expect(
+      JSON.parse(String(root?.attributes.get("langfuse.observation.output")))
+    ).toEqual({
+      durationSeconds: expect.any(Number),
+      parts: 3,
+      state: "ready",
+    });
+    expect(root?.attributes.has("langfuse.observation.level")).toBe(false);
   });
 
   test("records why a step stopped the narration", async () => {
@@ -216,10 +245,18 @@ describe("tracing a narration", () => {
     expect(read?.attributes.get("narration.reason")).toEqual(
       expect.stringContaining("could not be read")
     );
+    expect(read?.attributes.get("langfuse.observation.level")).toBe("ERROR");
     const [root] = traces.named("make narration");
     expect(root?.status).toMatchObject({
       _tag: "Ended",
       exit: { _tag: "Failure" },
+    });
+    expect(root?.attributes.get("langfuse.observation.level")).toBe("ERROR");
+    expect(
+      JSON.parse(String(root?.attributes.get("langfuse.observation.output")))
+    ).toEqual({
+      reason: expect.stringContaining("could not be read"),
+      state: "failed",
     });
   });
 });

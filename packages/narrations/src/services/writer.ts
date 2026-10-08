@@ -3,6 +3,12 @@ import { HttpClient, HttpClientRequest } from "effect/http";
 
 import { ScriptIncomplete } from "../errors.ts";
 import type { ServiceRejected, ServiceUnavailable } from "../errors.ts";
+import {
+  modelParameters,
+  observationInput,
+  observationOutput,
+  observationType,
+} from "../observation.ts";
 import type { Article } from "./reader.ts";
 import { decodeJson, send } from "./send.ts";
 
@@ -44,10 +50,12 @@ const Completion = Schema.Struct({
       finish_reason: Schema.NullOr(Schema.String),
       message: Schema.Struct({
         content: Schema.NullOr(Schema.String),
+        reasoning: Schema.optional(Schema.NullOr(Schema.String)),
         refusal: Schema.optional(Schema.NullOr(Schema.String)),
       }),
     })
   ),
+  model: Schema.optional(Schema.String),
   usage: Schema.optional(
     Schema.Struct({
       completion_tokens: Schema.Number,
@@ -87,10 +95,24 @@ export class Writer extends Context.Service<
       const write = Effect.fn("Writer.write")(function* writerWrite(
         article: Article
       ) {
+        const messages = [
+          { content: INSTRUCTIONS, role: "system" },
+          { content: JSON.stringify(article), role: "user" },
+        ];
+        const settings = {
+          max_completion_tokens: 64_000,
+          reasoning: { effort: "medium" },
+        };
         yield* Effect.annotateCurrentSpan({
           "article.characters": article.text.length,
           "gen_ai.provider.name": "openrouter",
           "gen_ai.request.model": MODEL,
+          ...observationType("generation"),
+          ...observationInput(messages),
+          ...modelParameters({
+            max_completion_tokens: settings.max_completion_tokens,
+            reasoning_effort: settings.reasoning.effort,
+          }),
         });
         const body = yield* send(
           "writer",
@@ -99,13 +121,9 @@ export class Writer extends Context.Service<
           ).pipe(
             HttpClientRequest.bearerToken(Redacted.value(key)),
             HttpClientRequest.bodyJsonUnsafe({
-              max_completion_tokens: 64_000,
-              messages: [
-                { content: INSTRUCTIONS, role: "system" },
-                { content: JSON.stringify(article), role: "user" },
-              ],
+              ...settings,
+              messages,
               model: MODEL,
-              reasoning: { effort: "medium" },
               response_format: {
                 json_schema: {
                   name: "narration",
@@ -127,13 +145,22 @@ export class Writer extends Context.Service<
           ),
           { limit: 4 * 1024 * 1024, timeout: "10 minutes" }
         ).pipe(Effect.provideService(HttpClient.HttpClient, client));
-        const { choices, usage } = yield* decodeJson(Completion)(
+        const { choices, model, usage } = yield* decodeJson(Completion)(
           body,
           () => new ScriptIncomplete()
         );
         const [choice] = choices;
+        const reasoning = choice?.message.reasoning ?? undefined;
+        // The raw answer, until it is known to be a whole script.
         yield* Effect.annotateCurrentSpan({
+          ...(choice &&
+            observationOutput({
+              content: choice.message.content,
+              reasoning,
+              role: "assistant",
+            })),
           "gen_ai.response.finish_reason": choice?.finish_reason ?? undefined,
+          "gen_ai.response.model": model,
           "gen_ai.usage.cost": usage?.cost,
           "gen_ai.usage.input_tokens": usage?.prompt_tokens,
           "gen_ai.usage.output_tokens": usage?.completion_tokens,
@@ -150,7 +177,16 @@ export class Writer extends Context.Service<
         const { text, title } = yield* Schema.decodeUnknownEffect(Answer)(
           choice.message.content
         ).pipe(Effect.mapError(() => new ScriptIncomplete()));
-        yield* Effect.annotateCurrentSpan("script.characters", text.length);
+        yield* Effect.annotateCurrentSpan({
+          "script.characters": text.length,
+          // The script itself, easier to read than the JSON it came in.
+          ...observationOutput({
+            content: text,
+            reasoning,
+            role: "assistant",
+            title,
+          }),
+        });
         // The page's own title is still better than none.
         return { text, title: title.trim() || article.title };
       });

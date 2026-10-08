@@ -13,6 +13,7 @@ This file records decisions and constraints that should hold as the code changes
 - **Extracted pages are untrusted data.** The adaptation model gets no tools or credentials, and treats the page as material to narrate, never as instructions.
 - **Trust the model; fix quality in the prompt.** The page arrives with its clutter, and the prompt tells the model what to leave out. Do not check the model's output with word-counting heuristics. When narrations go wrong, improve the prompt first, then try a better model.
 - **Site quirks live in one place.** When a site needs special help to be read, that help goes in one list next to the reader, with the reason it exists. The rest of the app never asks which site a link is on.
+- **Trace narration runs in Langfuse, API requests in Honeycomb.** A narration's trace shows the article, prompt, script, and cost of each step; HTTP requests under a step are left out.
 - **Hard limits live with the providers.** Set spending caps in each provider account.
 
 ## Interface

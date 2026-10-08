@@ -6,9 +6,10 @@
 import { Effect } from "effect";
 
 import { servicesFor } from "../src/layers.ts";
+import { observationInput, observationOutput } from "../src/observation.ts";
 import { Reader } from "../src/services/reader.ts";
 import { Writer } from "../src/services/writer.ts";
-import { tracingFor } from "../src/telemetry.ts";
+import { narrationTracingFor } from "../src/telemetry.ts";
 
 const [url] = process.argv.slice(2);
 if (!url) {
@@ -20,9 +21,18 @@ const { article, script } = await Effect.runPromise(
   Effect.gen(function* narrate() {
     const read = yield* (yield* Reader).read(url);
     const written = yield* (yield* Writer).write(read);
+    yield* Effect.annotateCurrentSpan(
+      observationOutput({
+        articleCharacters: read.text.length,
+        scriptCharacters: written.text.length,
+        title: written.title,
+      })
+    );
     return { article: read, script: written };
   }).pipe(
-    Effect.withSpan("try narration", { attributes: { "article.url": url } }),
+    Effect.withSpan("try narration", {
+      attributes: { "article.url": url, ...observationInput({ link: url }) },
+    }),
     Effect.provide(
       servicesFor({
         ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
@@ -30,9 +40,14 @@ const { article, script } = await Effect.runPromise(
         OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
       })
     ),
-    // Sends the trace before exiting, when a Honeycomb key is set.
+    // Sends the trace to Langfuse before exiting, when its keys are set.
     Effect.provide(
-      tracingFor({ HONEYCOMB_API_KEY: process.env.HONEYCOMB_API_KEY })
+      narrationTracingFor({
+        LANGFUSE_BASE_URL: process.env.LANGFUSE_BASE_URL,
+        LANGFUSE_PUBLIC_KEY: process.env.LANGFUSE_PUBLIC_KEY,
+        LANGFUSE_SECRET_KEY: process.env.LANGFUSE_SECRET_KEY,
+        LANGFUSE_TRACING_ENVIRONMENT: process.env.LANGFUSE_TRACING_ENVIRONMENT,
+      })
     )
   )
 );

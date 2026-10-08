@@ -66,7 +66,6 @@ export const send = (
       duration: options.timeout,
       orElse: () => Effect.fail(unavailable),
     }),
-    Effect.withSpan(`narrations.send.${service}`),
     Effect.provideService(Headers.CurrentRedactedNames, REDACTED_HEADERS)
   );
 };

@@ -1,9 +1,13 @@
 import type { R2Bucket, Workflow } from "@cloudflare/workers-types";
 
 import type { NarrationParams } from "./services/engine.ts";
+import type { LangfuseEnv } from "./telemetry.ts";
 
-/** The Worker bindings and secrets narrations need. */
-export interface NarrationsEnv {
+/**
+ * The Worker bindings and secrets narrations need. Without the Langfuse
+ * settings, narration runs are not traced.
+ */
+export interface NarrationsEnv extends LangfuseEnv {
   /** Narrations and their audio. */
   readonly AUDIO: R2Bucket;
   /** The Cloudflare Workflow that makes narrations. */
@@ -11,7 +15,7 @@ export interface NarrationsEnv {
   readonly FIRECRAWL_API_KEY?: string;
   readonly OPENROUTER_API_KEY?: string;
   readonly ELEVENLABS_API_KEY?: string;
-  /** Optional. Without it, traces are not sent anywhere. */
+  /** Optional. Without it, API requests are not traced. */
   readonly HONEYCOMB_API_KEY?: string;
 }
 

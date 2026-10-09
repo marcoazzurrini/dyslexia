@@ -2,25 +2,31 @@ import type { Narration } from "@dyslexia/narrations/client";
 import {
   ActivityIndicator,
   Button,
-  EllipsisIcon,
+  ChipGroup,
   EmptyState,
   IconButton,
-  ListButton,
-  ListRow,
   ListSection,
   Notice,
-  PersonIcon,
-  PlayIcon,
   PlusIcon,
   Screen,
-  WarningIcon,
   WaveformIcon,
 } from "@dyslexia/ui";
-import { space } from "@dyslexia/ui/tokens.stylex";
+import { media, motion, space } from "@dyslexia/ui/tokens.stylex";
 import * as stylex from "@stylexjs/stylex";
+import { useState } from "react";
 
-import { formatDuration, siteOf } from "../lib/recording";
-import { RowIcon } from "./row-icon";
+import type { Listening, ListeningStatus } from "../lib/listening";
+import { FailedRow, MakingRow, ReadyRow } from "./narration-rows";
+
+const appear = stylex.keyframes({
+  from: { opacity: 0, transform: "translateY(6px)" },
+  to: { opacity: 1, transform: "none" },
+});
+
+const fadeIn = stylex.keyframes({
+  from: { opacity: 0 },
+  to: { opacity: 1 },
+});
 
 const styles = stylex.create({
   loading: {
@@ -28,19 +34,59 @@ const styles = stylex.create({
     justifyContent: "center",
     paddingBlock: space.huge,
   },
+  results: {
+    display: "flex",
+    flexDirection: "column",
+    gap: space.xxl,
+  },
+  // A new filter's rows settle in, so the change reads as a change.
+  settle: {
+    animationDuration: motion.regular,
+    animationName: { default: appear, [media.reducedMotion]: fadeIn },
+    animationTimingFunction: motion.easeOut,
+  },
 });
 
 type Making = Extract<Narration, { state: "making" }>;
 type Ready = Extract<Narration, { state: "ready" }>;
 type Failed = Extract<Narration, { state: "failed" }>;
 
+/** Which narrations the library shows. */
+export type LibraryFilter = "all" | ListeningStatus;
+
+const FILTERS: readonly { value: LibraryFilter; label: string }[] = [
+  { label: "All", value: "all" },
+  { label: "Not started", value: "not-started" },
+  { label: "In progress", value: "in-progress" },
+  { label: "Finished", value: "finished" },
+];
+
+const NOTHING: Record<ListeningStatus, { title: string; description: string }> =
+  {
+    finished: {
+      description: "Narrations you listen to the end appear here.",
+      title: "Nothing finished yet",
+    },
+    "in-progress": {
+      description: "Narrations you have started listening to appear here.",
+      title: "Nothing in progress",
+    },
+    "not-started": {
+      description: "You have started every narration.",
+      title: "Nothing new",
+    },
+  };
+
 export interface LibraryScreenProps {
   /** `null` while the first load is in flight. */
   readonly narrations: readonly Narration[] | null;
+  readonly filter: LibraryFilter;
+  readonly onFilter: (filter: LibraryFilter) => void;
+  /** How far the listener got with a narration on this device. */
+  readonly listeningOf: (narration: Ready) => Listening;
   readonly error?: string;
   readonly onReload: () => void;
   readonly onAdd: () => void;
-  readonly onAccount: () => void;
   readonly onPlay: (narration: Ready) => void;
   readonly onOpenFailed: (narration: Failed) => void;
   /** Opens the options for a ready narration, such as Delete. */
@@ -51,52 +97,118 @@ export interface LibraryScreenProps {
   readonly bottomInset?: string;
 }
 
-/** What a narration in progress is doing, such as "Recording 3 of 8". */
-export const progressOf = ({ progress, stage }: Making) => {
-  if (stage === "reading") {
-    return "Reading the article…";
+type RowActions = Pick<
+  LibraryScreenProps,
+  "onDelete" | "onOpenFailed" | "onOptions" | "onPlay"
+>;
+
+/** The narrations one filter shows. */
+const Results = ({
+  changed,
+  filter,
+  listeningOf,
+  narrations,
+  onDelete,
+  onOpenFailed,
+  onOptions,
+  onPlay,
+}: RowActions & {
+  filter: LibraryFilter;
+  listeningOf: LibraryScreenProps["listeningOf"];
+  narrations: readonly Narration[];
+  /** The listener just chose this filter. */
+  changed: boolean;
+}) => {
+  const making: Making[] = [];
+  const ready: { narration: Ready; listening: Listening }[] = [];
+  const failed: Failed[] = [];
+  for (const narration of narrations) {
+    if (narration.state === "making") {
+      making.push(narration);
+    } else if (narration.state === "ready") {
+      const listening = listeningOf(narration);
+      if (filter === "all" || listening.status === filter) {
+        ready.push({ listening, narration });
+      }
+    } else {
+      failed.push(narration);
+    }
   }
-  if (stage === "writing") {
-    return "Writing the narration…";
-  }
-  return progress
-    ? `Recording ${progress.done} of ${progress.total}…`
-    : "Recording…";
+  const all = filter === "all";
+  return (
+    <div {...stylex.props(styles.results, changed && styles.settle)}>
+      {all && making.length > 0 && (
+        <ListSection
+          header="Being made"
+          withIcons
+          footer="You can leave the app while narrations are made."
+        >
+          {making.map((narration) => (
+            <MakingRow key={narration.id} narration={narration} />
+          ))}
+        </ListSection>
+      )}
+      {ready.length > 0 && (
+        <ListSection header={all ? "Ready to listen" : undefined} withIcons>
+          {ready.map(({ listening, narration }) => (
+            <ReadyRow
+              key={narration.id}
+              narration={narration}
+              listening={listening}
+              onPlay={onPlay}
+              onOptions={onOptions}
+              onDelete={onDelete}
+            />
+          ))}
+        </ListSection>
+      )}
+      {all && failed.length > 0 && (
+        <ListSection header="Could not be made" withIcons>
+          {failed.map((narration) => (
+            <FailedRow
+              key={narration.id}
+              narration={narration}
+              onOpen={onOpenFailed}
+              onDelete={onDelete}
+            />
+          ))}
+        </ListSection>
+      )}
+      {!all && ready.length === 0 && (
+        <EmptyState
+          title={NOTHING[filter].title}
+          description={NOTHING[filter].description}
+        />
+      )}
+    </div>
+  );
 };
 
-/** Every narration: those being made, those ready to play, and failures. */
+/**
+ * Every narration, filtered by how far the listener got. "All" also shows
+ * narrations being made and those that could not be made.
+ */
 export const LibraryScreen = ({
   bottomInset,
   deleteError,
   error,
+  filter,
+  listeningOf,
   narrations,
-  onAccount,
   onAdd,
   onDelete,
+  onFilter,
   onOpenFailed,
   onOptions,
   onPlay,
   onReload,
 }: LibraryScreenProps) => {
-  const making: Making[] = [];
-  const ready: Ready[] = [];
-  const failed: Failed[] = [];
-  for (const narration of narrations ?? []) {
-    if (narration.state === "making") {
-      making.push(narration);
-    } else if (narration.state === "ready") {
-      ready.push(narration);
-    } else {
-      failed.push(narration);
-    }
-  }
+  // Opening the library shows it at once; only a chosen filter animates.
+  const [chosen, setChosen] = useState(false);
   return (
     <Screen
       title="Library"
       bottomInset={bottomInset}
-      leading={
-        <IconButton label="Account" icon={<PersonIcon />} onClick={onAccount} />
-      }
       trailing={
         <IconButton label="Add article" icon={<PlusIcon />} onClick={onAdd} />
       }
@@ -137,76 +249,29 @@ export const LibraryScreen = ({
           }
         />
       )}
-      {making.length > 0 && (
-        <ListSection
-          header="Being made"
-          withIcons
-          footer="You can leave the app while narrations are made."
-        >
-          {making.map((narration) => (
-            <ListRow
-              key={narration.id}
-              leading={
-                <RowIcon tone="neutral">
-                  <ActivityIndicator />
-                </RowIcon>
-              }
-              title={narration.title}
-              subtitle={progressOf(narration)}
-            />
-          ))}
-        </ListSection>
-      )}
-      {ready.length > 0 && (
-        <ListSection header="Ready to listen" withIcons>
-          {ready.map((narration) => (
-            <ListButton
-              key={narration.id}
-              aria-label={`Play ${narration.title}`}
-              leading={
-                <RowIcon tone="accent">
-                  <PlayIcon />
-                </RowIcon>
-              }
-              title={narration.title}
-              subtitle={`${siteOf(narration.url)} · ${formatDuration(narration.durationSeconds)}`}
-              onClick={() => onPlay(narration)}
-              swipeAction={{
-                label: "Delete",
-                onAction: () => onDelete(narration),
-              }}
-              trailing={
-                <IconButton
-                  label={`Options for ${narration.title}`}
-                  icon={<EllipsisIcon />}
-                  variant="plain"
-                  onClick={() => onOptions(narration)}
-                />
-              }
-            />
-          ))}
-        </ListSection>
-      )}
-      {failed.length > 0 && (
-        <ListSection header="Could not be made" withIcons>
-          {failed.map((narration) => (
-            <ListButton
-              key={narration.id}
-              leading={
-                <RowIcon tone="danger">
-                  <WarningIcon />
-                </RowIcon>
-              }
-              title={narration.title}
-              subtitle={siteOf(narration.url)}
-              onClick={() => onOpenFailed(narration)}
-              swipeAction={{
-                label: "Delete",
-                onAction: () => onDelete(narration),
-              }}
-            />
-          ))}
-        </ListSection>
+      {narrations && narrations.length > 0 && (
+        <>
+          <ChipGroup
+            label="Show"
+            options={FILTERS}
+            value={filter}
+            onChange={(next) => {
+              setChosen(true);
+              onFilter(next);
+            }}
+          />
+          <Results
+            key={filter}
+            changed={chosen}
+            filter={filter}
+            listeningOf={listeningOf}
+            narrations={narrations}
+            onDelete={onDelete}
+            onOpenFailed={onOpenFailed}
+            onOptions={onOptions}
+            onPlay={onPlay}
+          />
+        </>
       )}
     </Screen>
   );

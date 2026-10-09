@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 const INTERVAL_MS = 3000;
 
@@ -92,5 +92,5 @@ export const usePolling = <A>(
   }, [enabled]);
 
   /** Loads again now, as after the person retries. */
-  return () => reload.current?.();
+  return useCallback(() => reload.current?.(), []);
 };

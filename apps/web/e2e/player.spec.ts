@@ -181,7 +181,7 @@ test("persists progress and rate across reload", async ({ page }) => {
   await speed(page, "1.25").click();
   await expect
     .poll(() => readSaved(page))
-    .toEqual({ position: 15, rate: 1.25 });
+    .toMatchObject({ position: 15, rate: 1.25 });
   await page.reload();
   // The recording comes back in the mini player, closed and paused.
   await page

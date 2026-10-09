@@ -133,9 +133,13 @@ export const font = stylex.defineVars({
 /** Fixed sizes for controls, which iOS does not scale with text. */
 export const size = stylex.defineVars({
   control: "50px",
+  /** The widest the floating bars at the bottom of the screen get. */
+  dock: "28rem",
   /** Readable line length for long text. */
   measure: "40rem",
   navBar: "52px",
+  /** The floating tab bar at the bottom of the screen. */
+  tabBar: "62px",
   /** The smallest comfortable touch target. */
   touch: "44px",
 });

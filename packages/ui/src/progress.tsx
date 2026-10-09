@@ -59,6 +59,7 @@ const styles = stylex.create({
     height: "100%",
     width: "100%",
   },
+  thin: { height: "4px" },
 });
 
 export interface ActivityIndicatorProps {
@@ -101,14 +102,21 @@ export interface ProgressBarProps {
   readonly max: number;
   /** The accessible name, such as "Speech segments". */
   readonly label: string;
+  /** `thin` sits inside a list row, under its text. */
+  readonly size?: "regular" | "thin";
 }
 
 /** A determinate progress bar. */
-export const ProgressBar = ({ label, max, value }: ProgressBarProps) => (
+export const ProgressBar = ({
+  label,
+  max,
+  size = "regular",
+  value,
+}: ProgressBarProps) => (
   <progress
     aria-label={label}
     max={max}
     value={Math.min(value, max)}
-    {...stylex.props(styles.bar)}
+    {...stylex.props(styles.bar, size === "thin" && styles.thin)}
   />
 );

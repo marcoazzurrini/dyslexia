@@ -36,13 +36,14 @@ const styles = stylex.create({
     display: "flex",
     gap: space.xs,
     marginInline: "auto",
-    maxWidth: size.measure,
+    maxWidth: size.dock,
     minHeight: "3.75rem",
     paddingInlineEnd: space.sm,
     pointerEvents: "auto",
   },
+  // Floats just above the tab bar.
   dock: {
-    bottom: `max(${space.md}, env(safe-area-inset-bottom))`,
+    bottom: `calc(max(${space.sm}, env(safe-area-inset-bottom)) + ${size.tabBar} + ${space.sm})`,
     insetInline: 0,
     paddingInline: `max(${space.md}, env(safe-area-inset-left))`,
     pointerEvents: "none",

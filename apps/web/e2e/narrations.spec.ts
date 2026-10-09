@@ -14,14 +14,20 @@ test("Google sign-in returns to the app, and sign-out signs out", async ({
   const state = await mockNarrations(page, { authenticated: false });
   await page.goto("/");
   await page.getByRole("button", { name: "Sign in with Google" }).click();
-  await expect(page.getByRole("heading", { name: "Library" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: /^Good (?:morning|afternoon|evening)$/u,
+    })
+  ).toBeVisible();
   expect(state.authRequests).toEqual([
     {
       body: { callbackURL: "/", errorCallbackURL: "/", provider: "google" },
       path: "/sign-in/social",
     },
   ]);
-  await page.getByRole("button", { name: "Account" }).click();
+  await page.getByRole("link", { name: "Profile" }).click();
+  await expect(page.getByText("reader@example.com")).toBeVisible();
   await page.getByRole("button", { exact: true, name: "Sign out" }).click();
   await expect(
     page.getByRole("button", { name: "Sign in with Google" })
@@ -44,7 +50,7 @@ test("unconfigured service explains setup without offering sign-in", async ({
     authenticated: false,
     configured: false,
   });
-  await page.goto("/");
+  await page.goto("/library");
   await expect(page.getByText("Narration setup needed")).toBeVisible();
   await expect(page.getByText(/configure Google sign-in/u)).toBeVisible();
   await expect(
@@ -55,7 +61,7 @@ test("unconfigured service explains setup without offering sign-in", async ({
 
 test("adds an article link and shows it being made", async ({ page }) => {
   const state = await mockNarrations(page);
-  await page.goto("/");
+  await page.goto("/library");
   await expect(page.getByText("No narrations yet")).toBeVisible();
   await page.getByRole("button", { name: "Add article" }).first().click();
   const link = page.getByLabel("Article link", { exact: true });
@@ -94,7 +100,7 @@ test("a narration being made shows its progress and becomes playable", async ({
       },
     ],
   });
-  await page.goto("/");
+  await page.goto("/library");
   await expect(page.getByText("Recording 3 of 8…")).toBeVisible();
   state.narrations.set("job-one", makeNarration("ready"));
   await page.clock.fastForward(3000);
@@ -113,7 +119,7 @@ test("polls only while the page is visible", async ({ page }) => {
   const state = await mockNarrations(page, {
     narrations: [makeNarration("making")],
   });
-  await page.goto("/");
+  await page.goto("/library");
   await expect(page.getByText("Reading the article…")).toBeVisible();
   const before = state.listRequests;
   await page.clock.fastForward(3000);
@@ -145,7 +151,7 @@ test("slow polling never overlaps and hidden pages abort in-flight reads", async
     };
   });
   await mockNarrations(page, { narrations: [makeNarration("making")] });
-  await page.goto("/");
+  await page.goto("/library");
   await expect(page.getByText("Reading the article…")).toBeVisible();
   const pending: Route[] = [];
   await page.route("**/api/narrations", (route) => {
@@ -171,7 +177,7 @@ test("a failed narration explains why and can be made again", async ({
   const state = await mockNarrations(page, {
     narrations: [makeNarration("failed", { title: "Paywalled article" })],
   });
-  await page.goto("/");
+  await page.goto("/library");
   await page.getByRole("button", { name: /Paywalled article/u }).click();
   const sheet = page.getByRole("dialog", { name: "Paywalled article" });
   await expect(sheet).toContainText("behind a paywall");
@@ -188,7 +194,7 @@ test("a failed narration can be removed", async ({ page }) => {
   const state = await mockNarrations(page, {
     narrations: [makeNarration("failed", { title: "Paywalled article" })],
   });
-  await page.goto("/");
+  await page.goto("/library");
   await page.getByRole("button", { name: /Paywalled article/u }).click();
   const sheet = page.getByRole("dialog", { name: "Paywalled article" });
   await sheet.getByRole("button", { exact: true, name: "Remove" }).click();
@@ -204,7 +210,7 @@ test("the failed narration sheet fits a narrow screen", async ({ page }) => {
   await mockNarrations(page, {
     narrations: [makeNarration("failed", { title: "A".repeat(80) })],
   });
-  await page.goto("/");
+  await page.goto("/library");
   await page.getByRole("button", { name: /AAAA/u }).click();
   const retry = page.getByRole("button", { exact: true, name: "Try again" });
   await expect(retry).toBeVisible();
@@ -224,7 +230,7 @@ test("session expiry clears private narrations and offers sign-in", async ({
   const state = await mockNarrations(page, {
     narrations: [makeNarration("making")],
   });
-  await page.goto("/");
+  await page.goto("/library");
   await expect(page.getByText("Reading the article…")).toBeVisible();
   state.authenticated = false;
   await page.clock.fastForward(3000);
@@ -255,7 +261,7 @@ test("playback continues behind the library, and each recording keeps its own pl
       JSON.stringify({ position: 24, rate: 1.5 })
     );
   });
-  await page.goto("/");
+  await page.goto("/library");
   await page.getByRole("button", { name: "Play First recording" }).click();
   const player = page.getByRole("dialog", { name: "Now playing" });
   await expect(

@@ -24,7 +24,9 @@ for (const authenticated of [false, true]) {
     await expect(
       page.getByRole("heading", {
         level: 1,
-        name: authenticated ? "Library" : "Dyslexia",
+        name: authenticated
+          ? /^Good (?:morning|afternoon|evening)$/u
+          : "Dyslexia",
       })
     ).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
@@ -43,7 +45,7 @@ test("keyboard users can skip to the main content", async ({
   browserName,
 }) => {
   await mockNarrations(page);
-  await page.goto("/");
+  await page.goto("/library");
   await expect(page.getByRole("heading", { name: "Library" })).toBeVisible();
   // WebKit on macOS uses Option+Tab to include links in keyboard navigation.
   await page.keyboard.press(browserName === "webkit" ? "Alt+Tab" : "Tab");
@@ -126,7 +128,12 @@ test("unknown navigation shows a not-found page and can return home", async ({
   ).toBeVisible();
   await page.getByRole("link", { name: "Return home" }).click();
   await expect(page).toHaveURL(`${baseURL}/`);
-  await expect(page.getByRole("heading", { name: "Library" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: /^Good (?:morning|afternoon|evening)$/u,
+    })
+  ).toBeVisible();
 });
 
 test("missing non-navigation assets return 404 rather than the app shell", async ({

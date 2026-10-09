@@ -31,3 +31,12 @@ export const signOut = async () => {
     throw new Error(error.message ?? "Sign-out failed");
   }
 };
+
+/** The signed-in Google account, or `null` when nobody is signed in. */
+export const getAccount = async () => {
+  const { data, error } = await client.getSession();
+  if (error) {
+    throw new Error(error.message ?? "Could not load the account");
+  }
+  return data ? { email: data.user.email, name: data.user.name } : null;
+};

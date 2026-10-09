@@ -48,7 +48,7 @@ test("swiping a narration left reveals Delete, which deletes it", async ({
   const state = await mockNarrations(page, {
     narrations: [makeNarration("ready")],
   });
-  await page.goto("/");
+  await page.goto("/library");
   const row = page.getByRole("button", { name: "Play A new article" });
   const rest = await restingX(row);
   await swipeLeft(page, row, 140);
@@ -67,7 +67,7 @@ test("a short swipe springs back, and nothing is deleted", async ({ page }) => {
   const state = await mockNarrations(page, {
     narrations: [makeNarration("ready")],
   });
-  await page.goto("/");
+  await page.goto("/library");
   const row = page.getByRole("button", { name: "Play A new article" });
   const rest = await restingX(row);
   await swipeLeft(page, row, 25, { slow: true });
@@ -82,7 +82,7 @@ test("swiping another row closes the open one", async ({ page }) => {
       makeNarration("ready", { id: "job-two", title: "Second" }),
     ],
   });
-  await page.goto("/");
+  await page.goto("/library");
   const first = page.getByRole("button", { name: "Play A new article" });
   const second = page.getByRole("button", { name: "Play Second" });
   const rest = await restingX(first);
@@ -95,7 +95,7 @@ test("swiping another row closes the open one", async ({ page }) => {
 
 test("tapping an open row closes it instead of playing", async ({ page }) => {
   await mockNarrations(page, { narrations: [makeNarration("ready")] });
-  await page.goto("/");
+  await page.goto("/library");
   const row = page.getByRole("button", { name: "Play A new article" });
   const rest = await restingX(row);
   await swipeLeft(page, row, 140);
@@ -120,7 +120,7 @@ test("the options button deletes a narration without a gesture", async ({
       makeNarration("ready", { id: "job-two", title: "Kept" }),
     ],
   });
-  await page.goto("/");
+  await page.goto("/library");
   await page.getByRole("button", { name: "Options for A new article" }).click();
   const sheet = page.getByRole("dialog", { name: "A new article" });
   await sheet.getByRole("button", { name: "Delete narration" }).click();
@@ -150,7 +150,7 @@ test("a failed narration can be swiped away too", async ({ page }) => {
   const state = await mockNarrations(page, {
     narrations: [makeNarration("failed", { title: "Paywalled article" })],
   });
-  await page.goto("/");
+  await page.goto("/library");
   const row = page.getByRole("button", { name: /Paywalled article/u });
   const rest = await restingX(row);
   await swipeLeft(page, row, 140);
@@ -171,7 +171,7 @@ test("a refused deletion brings the narration back and says why", async ({
       ? route.fulfill({ json: { _tag: "NotConfigured" }, status: 503 })
       : route.fallback()
   );
-  await page.goto("/");
+  await page.goto("/library");
   await page.getByRole("button", { name: "Options for A new article" }).click();
   await page.getByRole("button", { name: "Delete narration" }).click();
   await expect(page.getByRole("alert")).toContainText(

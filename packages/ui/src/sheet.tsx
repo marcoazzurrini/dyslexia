@@ -36,7 +36,10 @@ const styles = stylex.create({
     margin: 0,
     maxHeight: "none",
     maxWidth: "none",
-    overflow: "hidden",
+    // Clip, not hide: a hidden overflow can still scroll, and showing the
+    // dialog focuses its close button while the panel is below the screen,
+    // which scrolled the panel up past its place until the slide ended.
+    overflow: "clip",
     padding: 0,
     position: "fixed",
     width: "100%",

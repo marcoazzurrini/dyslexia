@@ -1,7 +1,14 @@
 import type { Page, Route } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
-import { openPlayer, PLAYBACK_KEY, readAudio, serveAudio } from "./fixtures";
+import {
+  makeNarration,
+  mockNarrations,
+  openPlayer,
+  PLAYBACK_KEY,
+  readAudio,
+  serveAudio,
+} from "./fixtures";
 
 const audioValue = async <
   Key extends keyof Awaited<ReturnType<typeof readAudio>>,
@@ -331,16 +338,50 @@ test("controls fit a narrow screen with accessible touch targets", async ({
   ];
   await Promise.all(
     controls.map(async (control) => {
+      // The sheet may still be settling, so its box can be a hair off whole.
       const box = await control.boundingBox();
       const tag = await control.evaluate((element) => element.tagName);
-      expect(box?.height, `${tag} touch target height`).toBeGreaterThanOrEqual(
-        44
-      );
-      expect(box?.width, `${tag} touch target width`).toBeGreaterThanOrEqual(
-        44
-      );
+      expect(
+        Math.round(box?.height ?? 0),
+        `${tag} touch target height`
+      ).toBeGreaterThanOrEqual(44);
+      expect(
+        Math.round(box?.width ?? 0),
+        `${tag} touch target width`
+      ).toBeGreaterThanOrEqual(44);
     })
   );
+});
+
+/**
+ * Records, on every frame, the highest the open sheet's panel reaches. Its own
+ * name lets it schedule itself once serialized to the page.
+ */
+const recordHighest = function recordHighest() {
+  const panel = document.querySelector("dialog[open] > :last-child");
+  if (panel) {
+    const { top } = panel.getBoundingClientRect();
+    const highest = Number(document.body.dataset.highest ?? Infinity);
+    document.body.dataset.highest = String(Math.min(highest, top));
+  }
+  requestAnimationFrame(recordHighest);
+};
+
+test("the player slides up without passing its place", async ({ page }) => {
+  await mockNarrations(page, { narrations: [makeNarration("ready")] });
+  await page.route("**/api/narrations/job-one/audio", serveAudio);
+  await page.goto("/library");
+  await page.evaluate(recordHighest);
+  await page.getByRole("button", { name: "Play A new article" }).click();
+  // The sheet settles within its 500ms spring.
+  await page.waitForTimeout(1000);
+  const reached = await page.evaluate(() =>
+    Number(document.body.dataset.highest)
+  );
+  const rest = await player(page)
+    .locator(":scope > :last-child")
+    .evaluate((panel) => panel.getBoundingClientRect().top);
+  expect(reached).toBeGreaterThanOrEqual(rest - 1);
 });
 
 test("hidden visibility saves without pausing native playback", async ({

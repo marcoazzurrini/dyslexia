@@ -159,24 +159,24 @@ export const Route = createRootRoute({
           "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
         name: "viewport",
       },
-      { title: "Dyslexia" },
+      { title: "Reader" },
       {
         content: "Turn articles into narrations you can listen to.",
         name: "description",
       },
       {
-        content: "#f3f1ea",
+        content: "#f2f2f7",
         media: "(prefers-color-scheme: light)",
         name: "theme-color",
       },
       {
-        content: "#0b0c0b",
+        content: "#0d0d0f",
         media: "(prefers-color-scheme: dark)",
         name: "theme-color",
       },
       { content: "yes", name: "mobile-web-app-capable" },
       { content: "yes", name: "apple-mobile-web-app-capable" },
-      { content: "Dyslexia", name: "apple-mobile-web-app-title" },
+      { content: "Reader", name: "apple-mobile-web-app-title" },
     ],
     scripts: dev
       ? [{ src: "/@id/virtual:stylex:runtime", type: "module" }]

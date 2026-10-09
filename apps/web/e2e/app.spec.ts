@@ -20,13 +20,13 @@ for (const authenticated of [false, true]) {
 
     await page.goto("/");
 
-    await expect(page).toHaveTitle("Dyslexia");
+    await expect(page).toHaveTitle("Reader");
     await expect(
       page.getByRole("heading", {
         level: 1,
         name: authenticated
           ? /^Good (?:morning|afternoon|evening)$/u
-          : "Dyslexia",
+          : "Reader",
       })
     ).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
@@ -74,7 +74,7 @@ test("manifest and installation icons are valid and served as assets", async ({
   expect(response.ok()).toBe(true);
   expect(response.headers()["content-type"]).toContain("manifest+json");
   const manifest = await response.json();
-  expect(manifest.name).toBe("Dyslexia");
+  expect(manifest.name).toBe("Reader");
   expect(manifest.display).toBe("standalone");
   expect(manifest.id).toBe("/");
   expect(manifest.start_url).toBe("/");

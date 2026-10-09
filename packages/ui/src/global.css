@@ -79,3 +79,24 @@ svg {
 :focus:not(:focus-visible) {
   outline: none;
 }
+
+/* Browser surfaces carry the indigo tint too. */
+html {
+  accent-color: #5856d6;
+  caret-color: #5856d6;
+}
+
+::selection {
+  background-color: rgb(88 86 214 / 0.24);
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    accent-color: #8e8cff;
+    caret-color: #8e8cff;
+  }
+
+  ::selection {
+    background-color: rgb(142 140 255 / 0.32);
+  }
+}

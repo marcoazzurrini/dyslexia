@@ -69,7 +69,7 @@ export const WelcomeScreen = ({
         {...stylex.props(styles.icon)}
       />
       <Text as="h1" variant="largeTitle">
-        Dyslexia
+        Reader
       </Text>
       <Text variant="body" tone="secondary" style={styles.lead}>
         Paste an article link and listen to it, read aloud in a clear, calm

@@ -8,5 +8,8 @@ export default defineConfig({
   ignorePatterns: [
     ...(core.ignorePatterns ?? []),
     "apps/web/src/routeTree.gen.ts",
+    // Installed design skill and its working files, not project code.
+    ".claude/skills/**",
+    "**/.impeccable/**",
   ],
 });

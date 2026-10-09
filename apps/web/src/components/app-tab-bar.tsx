@@ -16,7 +16,6 @@ export const AppTabBar = () => {
   return (
     <TabBar
       label="Main"
-      selected={selected}
       tabs={TABS.map((tab, index) => (
         <RouterTabBarLink
           key={tab.to}

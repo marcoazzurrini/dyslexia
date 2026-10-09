@@ -60,6 +60,13 @@ const variants = stylex.create({
     color: color.label,
     opacity: { ":active": 0.5, default: 1 },
   },
+  // A bare glyph in the tint, as iOS shows actions in a navigation bar.
+  tinted: {
+    backgroundColor: "transparent",
+    color: color.accentText,
+    fontSize: "1.5rem",
+    opacity: { ":active": 0.5, default: 1 },
+  },
 });
 
 export type IconButtonVariant = keyof typeof variants;

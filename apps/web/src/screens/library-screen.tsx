@@ -2,13 +2,13 @@ import type { Narration } from "@dyslexia/narrations/client";
 import {
   ActivityIndicator,
   Button,
-  ChipGroup,
   EmptyState,
   IconButton,
   ListSection,
   Notice,
   PlusIcon,
   Screen,
+  SegmentedControl,
   WaveformIcon,
 } from "@dyslexia/ui";
 import { media, motion, space } from "@dyslexia/ui/tokens.stylex";
@@ -140,6 +140,8 @@ const Results = ({
       {all && making.length > 0 && (
         <ListSection
           header="Being made"
+          plain
+          prominent
           withIcons
           footer="You can leave the app while narrations are made."
         >
@@ -149,7 +151,12 @@ const Results = ({
         </ListSection>
       )}
       {ready.length > 0 && (
-        <ListSection header={all ? "Ready to listen" : undefined} withIcons>
+        <ListSection
+          header={all ? "Ready to listen" : undefined}
+          plain
+          prominent
+          withIcons
+        >
           {ready.map(({ listening, narration }) => (
             <ReadyRow
               key={narration.id}
@@ -163,7 +170,7 @@ const Results = ({
         </ListSection>
       )}
       {all && failed.length > 0 && (
-        <ListSection header="Could not be made" withIcons>
+        <ListSection header="Could not be made" plain prominent withIcons>
           {failed.map((narration) => (
             <FailedRow
               key={narration.id}
@@ -208,9 +215,15 @@ export const LibraryScreen = ({
   return (
     <Screen
       title="Library"
+      background="plain"
       bottomInset={bottomInset}
       trailing={
-        <IconButton label="Add article" icon={<PlusIcon />} onClick={onAdd} />
+        <IconButton
+          label="Add article"
+          icon={<PlusIcon />}
+          variant="tinted"
+          onClick={onAdd}
+        />
       }
     >
       {error && (
@@ -251,7 +264,7 @@ export const LibraryScreen = ({
       )}
       {narrations && narrations.length > 0 && (
         <>
-          <ChipGroup
+          <SegmentedControl
             label="Show"
             options={FILTERS}
             value={filter}

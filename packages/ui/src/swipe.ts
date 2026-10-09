@@ -21,13 +21,30 @@ let closeOpenRow: (() => void) | null = null;
 const currentX = (element: HTMLElement) =>
   new DOMMatrixReadOnly(getComputedStyle(element).transform).m41;
 
+/**
+ * Shows the action behind a row only while the row is moved. At rest it
+ * stays hidden, so its color never shows at the list's rounded corners.
+ */
+const reveal = (row: HTMLElement, shown: boolean) => {
+  const action = row.previousElementSibling;
+  if (action instanceof HTMLElement) {
+    action.style.visibility = shown ? "visible" : "hidden";
+  }
+};
+
 const slide = (element: HTMLElement, to: number, velocity = 0) => {
   const from = currentX(element);
   for (const animation of element.getAnimations()) {
     animation.cancel();
   }
   element.style.transform = to === 0 ? "" : `translateX(${to}px)`;
+  if (to !== 0) {
+    reveal(element, true);
+  }
   if (reducedMotion() || from === to) {
+    if (to === 0) {
+      reveal(element, false);
+    }
     return;
   }
   // A fast release shortens the motion, so the row keeps the finger's speed.
@@ -37,13 +54,16 @@ const slide = (element: HTMLElement, to: number, velocity = 0) => {
     speed > 0
       ? Math.min(SETTLE_MS, Math.max(160, (distance / speed) * 2000))
       : SETTLE_MS;
-  element.animate(
+  const animation = element.animate(
     [
       { transform: `translateX(${from}px)` },
       { transform: `translateX(${to}px)` },
     ],
     { duration, easing: SPRING }
   );
+  if (to === 0) {
+    animation.addEventListener("finish", () => reveal(element, false));
+  }
 };
 
 // Past either end the row resists, as at the end of an iOS list.
@@ -162,6 +182,7 @@ export const useSwipe = (enabled: boolean, actionWidth: number) => {
       current.axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
       if (current.axis === "x") {
         row.setPointerCapture(event.pointerId);
+        reveal(row, true);
       }
     }
     if (current.axis !== "x") {

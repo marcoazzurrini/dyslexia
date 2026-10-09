@@ -14,7 +14,15 @@ import {
 import { color, font, radius, size, space } from "./tokens.stylex.ts";
 
 const styles = stylex.create({
-  close: { insetInlineEnd: space.lg, position: "absolute" },
+  // The iOS sheet close button: a small disc, with a full-size hit area.
+  close: {
+    "::after": { content: "''", inset: "-7px", position: "absolute" },
+    fontSize: "0.9375rem",
+    height: "30px",
+    insetInlineEnd: space.lg,
+    position: "absolute",
+    width: "30px",
+  },
   content: {
     display: "flex",
     flexDirection: "column",
@@ -78,6 +86,7 @@ const styles = stylex.create({
     marginInline: "auto",
     maxHeight: "calc(100% - env(safe-area-inset-top) - 0.75rem)",
     maxWidth: "40rem",
+    outlineStyle: "none",
     position: "absolute",
     willChange: "transform",
   },
@@ -86,6 +95,10 @@ const styles = stylex.create({
     inset: 0,
     position: "absolute",
   },
+  // A wash of color at the top, as Podcasts tints its player from the art.
+  tinted: (tint: string) => ({
+    backgroundImage: `linear-gradient(to bottom, color-mix(in oklab, ${tint} 34%, transparent), transparent 62%)`,
+  }),
   title: {
     flexGrow: 1,
     fontSize: font.body,
@@ -103,6 +116,8 @@ export interface SheetProps {
   readonly title: string;
   /** Hide the title visually, for content that names itself. */
   readonly hideTitle?: boolean;
+  /** A color washed over the top of the sheet. */
+  readonly tint?: string;
   readonly children: ReactNode;
 }
 
@@ -115,6 +130,7 @@ export const Sheet = ({
   hideTitle = false,
   onClose,
   open,
+  tint,
   title,
 }: SheetProps) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -135,6 +151,10 @@ export const Sheet = ({
     const show = async () => {
       if (open && !dialog.open) {
         dialog.showModal();
+        // Showing the dialog focuses its close button, which WebKit rings
+        // as if reached by keyboard. Start on the panel instead, so the
+        // ring appears only once the keyboard moves.
+        panel.focus({ preventScroll: true });
         lockScroll(true);
         panel.style.transform = `translateY(${panel.offsetHeight}px)`;
         await settle(panel, scrim, 0);
@@ -226,7 +246,14 @@ export const Sheet = ({
         onClick={() => onClose()}
         {...stylex.props(styles.scrim)}
       />
-      <div ref={panelRef} {...stylex.props(styles.panel)}>
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        {...stylex.props(
+          styles.panel,
+          tint !== undefined && styles.tinted(tint)
+        )}
+      >
         <div
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}

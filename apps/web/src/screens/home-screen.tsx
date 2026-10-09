@@ -9,19 +9,40 @@ import {
   Notice,
   PlusIcon,
   Screen,
+  Text,
   WaveformIcon,
 } from "@dyslexia/ui";
 import { space } from "@dyslexia/ui/tokens.stylex";
 import * as stylex from "@stylexjs/stylex";
 
 import type { Listening } from "../lib/listening";
-import { FailedRow, MakingRow, ReadyRow } from "./narration-rows";
+import {
+  FailedRow,
+  MakingRow,
+  ReadyRow,
+  ResumeCard,
+  ShelfTile,
+} from "./narration-rows";
 
 const styles = stylex.create({
+  group: { display: "flex", flexDirection: "column", gap: space.sm },
+  heading: { fontWeight: 700, paddingInline: space.xxs },
   loading: {
     display: "flex",
     justifyContent: "center",
     paddingBlock: space.huge,
+  },
+  // Scrolls sideways under the screen's margins, as Podcasts' shelves do.
+  shelf: {
+    display: "flex",
+    gap: space.md,
+    marginInline: `calc(-1 * ${space.gutter})`,
+    overflowX: "auto",
+    paddingBlock: `${space.xs} ${space.lg}`,
+    paddingInline: space.gutter,
+    scrollPaddingInline: space.gutter,
+    scrollSnapType: "x mandatory",
+    scrollbarWidth: "none",
   },
 });
 
@@ -30,6 +51,9 @@ type Failed = Extract<Narration, { state: "failed" }>;
 
 /** How many narrations each section of Home shows at most. */
 const SHOWN = 3;
+
+/** Fewer new narrations than this read better as a list than a shelf. */
+const SHELF_MIN = 3;
 
 /** A greeting for the time of day, such as "Good morning". */
 export const greetingFor = (time: Date) => {
@@ -105,9 +129,15 @@ export const HomeScreen = ({
   return (
     <Screen
       title={greetingFor(now)}
+      background="plain"
       bottomInset={bottomInset}
       trailing={
-        <IconButton label="Add article" icon={<PlusIcon />} onClick={onAdd} />
+        <IconButton
+          label="Add article"
+          icon={<PlusIcon />}
+          variant="tinted"
+          onClick={onAdd}
+        />
       }
     >
       {error && (
@@ -138,8 +168,26 @@ export const HomeScreen = ({
         />
       )}
       {resume.length > 0 && (
-        <ListSection header="Pick up where you left off" withIcons>
-          {resume.map(({ listening, narration }) => (
+        <section {...stylex.props(styles.group)}>
+          <Text as="h2" variant="title3" style={styles.heading}>
+            Pick up where you left off
+          </Text>
+          <div {...stylex.props(styles.shelf)}>
+            {resume.map(({ listening, narration }) => (
+              <ResumeCard
+                key={narration.id}
+                narration={narration}
+                listening={listening}
+                onPlay={onPlay}
+                wide={resume.length === 1}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+      {fresh.length > 0 && fresh.length < SHELF_MIN && (
+        <ListSection header="Recently added" plain prominent withIcons>
+          {fresh.map(({ listening, narration }) => (
             <ReadyRow
               key={narration.id}
               narration={narration}
@@ -149,9 +197,27 @@ export const HomeScreen = ({
           ))}
         </ListSection>
       )}
+      {fresh.length >= SHELF_MIN && (
+        <section {...stylex.props(styles.group)}>
+          <Text as="h2" variant="title3" style={styles.heading}>
+            Recently added
+          </Text>
+          <div {...stylex.props(styles.shelf)}>
+            {fresh.map(({ narration }) => (
+              <ShelfTile
+                key={narration.id}
+                narration={narration}
+                onPlay={onPlay}
+              />
+            ))}
+          </div>
+        </section>
+      )}
       {making.length > 0 && (
         <ListSection
           header="Being made"
+          plain
+          prominent
           withIcons
           footer="You can leave the app while narrations are made."
         >
@@ -161,24 +227,12 @@ export const HomeScreen = ({
         </ListSection>
       )}
       {failed.length > 0 && (
-        <ListSection header="Could not be made" withIcons>
+        <ListSection header="Could not be made" plain prominent withIcons>
           {failed.map((narration) => (
             <FailedRow
               key={narration.id}
               narration={narration}
               onOpen={onOpenFailed}
-            />
-          ))}
-        </ListSection>
-      )}
-      {fresh.length > 0 && (
-        <ListSection header="Recently added" withIcons>
-          {fresh.map(({ listening, narration }) => (
-            <ReadyRow
-              key={narration.id}
-              narration={narration}
-              listening={listening}
-              onPlay={onPlay}
             />
           ))}
         </ListSection>

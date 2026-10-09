@@ -1,14 +1,14 @@
 {
   "id": "/",
-  "name": "Dyslexia",
-  "short_name": "Dyslexia",
+  "name": "Reader",
+  "short_name": "Reader",
   "description": "An audio-first home for articles worth listening to.",
   "lang": "en",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f6f4ef",
-  "theme_color": "#f6f4ef",
+  "background_color": "#f2f2f7",
+  "theme_color": "#f2f2f7",
   "icons": [
     {
       "src": "/icons/icon-192.png",

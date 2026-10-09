@@ -11,6 +11,7 @@ interface SiteRule {
 }
 
 const xArticle = /^\/(?<user>\w+)\/article\/(?<id>\d+)\/?$/u;
+const gist = /^\/(?<user>[\w-]+)\/(?<id>[\da-f]+)\/?$/u;
 
 const RULES: readonly SiteRule[] = [
   {
@@ -26,6 +27,19 @@ const RULES: readonly SiteRule[] = [
     },
     reason:
       "Firecrawl reads X posts but refuses X article links. An article's link names the post it was published in, and that post holds the whole article.",
+  },
+  {
+    linkToRead: (url) => {
+      if (url.hostname !== "gist.github.com") {
+        return;
+      }
+      const { id, user } = gist.exec(url.pathname)?.groups ?? {};
+      return user && id
+        ? `https://gist.github.com/${user}/${id}/raw`
+        : undefined;
+    },
+    reason:
+      "A gist's page puts its comments in the main content, so Firecrawl reads them as part of the document, and a popular gist runs past the length limit. The raw link holds only the document.",
   },
 ];
 

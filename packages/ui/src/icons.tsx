@@ -111,6 +111,19 @@ export const ExternalIcon = icon(
 export const WaveformIcon = icon(
   <path d="M3 12h1M7 8v8M11 4v16M15 7v10M19 10v4M21 12h0" />
 );
+export const HomeIcon = icon(
+  <>
+    <path d="M3.5 10.5 12 3.5l8.5 7" />
+    <path d="M5.5 9v10.5a1 1 0 0 0 1 1H10v-5.5h4v5.5h3.5a1 1 0 0 0 1-1V9" />
+  </>
+);
+export const LibraryIcon = icon(
+  <>
+    <rect x="3.5" y="4" width="4.5" height="16.5" rx="1" />
+    <rect x="9.5" y="4" width="4.5" height="16.5" rx="1" />
+    <path d="m15.8 5.4 3.6-0.9 3.1 15.2-3.6 0.9Z" />
+  </>
+);
 export const PersonIcon = icon(
   <>
     <circle cx="12" cy="8" r="4" />

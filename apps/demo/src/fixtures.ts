@@ -1,4 +1,5 @@
 import type { Narration } from "@dyslexia/narrations/client";
+import type { Listening } from "@dyslexia/web/lib/listening";
 
 const ARTICLE = {
   createdAt: "2026-10-01T09:00:00Z",
@@ -56,3 +57,53 @@ export const library: Narration[] = [
   }),
   failed({ id: "f" }),
 ];
+
+/** A library with narrations at every point of listening. */
+export const listened: Narration[] = [
+  making({ id: "a", title: "Why we sleep" }),
+  ready({ id: "d" }),
+  ready({
+    durationSeconds: 1980,
+    id: "e",
+    title: "The quiet history of the semicolon",
+    url: "https://www.newyorker.com/culture/semicolon",
+  }),
+  ready({
+    durationSeconds: 1500,
+    id: "g",
+    title: "Programming as theory building",
+    url: "https://pages.cs.wisc.edu/~remzi/Naur.pdf",
+  }),
+  ready({
+    durationSeconds: 640,
+    id: "h",
+    title: "Before you memo()",
+    url: "https://overreacted.io/before-you-memo/",
+  }),
+  ready({ id: "i", title: "A field guide to clouds" }),
+  failed({ id: "f" }),
+];
+
+const POSITIONS = new Map([
+  ["e", { playedAt: 2, position: 1200 }],
+  ["g", { playedAt: 3, position: 400 }],
+  ["h", { playedAt: 1, position: 640 }],
+]);
+
+/** How far a story's listener got: see `POSITIONS`; others not started. */
+export const listeningOf = (
+  narration: Extract<Narration, { state: "ready" }>
+): Listening => {
+  const { playedAt, position } = POSITIONS.get(narration.id) ?? {
+    playedAt: 0,
+    position: 0,
+  };
+  const remaining = Math.max(0, narration.durationSeconds - position);
+  let status: Listening["status"] = "in-progress";
+  if (position === 0) {
+    status = "not-started";
+  } else if (remaining === 0) {
+    status = "finished";
+  }
+  return { playedAt, position, remaining, status };
+};

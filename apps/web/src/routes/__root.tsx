@@ -13,6 +13,8 @@ import { Schema } from "effect";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
+import { AppTabBar } from "../components/app-tab-bar";
+import { NarrationsProvider } from "../components/narrations-provider";
 import { stop } from "../lib/now-playing";
 import { checkSession, signIn, useSession } from "../lib/session";
 import { Player } from "../player/player";
@@ -73,6 +75,18 @@ const App = () => {
     void checkSession();
   }, []);
 
+  // iPhone Safari applies :active, the press feedback of every control, only
+  // while the page listens for touches.
+  useEffect(() => {
+    const noop = () => {
+      // The listener only has to exist.
+    };
+    document.addEventListener("touchstart", noop, { passive: true });
+    return () => {
+      document.removeEventListener("touchstart", noop);
+    };
+  }, []);
+
   // Signing out forgets what was playing; other states keep it.
   useEffect(() => {
     if (session.status === "signed-out") {
@@ -113,10 +127,11 @@ const App = () => {
     );
   }
   return (
-    <>
+    <NarrationsProvider>
       <Outlet />
+      <AppTabBar />
       <Player />
-    </>
+    </NarrationsProvider>
   );
 };
 
@@ -140,7 +155,8 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       {
-        content: "width=device-width, initial-scale=1, viewport-fit=cover",
+        content:
+          "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
         name: "viewport",
       },
       { title: "Dyslexia" },

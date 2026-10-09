@@ -20,7 +20,8 @@ This file records decisions and constraints that should hold as the code changes
 
 ## Interface
 
-- **It should feel like an iPhone app.** Follow iOS patterns people already know: large titles, inset grouped lists, sheets, and a player that stays in reach on every screen.
+- **It should feel like an iPhone app.** Follow iOS patterns people already know: large titles, inset grouped lists, sheets, a tab bar, and a player that stays in reach on every screen.
+- **Three tabs, as in Audible.** Home greets the listener and offers what to pick up next, Library holds every narration with filters by how far the listener got, and Profile holds the account.
 - **Comfortable to read.** Use a soft background and never pure black text, at least 1.5 line spacing for running text, sentence case rather than capitals, and the system font at the size the reader chose in iOS settings.
 - **One main action per screen.** The next step is the most visible control.
 - **Every state explains itself.** Loading, empty, in-progress, and failed states say what happened and what to do next.
@@ -32,7 +33,7 @@ This file records decisions and constraints that should hold as the code changes
 - **Recordings are immutable and versioned.** Saved positions are keyed by recording version, so replacing audio means a new key and URL.
 - **Audio delivery must support HTTP byte ranges.** Seeking depends on correct `206` responses. A missing audio path must return `404`, never the app shell.
 - **System controls are an enhancement.** Media Session improves lock-screen controls but cannot guarantee background playback. Feature-detect it.
-- **Progress is device-local.** Losing browser storage must not break playback.
+- **Progress is device-local.** Losing browser storage must not break playback. Whether a narration is not started, in progress, or finished comes from the position saved on this device, so another device shows its own.
 
 ## Security
 

@@ -5,15 +5,17 @@ import { NewNarrationSheet } from "@dyslexia/web/screens/new-narration-sheet";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 
-import { failed, library, ready } from "../fixtures";
+import { failed, library, listened, listeningOf, ready } from "../fixtures";
 import { withRouter } from "../with-router";
 
 const meta = {
   args: {
+    filter: "all",
+    listeningOf,
     narrations: library,
-    onAccount: fn(),
     onAdd: fn(),
     onDelete: fn(),
+    onFilter: fn(),
     onOpenFailed: fn(),
     onOptions: fn(),
     onPlay: fn(),
@@ -29,6 +31,12 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const EveryState: Story = {};
+/** Narrations at every point of listening. */
+export const Listened: Story = { args: { narrations: listened } };
+export const InProgress: Story = {
+  args: { filter: "in-progress", narrations: listened },
+};
+export const NothingFinished: Story = { args: { filter: "finished" } };
 export const Loading: Story = { args: { narrations: null } };
 export const Empty: Story = { args: { narrations: [] } };
 export const LoadFailed: Story = {

@@ -107,7 +107,20 @@ export const mockNarrations = async (
     const request = route.request();
     const path = new URL(request.url()).pathname.replace("/api/auth", "");
     state.authRequests.push({ body: request.postDataJSON(), path });
-    if (path === "/sign-in/social") {
+    if (path === "/get-session") {
+      await route.fulfill({
+        json: state.authenticated
+          ? {
+              session: { id: "session", userId: "reader" },
+              user: {
+                email: "reader@example.com",
+                id: "reader",
+                name: "Ada Reader",
+              },
+            }
+          : null,
+      });
+    } else if (path === "/sign-in/social") {
       state.authenticated = true;
       // SAFETY: the sign-in button always sends callbackURL; the sign-in
       // test asserts the full request body.
@@ -203,7 +216,7 @@ export const readAudio = (page: Page) =>
 export const PLAYBACK_KEY = "dyslexia:playback:job-one:job-one";
 
 /**
- * Opens the library with one ready narration and opens its player. `audio`
+ * Opens the Library tab with one ready narration and opens its player. `audio`
  * replaces the recording's server, as for slow or missing audio.
  */
 export const openPlayer = async (
@@ -216,7 +229,7 @@ export const openPlayer = async (
   if (audio) {
     await page.route("**/api/narrations/job-one/audio", audio);
   }
-  await page.goto("/");
+  await page.goto("/library");
   await page.getByRole("button", { name: "Play A new article" }).click();
   return state;
 };

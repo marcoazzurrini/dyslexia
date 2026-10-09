@@ -73,3 +73,13 @@ Thumbs.db
 
 # Google OAuth client downloads
 client_secret_*.json
+
+# Impeccable design skill: screenshots, previews, and session state stay local.
+# Its product record, design record, and surface briefs are committed.
+**/.impeccable/review/
+**/.impeccable/mocks/
+**/.impeccable/questions/
+**/.impeccable/build/
+**/.impeccable/live/
+**/.impeccable/config.local.json
+**/.impeccable/hook.cache.json

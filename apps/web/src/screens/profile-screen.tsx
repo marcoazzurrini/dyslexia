@@ -1,6 +1,6 @@
 import {
   ActivityIndicator,
-  Button,
+  ListButton,
   ListRow,
   ListSection,
   Notice,
@@ -32,7 +32,7 @@ const styles = stylex.create({
     textAlign: "center",
   },
   loading: { display: "flex", justifyContent: "center", padding: space.xl },
-  signOut: { display: "flex", flexDirection: "column", gap: space.md },
+  signOut: { color: color.danger },
 });
 
 export interface Account {
@@ -87,16 +87,14 @@ export const ProfileScreen = ({
       <ListRow title="Signed in with" detail="Google" />
       <ListRow title="Stays signed in for" detail="A year of use" />
     </ListSection>
-    <div {...stylex.props(styles.signOut)}>
-      <Button
-        variant="destructive"
-        size="large"
-        block
-        loading={busy}
+    <ListSection>
+      <ListButton
+        title={<span {...stylex.props(styles.signOut)}>Sign out</span>}
+        accessory={busy ? <ActivityIndicator /> : null}
+        disabled={busy}
+        aria-busy={busy}
         onClick={onSignOut}
-      >
-        Sign out
-      </Button>
-    </div>
+      />
+    </ListSection>
   </Screen>
 );

@@ -73,6 +73,9 @@ const styles = stylex.create({
     outlineStyle: "none",
     paddingInline: `max(${space.gutter}, env(safe-area-inset-left))`,
   },
+  // Plain content, such as narrations, sits on the canvas, not the grouped
+  // gray.
+  plain: { backgroundColor: color.canvas },
   screen: {
     backgroundColor: color.background,
     color: color.label,
@@ -98,6 +101,11 @@ export interface ScreenProps {
   readonly children: ReactNode;
   /** Space kept clear at the bottom, such as for a floating player. */
   readonly bottomInset?: string;
+  /**
+   * `plain` sets content on the canvas, for media such as narrations;
+   * `grouped` sets it on gray, for settings in grouped lists.
+   */
+  readonly background?: "grouped" | "plain";
 }
 
 /**
@@ -105,6 +113,7 @@ export interface ScreenProps {
  * content scrolls under it, then becomes a translucent material.
  */
 export const Screen = ({
+  background = "grouped",
   bottomInset = "0px",
   children,
   leading,
@@ -146,7 +155,9 @@ export const Screen = ({
 
   const large = titleDisplay === "large";
   return (
-    <div {...stylex.props(styles.screen)}>
+    <div
+      {...stylex.props(styles.screen, background === "plain" && styles.plain)}
+    >
       <header
         ref={bar}
         {...stylex.props(styles.bar, scrolled && styles.barScrolled)}

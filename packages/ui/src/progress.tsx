@@ -48,6 +48,13 @@ const styles = stylex.create({
     width: "1.25em",
   },
   large: { height: "2.25rem", width: "2.25rem" },
+  // White on a colored surface, such as a card in a cover's color.
+  onColor: {
+    "::-moz-progress-bar": { backgroundColor: color.onAccent },
+    "::-webkit-progress-bar": { backgroundColor: "rgb(255 255 255 / 0.3)" },
+    "::-webkit-progress-value": { backgroundColor: color.onAccent },
+    backgroundColor: "rgb(255 255 255 / 0.3)",
+  },
   svg: {
     animationDuration: { default: "0.9s", [media.reducedMotion]: "1.6s" },
     animationIterationCount: "infinite",
@@ -104,6 +111,8 @@ export interface ProgressBarProps {
   readonly label: string;
   /** `thin` sits inside a list row, under its text. */
   readonly size?: "regular" | "thin";
+  /** `onColor` is white, for a colored surface. */
+  readonly tone?: "accent" | "onColor";
 }
 
 /** A determinate progress bar. */
@@ -111,12 +120,17 @@ export const ProgressBar = ({
   label,
   max,
   size = "regular",
+  tone = "accent",
   value,
 }: ProgressBarProps) => (
   <progress
     aria-label={label}
     max={max}
     value={Math.min(value, max)}
-    {...stylex.props(styles.bar, size === "thin" && styles.thin)}
+    {...stylex.props(
+      styles.bar,
+      size === "thin" && styles.thin,
+      tone === "onColor" && styles.onColor
+    )}
   />
 );

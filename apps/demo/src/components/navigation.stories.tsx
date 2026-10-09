@@ -10,7 +10,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 
 const meta = {
-  args: { label: "Main", selected: 0, tabs: [] },
+  args: { label: "Main", tabs: [] },
   component: TabBar,
   title: "Components/Navigation",
 } satisfies Meta<typeof TabBar>;
@@ -29,7 +29,6 @@ const TabsDemo = () => {
   return (
     <TabBar
       label="Main"
-      selected={selected}
       tabs={TABS.map((tab, index) => (
         <TabBarLink
           key={tab.label}

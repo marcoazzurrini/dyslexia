@@ -23,10 +23,10 @@ import {
 import * as stylex from "@stylexjs/stylex";
 import { SeekButton, Time, TimeSlider } from "@videojs/react";
 
+import { Cover, hueOf } from "../components/cover";
 import { PLAYBACK_RATES } from "../lib/playback";
 import type { Recording } from "../lib/recording";
 import { siteOf } from "../lib/recording";
-import { Artwork } from "./artwork";
 import type { PlaybackView } from "./player";
 
 const styles = stylex.create({
@@ -43,19 +43,26 @@ const styles = stylex.create({
   controls: {
     alignItems: "center",
     display: "flex",
-    gap: space.xxxl,
+    gap: space.huge,
     justifyContent: "center",
   },
+  // Room for the cover to grow back when playback starts.
+  coverStage: { paddingBlock: space.sm },
   fill: {
     backgroundColor: color.label,
     width: "var(--media-slider-fill)",
   },
   heading: {
-    alignItems: "center",
+    alignItems: "flex-start",
     display: "flex",
     flexDirection: "column",
-    gap: space.xs,
-    textAlign: "center",
+    gap: space.xxs,
+  },
+  play: { fontSize: "2.75rem", height: "5rem", width: "5rem" },
+  remaining: {
+    color: color.label,
+    fontSize: font.body,
+    fontWeight: 600,
   },
   seek: {
     alignItems: "center",
@@ -64,7 +71,7 @@ const styles = stylex.create({
     borderStyle: "none",
     color: color.label,
     display: "flex",
-    fontSize: "1.9rem",
+    fontSize: "2rem",
     height: "3.5rem",
     justifyContent: "center",
     opacity: { ":active": 0.5, ":disabled": 0.35, default: 1 },
@@ -88,8 +95,9 @@ const styles = stylex.create({
     alignItems: "center",
     color: color.accentText,
     display: "inline-flex",
-    fontSize: font.subheadline,
+    fontSize: font.body,
     gap: space.xs,
+    marginBlock: `calc((${size.touch} - 1.5em) / -2)`,
     minHeight: size.touch,
     textDecoration: "none",
   },
@@ -102,7 +110,6 @@ const styles = stylex.create({
     color: color.secondaryLabel,
     fontSize: font.footnote,
     fontWeight: 600,
-    paddingInline: space.lg,
   },
   status: {
     color: color.secondaryLabel,
@@ -114,9 +121,18 @@ const styles = stylex.create({
     "::after": {
       backgroundColor: color.label,
       borderRadius: radius.full,
+      boxShadow: "0 1px 4px rgb(0 0 0 / 0.2)",
       content: "''",
-      height: "14px",
-      width: "14px",
+      height: "12px",
+      // Hidden at rest, as in Podcasts; it grows under the finger.
+      transform: {
+        default: "scale(0)",
+        [stylex.when.ancestor("[data-dragging]")]: "scale(1.4)",
+        [stylex.when.ancestor(":focus-visible")]: "scale(1)",
+      },
+      transitionDuration: motion.fast,
+      transitionProperty: "transform",
+      width: "12px",
     },
     alignItems: "center",
     display: "flex",
@@ -129,17 +145,20 @@ const styles = stylex.create({
     width: size.touch,
   },
   timeline: { display: "flex", flexDirection: "column" },
+  // Tucked under the track, inside the slider's touch area.
   times: {
+    alignItems: "baseline",
     color: color.secondaryLabel,
     display: "flex",
     fontSize: font.footnote,
     fontVariantNumeric: "tabular-nums",
     justifyContent: "space-between",
+    marginTop: "-0.75rem",
   },
   track: {
-    backgroundColor: color.fill,
+    backgroundColor: color.fillPressed,
     borderRadius: radius.full,
-    height: "6px",
+    height: "5px",
     insetInline: 0,
     overflow: "hidden",
     position: "absolute",
@@ -170,8 +189,20 @@ export const NowPlaying = ({
   recording: Recording;
   view: PlaybackView;
 }) => (
-  <Sheet open={open} onClose={onClose} title="Now playing">
-    <Artwork size="large" />
+  <Sheet
+    open={open}
+    onClose={onClose}
+    title="Now playing"
+    hideTitle
+    tint={hueOf(siteOf(recording.sourceUrl))}
+  >
+    <div {...stylex.props(styles.coverStage)}>
+      <Cover
+        url={recording.sourceUrl}
+        size="large"
+        paused={view.status !== "playing"}
+      />
+    </div>
     <div {...stylex.props(styles.heading)}>
       <Text as="h3" variant="title2">
         {recording.title}
@@ -194,7 +225,7 @@ export const NowPlaying = ({
       <TimeSlider.Root
         label="seek"
         disabled={!view.canSeek}
-        {...stylex.props(styles.slider)}
+        {...stylex.props(styles.slider, stylex.defaultMarker())}
       >
         <TimeSlider.Track {...stylex.props(styles.track)}>
           <TimeSlider.Buffer {...stylex.props(styles.bar, styles.buffer)} />
@@ -204,7 +235,10 @@ export const NowPlaying = ({
       </TimeSlider.Root>
       <div {...stylex.props(styles.times)}>
         <Time.Value type="current" />
-        <Time.Value type="remaining" negativeSign="−" />
+        {/* Read at a glance, so larger than the time played. */}
+        <span {...stylex.props(styles.remaining)}>
+          <Time.Value type="remaining" negativeSign="−" />
+        </span>
       </div>
     </div>
 
@@ -220,8 +254,9 @@ export const NowPlaying = ({
       <IconButton
         label={view.status === "playing" ? "pause" : "play"}
         icon={view.status === "playing" ? <PauseIcon /> : <PlayIcon />}
-        variant="filled"
+        variant="plain"
         size="large"
+        style={styles.play}
         onClick={view.handleToggle}
       />
       <SeekButton

@@ -16,7 +16,7 @@ import {
 const styles = stylex.create({
   base: {
     alignItems: "center",
-    borderRadius: radius.full,
+    borderRadius: radius.md,
     borderStyle: "none",
     display: "inline-flex",
     fontFamily: font.family,

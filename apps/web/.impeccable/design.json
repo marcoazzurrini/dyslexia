@@ -1,0 +1,765 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-09T18:27:02+00:00",
+  "title": "Design System: Reader",
+  "extensions": {
+    "colorMeta": {
+      "indigo-tint": {
+        "role": "primary",
+        "displayName": "Indigo Tint",
+        "canonical": "#5856d6",
+        "dark": "#5e5ce6",
+        "purpose": "Filled controls, selected tab, list progress, avatar; white on it passes AA.",
+        "tonalRamp": [
+          "#10004c",
+          "#1e016f",
+          "#342e94",
+          "#5051b9",
+          "#6f74df",
+          "#9098ff",
+          "#b2bdff",
+          "#d6e3ff"
+        ]
+      },
+      "indigo-pressed": {
+        "role": "primary",
+        "displayName": "Indigo Pressed",
+        "canonical": "#4644b8",
+        "dark": "#4c4ad0",
+        "purpose": "Pressed state of filled controls.",
+        "tonalRamp": [
+          "#0f004c",
+          "#1d026f",
+          "#332e94",
+          "#4f52b9",
+          "#6d75e0",
+          "#8e98ff",
+          "#b1bdff",
+          "#d5e3ff"
+        ]
+      },
+      "indigo-text": {
+        "role": "primary",
+        "displayName": "Indigo Text",
+        "canonical": "#4f4dcc",
+        "dark": "#8e8cff",
+        "purpose": "Tinted text and glyphs on any background.",
+        "tonalRamp": [
+          "#0f004c",
+          "#1d026f",
+          "#332e94",
+          "#4f52b9",
+          "#6d75e0",
+          "#8e98ff",
+          "#b1bdff",
+          "#d5e3ff"
+        ]
+      },
+      "indigo-wash": {
+        "role": "primary",
+        "displayName": "Indigo Wash",
+        "canonical": "rgb(88 86 214 / 0.12)",
+        "dark": "rgb(125 122 255 / 0.18)",
+        "purpose": "Tinted button and play capsule background.",
+        "tonalRamp": [
+          "#10004c",
+          "#1e016f",
+          "#342e94",
+          "#5051b9",
+          "#6f74df",
+          "#9098ff",
+          "#b2bdff",
+          "#d6e3ff"
+        ]
+      },
+      "grouped-gray": {
+        "role": "neutral",
+        "displayName": "Grouped Gray",
+        "canonical": "#f2f2f7",
+        "dark": "#0d0d0f",
+        "purpose": "Behind grouped lists (Profile, settings); also the sheet ground in light mode (elevated).",
+        "tonalRamp": [
+          "#0b0b0e",
+          "#252528",
+          "#414145",
+          "#616165",
+          "#828286",
+          "#a4a4a9",
+          "#c8c8cd",
+          "#eeeef3"
+        ]
+      },
+      "media-canvas": {
+        "role": "neutral",
+        "displayName": "Media Canvas",
+        "canonical": "#f7f7f9",
+        "dark": "#0d0d0f",
+        "purpose": "Behind plain media screens (Home, Library); opaque fill of floating chrome (glass, dark #1f1f22).",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#252526",
+          "#424243",
+          "#616163",
+          "#828284",
+          "#a5a5a7",
+          "#c9c9cb",
+          "#eeeef0"
+        ]
+      },
+      "cell-white": {
+        "role": "neutral",
+        "displayName": "Cell White",
+        "canonical": "#ffffff",
+        "dark": "#1c1c1e",
+        "purpose": "Cells and cards on grouped gray.",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "cell-pressed": {
+        "role": "neutral",
+        "displayName": "Cell Pressed",
+        "canonical": "#e5e5ea",
+        "dark": "#2c2c2e",
+        "purpose": "Pressed or hovered row.",
+        "tonalRamp": [
+          "#0b0b0e",
+          "#252528",
+          "#414145",
+          "#616165",
+          "#828286",
+          "#a4a4a9",
+          "#c8c8cd",
+          "#eeeef3"
+        ]
+      },
+      "label-graphite": {
+        "role": "neutral",
+        "displayName": "Label Graphite",
+        "canonical": "#1c1c1e",
+        "dark": "#ececf1",
+        "purpose": "Primary text; never pure black or white.",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#252527",
+          "#424244",
+          "#616163",
+          "#828284",
+          "#a5a5a7",
+          "#c9c9cb",
+          "#eeeef1"
+        ]
+      },
+      "label-secondary": {
+        "role": "neutral",
+        "displayName": "Secondary Label",
+        "canonical": "rgb(60 60 67 / 0.78)",
+        "dark": "rgb(235 235 245 / 0.68)",
+        "purpose": "Site names, times, headers; rgb(28 28 30 / 0.92) under increased contrast.",
+        "tonalRamp": [
+          "#0b0a10",
+          "#24242b",
+          "#414148",
+          "#606068",
+          "#818189",
+          "#a4a4ac",
+          "#c8c8d1",
+          "#ededf6"
+        ]
+      },
+      "label-tertiary": {
+        "role": "neutral",
+        "displayName": "Tertiary Label",
+        "canonical": "rgb(60 60 67 / 0.5)",
+        "dark": "rgb(235 235 245 / 0.4)",
+        "purpose": "Chevrons, grabber.",
+        "tonalRamp": [
+          "#0b0a10",
+          "#24242b",
+          "#414148",
+          "#606068",
+          "#818189",
+          "#a4a4ac",
+          "#c8c8d1",
+          "#ededf6"
+        ]
+      },
+      "separator": {
+        "role": "neutral",
+        "displayName": "Separator",
+        "canonical": "rgb(60 60 67 / 0.2)",
+        "dark": "rgb(84 84 88 / 0.6)",
+        "purpose": "Hairlines between rows and under scrolled bars.",
+        "tonalRamp": [
+          "#0b0a10",
+          "#24242b",
+          "#414148",
+          "#606068",
+          "#818189",
+          "#a4a4ac",
+          "#c8c8d1",
+          "#ededf6"
+        ]
+      },
+      "control-fill": {
+        "role": "neutral",
+        "displayName": "Control Fill",
+        "canonical": "rgb(118 118 128 / 0.12)",
+        "dark": "rgb(118 118 128 / 0.24)",
+        "purpose": "Gray buttons, segmented track, progress track.",
+        "tonalRamp": [
+          "#0a0a11",
+          "#24242c",
+          "#41414a",
+          "#60606a",
+          "#81818b",
+          "#a4a4ae",
+          "#c8c8d3",
+          "#ededf9"
+        ]
+      },
+      "control-fill-pressed": {
+        "role": "neutral",
+        "displayName": "Control Fill Pressed",
+        "canonical": "rgb(118 118 128 / 0.24)",
+        "dark": "rgb(118 118 128 / 0.36)",
+        "purpose": "Pressed gray controls; scrubber track.",
+        "tonalRamp": [
+          "#0a0a11",
+          "#24242c",
+          "#41414a",
+          "#60606a",
+          "#81818b",
+          "#a4a4ae",
+          "#c8c8d3",
+          "#ededf9"
+        ]
+      },
+      "thumb-white": {
+        "role": "neutral",
+        "displayName": "Thumb",
+        "canonical": "#ffffff",
+        "dark": "#636366",
+        "purpose": "Segmented control thumb.",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "scrim": {
+        "role": "neutral",
+        "displayName": "Scrim",
+        "canonical": "rgb(0 0 0 / 0.3)",
+        "dark": "rgb(0 0 0 / 0.6)",
+        "purpose": "Behind sheets.",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "danger-red": {
+        "role": "tertiary",
+        "displayName": "Danger Red",
+        "canonical": "#d70015",
+        "dark": "#ff6961",
+        "purpose": "Destructive text; failed narration glyph. Swiped Delete uses destructive #d70015 / #d83a34 behind white.",
+        "tonalRamp": [
+          "#360000",
+          "#5c0000",
+          "#830004",
+          "#a92f29",
+          "#d1544a",
+          "#f9786c",
+          "#ff9d8f",
+          "#ffc2b3"
+        ]
+      },
+      "danger-wash": {
+        "role": "tertiary",
+        "displayName": "Danger Wash",
+        "canonical": "rgb(215 0 21 / 0.1)",
+        "dark": "rgb(255 105 97 / 0.16)",
+        "purpose": "Destructive button and failed cover background.",
+        "tonalRamp": [
+          "#360000",
+          "#5c0000",
+          "#830004",
+          "#a92f29",
+          "#d1544a",
+          "#f9786c",
+          "#ff9d8f",
+          "#ffc2b3"
+        ]
+      },
+      "success-green": {
+        "role": "tertiary",
+        "displayName": "Success Green",
+        "canonical": "#248a3d",
+        "dark": "#30d158",
+        "purpose": "Success notices.",
+        "tonalRamp": [
+          "#001600",
+          "#003500",
+          "#005400",
+          "#007629",
+          "#37994b",
+          "#5ebd6e",
+          "#83e391",
+          "#a8ffb5"
+        ]
+      },
+      "warning-amber": {
+        "role": "tertiary",
+        "displayName": "Warning Amber",
+        "canonical": "#b25000",
+        "dark": "#ffb340",
+        "purpose": "Warning notices; fill rgb(178 80 0 / 0.12).",
+        "tonalRamp": [
+          "#310000",
+          "#560000",
+          "#7a1a00",
+          "#a03f00",
+          "#c66222",
+          "#ed864a",
+          "#ffaa6f",
+          "#ffd093"
+        ]
+      },
+      "cover-blue": {
+        "role": "secondary",
+        "displayName": "Cover Blue",
+        "canonical": "#0062c4",
+        "dark": "#0062c4",
+        "purpose": "Generated cover fill, chosen by a hash of the site; same in both modes.",
+        "tonalRamp": [
+          "#00004c",
+          "#00176f",
+          "#003c94",
+          "#0c5fb9",
+          "#3782df",
+          "#5ca6ff",
+          "#80ccff",
+          "#a4f2ff"
+        ]
+      },
+      "cover-teal": {
+        "role": "secondary",
+        "displayName": "Cover Teal",
+        "canonical": "#00727a",
+        "dark": "#00727a",
+        "purpose": "Generated cover fill, chosen by a hash of the site; same in both modes.",
+        "tonalRamp": [
+          "#00121b",
+          "#002f37",
+          "#004e56",
+          "#006f77",
+          "#359199",
+          "#5cb5bd",
+          "#82dae2",
+          "#a7ffff"
+        ]
+      },
+      "cover-green": {
+        "role": "secondary",
+        "displayName": "Cover Green",
+        "canonical": "#2b7a35",
+        "dark": "#2b7a35",
+        "purpose": "Generated cover fill, chosen by a hash of the site; same in both modes.",
+        "tonalRamp": [
+          "#001500",
+          "#003300",
+          "#00520a",
+          "#23742f",
+          "#499650",
+          "#6dba72",
+          "#91e095",
+          "#b6ffb9"
+        ]
+      },
+      "cover-rust": {
+        "role": "secondary",
+        "displayName": "Cover Rust",
+        "canonical": "#b8440f",
+        "dark": "#b8440f",
+        "purpose": "Generated cover fill, chosen by a hash of the site; same in both modes.",
+        "tonalRamp": [
+          "#360000",
+          "#5b0000",
+          "#810500",
+          "#a73500",
+          "#cf592b",
+          "#f77d51",
+          "#ffa275",
+          "#ffc899"
+        ]
+      },
+      "cover-raspberry": {
+        "role": "secondary",
+        "displayName": "Cover Raspberry",
+        "canonical": "#b5245f",
+        "dark": "#b5245f",
+        "purpose": "Generated cover fill, chosen by a hash of the site; same in both modes.",
+        "tonalRamp": [
+          "#330006",
+          "#58001f",
+          "#7e003b",
+          "#a52c5a",
+          "#cc517a",
+          "#f4759d",
+          "#ff9ac0",
+          "#ffbfe6"
+        ]
+      },
+      "cover-violet": {
+        "role": "secondary",
+        "displayName": "Cover Violet",
+        "canonical": "#8a2aa6",
+        "dark": "#8a2aa6",
+        "purpose": "Generated cover fill, chosen by a hash of the site; same in both modes.",
+        "tonalRamp": [
+          "#220035",
+          "#420056",
+          "#621778",
+          "#853c9b",
+          "#a85fc0",
+          "#cd82e6",
+          "#f3a6ff",
+          "#ffcbff"
+        ]
+      },
+      "cover-walnut": {
+        "role": "secondary",
+        "displayName": "Cover Walnut",
+        "canonical": "#86532a",
+        "dark": "#86532a",
+        "purpose": "Generated cover fill, chosen by a hash of the site; same in both modes.",
+        "tonalRamp": [
+          "#230000",
+          "#431500",
+          "#643404",
+          "#86532a",
+          "#aa754c",
+          "#cf976d",
+          "#f5bb90",
+          "#ffe0b5"
+        ]
+      },
+      "cover-slate": {
+        "role": "secondary",
+        "displayName": "Cover Slate",
+        "canonical": "#4a5868",
+        "dark": "#4a5868",
+        "purpose": "Generated cover fill, chosen by a hash of the site; same in both modes.",
+        "tonalRamp": [
+          "#030c18",
+          "#1a2634",
+          "#364353",
+          "#546373",
+          "#758495",
+          "#97a7b9",
+          "#bbcbde",
+          "#e0f0ff"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "large-title": {
+        "displayName": "Large Title",
+        "purpose": "Screen titles."
+      },
+      "title1": {
+        "displayName": "Title 1",
+        "purpose": "Rare; Profile avatar initial."
+      },
+      "title2": {
+        "displayName": "Title 2",
+        "purpose": "Narration title in the full player."
+      },
+      "title3": {
+        "displayName": "Title 3",
+        "purpose": "Prominent section headings and resume card title, at 700."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Sheet and compact bar titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text and row titles; 1.5 line spacing."
+      },
+      "callout": {
+        "displayName": "Callout",
+        "purpose": "Medium buttons."
+      },
+      "subheadline": {
+        "displayName": "Subheadline",
+        "purpose": "Row subtitles, shelf titles, segmented labels, mini player title."
+      },
+      "footnote": {
+        "displayName": "Footnote",
+        "purpose": "Times, list headers and footers, capsules."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Smallest metadata."
+      }
+    },
+    "shadows": [
+      {
+        "name": "cover-large",
+        "value": "0 14px 36px rgb(0 0 0 / 0.24), 0 2px 6px rgb(0 0 0 / 0.12)",
+        "purpose": "Player cover while playing."
+      },
+      {
+        "name": "cover-large-paused",
+        "value": "0 6px 18px rgb(0 0 0 / 0.16), 0 1px 3px rgb(0 0 0 / 0.1)",
+        "purpose": "Player cover while paused."
+      },
+      {
+        "name": "cover-shelf",
+        "value": "0 6px 16px rgb(0 0 0 / 0.14), 0 1px 3px rgb(0 0 0 / 0.08)",
+        "purpose": "Shelf covers on Home."
+      },
+      {
+        "name": "cover-card",
+        "value": "0 4px 12px rgb(0 0 0 / 0.24)",
+        "purpose": "Cover on the resume card."
+      },
+      {
+        "name": "tab-bar",
+        "value": "inset 0 0.5px 0 rgb(255 255 255 / 0.8), 0 10px 30px rgb(0 0 0 / 0.14), 0 1px 3px rgb(0 0 0 / 0.08)",
+        "purpose": "Floating tab bar; edge highlight is rgb(255 255 255 / 0.1) in dark."
+      },
+      {
+        "name": "mini-player",
+        "value": "inset 0 0.5px 0 rgb(255 255 255 / 0.8), 0 8px 30px rgb(0 0 0 / 0.16)",
+        "purpose": "Floating mini player."
+      },
+      {
+        "name": "floating-button",
+        "value": "inset 0 0.5px 0 rgb(255 255 255 / 0.8), 0 2px 10px rgb(0 0 0 / 0.08)",
+        "purpose": "Glass icon buttons over content."
+      },
+      {
+        "name": "sheet",
+        "value": "0 -8px 40px rgb(0 0 0 / 0.18)",
+        "purpose": "Sheet panel."
+      },
+      {
+        "name": "segmented-thumb",
+        "value": "0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.06)",
+        "purpose": "Segmented control thumb."
+      },
+      {
+        "name": "nav-bar-scrolled",
+        "value": "0 0.5px 0 separator",
+        "purpose": "Hairline under the nav bar once scrolled."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "Press feedback and state transitions."
+      },
+      {
+        "name": "fast",
+        "value": "120ms",
+        "purpose": "Press feedback, color changes."
+      },
+      {
+        "name": "regular",
+        "value": "240ms",
+        "purpose": "Nav bar material and title hand-off."
+      },
+      {
+        "name": "slow",
+        "value": "500ms",
+        "purpose": "Cover breathing, segmented thumb slide."
+      },
+      {
+        "name": "spring",
+        "value": "linear(0, 0.227, 0.536, 0.75, 0.873, 0.938, 0.971, 0.986, 0.994, 0.997, 1)",
+        "purpose": "Critically damped spring, 0.35s response, no overshoot."
+      },
+      {
+        "name": "press-scale",
+        "value": "scale(0.97) buttons, 0.92 icon buttons, 0.94 tabs, 0.98 cards and mini player",
+        "purpose": "Feedback on press; none under reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "measure",
+        "value": "40rem"
+      },
+      {
+        "name": "dock",
+        "value": "28rem"
+      }
+    ],
+    "sizes": [
+      {
+        "name": "touch",
+        "value": "44px"
+      },
+      {
+        "name": "control",
+        "value": "50px"
+      },
+      {
+        "name": "navBar",
+        "value": "52px"
+      },
+      {
+        "name": "tabBar",
+        "value": "62px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Filled Button",
+      "kind": "button",
+      "refersTo": "button-filled",
+      "description": "The one primary action on a screen.",
+      "html": "<button class=\"ds-btn-filled\">Add narration</button>",
+      "css": ".ds-btn-filled{font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;font-weight:600;font-size:0.94rem;min-height:44px;padding:0.5rem 1rem;border:none;border-radius:0.625rem;display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1),background-color 120ms,opacity 120ms;background:#5856d6;color:#fff} .ds-btn-filled:active{background:#4644b8;transform:scale(0.97)} .ds-btn-filled:focus-visible{outline:2px solid #5856d6;outline-offset:2px}"
+    },
+    {
+      "name": "Tinted Button",
+      "kind": "button",
+      "refersTo": "button-tinted",
+      "description": "Secondary actions, such as Retry.",
+      "html": "<button class=\"ds-btn-tinted\">Try again</button>",
+      "css": ".ds-btn-tinted{font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;font-weight:600;font-size:0.94rem;min-height:44px;padding:0.5rem 1rem;border:none;border-radius:0.625rem;display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1),background-color 120ms,opacity 120ms;background:rgb(88 86 214 / 0.12);color:#4f4dcc} .ds-btn-tinted:active{opacity:0.7;transform:scale(0.97)} .ds-btn-tinted:focus-visible{outline:2px solid #5856d6;outline-offset:2px}"
+    },
+    {
+      "name": "Destructive Button",
+      "kind": "button",
+      "refersTo": "button-destructive",
+      "description": "Remove or sign out.",
+      "html": "<button class=\"ds-btn-destructive\">Remove</button>",
+      "css": ".ds-btn-destructive{font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;font-weight:600;font-size:0.94rem;min-height:44px;padding:0.5rem 1rem;border:none;border-radius:0.625rem;display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;transition:transform 120ms cubic-bezier(0.2,0.8,0.2,1),background-color 120ms,opacity 120ms;background:rgb(215 0 21 / 0.1);color:#d70015} .ds-btn-destructive:active{opacity:0.7;transform:scale(0.97)} .ds-btn-destructive:focus-visible{outline:2px solid #5856d6;outline-offset:2px}"
+    },
+    {
+      "name": "Narration Row",
+      "kind": "card",
+      "refersTo": "list-row",
+      "description": "A plain-list row: row cover, title, site, play capsule.",
+      "html": "<button class=\"ds-row\"><span class=\"ds-row-cover\">T</span><span class=\"ds-row-text\"><span class=\"ds-row-title\">The quiet power of walking every day</span><span class=\"ds-row-site\">theatlantic.com</span><span class=\"ds-capsule\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z\"/></svg>24 min</span></span></button>",
+      "css": ".ds-row{display:flex;align-items:center;gap:0.75rem;width:100%;min-height:44px;padding:0.75rem 1rem;border:none;background:#f7f7f9;color:#1c1c1e;font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;font-size:1rem;text-align:start} .ds-row:hover,.ds-row:active{background:#e5e5ea} .ds-row:focus-visible{outline:2px solid #5856d6;outline-offset:-3px} .ds-row-cover{flex-shrink:0;width:3.5rem;height:3.5rem;border-radius:0.625rem;background:#8a2aa6;color:#fff;font-weight:700;font-size:1.5rem;display:flex;align-items:center;justify-content:center} .ds-row-text{display:flex;flex-direction:column;align-items:flex-start;gap:0.125rem} .ds-row-title{font-weight:600;line-height:1.35} .ds-row-site{color:rgb(60 60 67 / 0.78);font-size:0.88rem} .ds-capsule{display:inline-flex;align-items:center;gap:0.25rem;padding:0.125rem 0.5rem;border-radius:999px;background:rgb(88 86 214 / 0.12);color:#4f4dcc;font-size:0.8rem;font-weight:600}"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "chip",
+      "refersTo": "segmented-control",
+      "description": "Library filters and playback speed; the white thumb slides on a spring.",
+      "html": "<div class=\"ds-seg\"><span class=\"ds-seg-item ds-seg-on\">All</span><span class=\"ds-seg-item\">Not started</span><span class=\"ds-seg-item\">In progress</span><span class=\"ds-seg-item\">Finished</span></div>",
+      "css": ".ds-seg{display:flex;padding:3px;border-radius:0.5625rem;background:rgb(118 118 128 / 0.12);font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif} .ds-seg-item{flex:1;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:0.4375rem;font-size:0.88rem;font-weight:500;color:#1c1c1e;padding:0 0.5rem;white-space:nowrap;cursor:pointer} .ds-seg-item:hover{opacity:0.8} .ds-seg-on{background:#fff;font-weight:600;box-shadow:0 3px 8px rgb(0 0 0 / 0.12),0 1px 1px rgb(0 0 0 / 0.06)}"
+    },
+    {
+      "name": "Floating Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-bar",
+      "description": "Opaque floating capsule; the selected tab takes the tint, no shape behind it.",
+      "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab ds-tab-on\" href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z\"/></svg>Home</a><a class=\"ds-tab\" href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M5 4v16M10 4v16M15 4l4 16\"/></svg>Library</a><a class=\"ds-tab\" href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21a8 8 0 0 1 16 0\"/></svg>Profile</a></nav>",
+      "css": ".ds-tabs{display:flex;height:62px;max-width:28rem;border-radius:999px;background:#f7f7f9;box-shadow:inset 0 0.5px 0 rgb(255 255 255 / 0.8),0 10px 30px rgb(0 0 0 / 0.14),0 1px 3px rgb(0 0 0 / 0.08);font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif} .ds-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:11px;font-weight:600;line-height:1.2;color:rgb(60 60 67 / 0.78);text-decoration:none;transition:color 120ms,transform 120ms} .ds-tab:active{transform:scale(0.94)} .ds-tab:focus-visible{outline:2px solid #5856d6;outline-offset:-2px} .ds-tab-on{color:#4f4dcc}"
+    },
+    {
+      "name": "Mini Player",
+      "kind": "custom",
+      "refersTo": "mini-player",
+      "description": "Floats above the tab bar: mini cover, title, time left, play and skip forward.",
+      "html": "<div class=\"ds-mini\"><span class=\"ds-mini-cover\">S</span><span class=\"ds-mini-text\"><span class=\"ds-mini-title\">Programming sucks</span><span class=\"ds-mini-time\">8:12 left</span></span><button class=\"ds-mini-btn\" aria-label=\"Play\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z\"/></svg></button></div>",
+      "css": ".ds-mini{display:flex;align-items:center;gap:0.75rem;max-width:28rem;min-height:3.75rem;padding:0.5rem;border-radius:0.875rem;background:#f7f7f9;color:#1c1c1e;box-shadow:inset 0 0.5px 0 rgb(255 255 255 / 0.8),0 8px 30px rgb(0 0 0 / 0.16);font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif} .ds-mini-cover{width:2.75rem;height:2.75rem;border-radius:0.5rem;background:#0062c4;color:#fff;font-weight:700;font-size:1.25rem;display:flex;align-items:center;justify-content:center} .ds-mini-text{flex:1;display:flex;flex-direction:column} .ds-mini-title{font-size:0.88rem;font-weight:600;line-height:1.3} .ds-mini-time{font-size:0.8rem;color:rgb(60 60 67 / 0.78);font-variant-numeric:tabular-nums} .ds-mini-btn{width:44px;height:44px;border:none;border-radius:999px;background:transparent;color:#1c1c1e;display:flex;align-items:center;justify-content:center} .ds-mini-btn:active{opacity:0.5} .ds-mini-btn:focus-visible{outline:2px solid #5856d6}"
+    },
+    {
+      "name": "Large Cover",
+      "kind": "custom",
+      "refersTo": "cover-large",
+      "description": "The player cover: site hue lit from the top, initial and site name; steps back to 0.84 while paused.",
+      "html": "<div class=\"ds-cover-large\"><span>S</span><span class=\"ds-cover-name\">stilldrinking</span></div>",
+      "css": ".ds-cover-large{position:relative;width:15rem;aspect-ratio:1;border-radius:1.25rem;display:flex;align-items:center;justify-content:center;color:#fff;font-family:system-ui,-apple-system,sans-serif;font-weight:700;font-size:6.5rem;line-height:1;background:linear-gradient(160deg,color-mix(in oklab,#0062c4 78%,white),#0062c4 72%);box-shadow:0 14px 36px rgb(0 0 0 / 0.24),0 2px 6px rgb(0 0 0 / 0.12);transition:transform 500ms linear(0,0.227,0.536,0.75,0.873,0.938,0.971,0.986,0.994,0.997,1),box-shadow 500ms} .ds-cover-large:hover{transform:scale(0.84);box-shadow:0 6px 18px rgb(0 0 0 / 0.16),0 1px 3px rgb(0 0 0 / 0.1)} .ds-cover-name{position:absolute;bottom:8%;left:9%;right:9%;font-size:1.0625rem;opacity:0.92;letter-spacing:-0.01em}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The First-Party Sibling",
+    "overview": "Reader looks like an app Apple shipped beside Podcasts. Every structural choice is the iOS one: grouped settings on system gray, plain media screens on a near-white canvas, large titles that hand off to a compact bar, sheets with a grabber, a floating tab bar, a mini player above it. The system's personality is not invented; it is borrowed on purpose from the category standard, because the listener should never have to learn the app.\n\nWhat makes it Reader rather than a template is the cover. Narrations have no art, so each gets a generated square in a deep hue chosen from its site, with the site's initial in white. Covers give every list row, shelf, card, and the player a face, and the large cover in the player breathes with playback: full size while playing, stepping back while paused, as Podcasts does. One indigo tint marks everything that can be pressed, selected, or is progressing; the cover hues never use it.\n\nDensity is iOS default: 44px touch targets, 4-point rem spacing that grows with the system text size, 1.5 line spacing for running text. Light and dark are both first-class. The earlier look (cream paper, green accent, equal icon tiles on every row) is rejected.",
+    "keyCharacteristics": [
+      "iOS structure and semantic colors, near the system values but never pure black or pure white text.",
+      "One indigo tint for actions, selection, and progress; cover hues for identity only.",
+      "Generated covers as the only imagery, in five fixed sizes.",
+      "Opaque floating chrome (tab bar, mini player) with content fading out behind it.",
+      "Soft, ambient shadows on covers and floating chrome only; cells are flat.",
+      "Every size in rem, so the whole interface follows Dynamic Type."
+    ],
+    "rules": [
+      {
+        "name": "The One Tint Rule",
+        "body": "Indigo means \"you can press this\" or \"this is selected or progressing\". Nothing decorative is indigo, and no cover hue is indigo.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Glare Rule",
+        "body": "Text is never pure black, and full-screen grounds are never pure white. White is for cells, the segmented thumb, and text on color.",
+        "section": "colors"
+      },
+      {
+        "name": "The Running Text Rule",
+        "body": "Running text keeps 1.5 line spacing, and every type size is in rem so Dynamic Type scales it. Copy is sentence case; nothing is set in capitals.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Time Rule",
+        "body": "Times, speeds, and remaining time use tabular numerals, so they do not jitter while playing.",
+        "section": "typography"
+      },
+      {
+        "name": "The Clean Edge Rule",
+        "body": "Bars are opaque, and content fades into the canvas behind floating bars, so text never shows through or sits half cut beside a bar.",
+        "section": "layout"
+      },
+      {
+        "name": "The Lift Has A Reason Rule",
+        "body": "Only things that float (chrome, sheets, the segmented thumb) or have a face (covers) cast a shadow. Rows and grouped cells never do.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use iOS semantic roles (background, canvas, surface, label, separator, fill) rather than raw colors.",
+      "Do give every narration a generated cover, in one of the five sizes, in its site's hue.",
+      "Do keep indigo for actions, selection, and progress, and the player scrubber in label color as Podcasts does.",
+      "Do keep touch targets at 44px or more and sizes in rem, so text size changes scale the interface.",
+      "Do respect reduced motion (no press scaling, no cover breathing), reduced transparency, and increased contrast.",
+      "Do keep floating chrome opaque and fade content out behind it."
+    ],
+    "donts": [
+      "Don't use pure black text or a pure white full-screen ground.",
+      "Don't return to cream paper, a green accent, or equal icon tiles on every row.",
+      "Don't use indigo as a cover hue or as decoration.",
+      "Don't put a highlight shape behind the selected tab, or a disc behind the player's play glyph.",
+      "Don't set text in capitals or add a second typeface.",
+      "Don't add shadows to rows or grouped cells."
+    ]
+  }
+}

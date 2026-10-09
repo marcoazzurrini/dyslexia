@@ -10,6 +10,17 @@ import { color, font, media, radius, size, space } from "./tokens.stylex.ts";
 /** How far a row slides to reveal its swipe action, in pixels. */
 const ACTION_WIDTH = 88;
 
+/**
+ * Plain lists sit straight on the canvas, as in Podcasts, so their rows take
+ * the canvas color instead of the grouped cell color.
+ */
+const plainTheme = stylex.createTheme(color, {
+  surface: {
+    "@media (prefers-color-scheme: dark)": "#0d0d0f",
+    default: "#f7f7f9",
+  },
+});
+
 const styles = stylex.create({
   accessory: {
     color: color.tertiaryLabel,
@@ -31,6 +42,8 @@ const styles = stylex.create({
     justifyContent: "flex-end",
     padding: 0,
     position: "absolute",
+    // Shown by the swipe while the row moves.
+    visibility: "hidden",
   },
   actionLabel: {
     alignItems: "center",
@@ -72,9 +85,17 @@ const styles = stylex.create({
     lineHeight: 1.35,
     paddingInline: space.lg,
   },
-  // The icon tile is 2rem wide, followed by the row gap.
+  // A bold heading, as content apps such as Podcasts head their sections.
+  headerProminent: {
+    color: color.label,
+    fontSize: font.title3,
+    fontWeight: 700,
+    letterSpacing: "-0.01em",
+    paddingInline: space.xxs,
+  },
+  // Leading artwork is 3.5rem wide, followed by the row gap.
   iconInset: {
-    backgroundImage: `linear-gradient(to right, ${color.surface} calc(${space.lg} + 2rem + ${space.md}), ${color.separator} calc(${space.lg} + 2rem + ${space.md}))`,
+    backgroundImage: `linear-gradient(to right, ${color.surface} calc(${space.lg} + 3.5rem + ${space.md}), ${color.separator} calc(${space.lg} + 3.5rem + ${space.md}))`,
   },
   item: {
     backgroundColor: color.surface,
@@ -96,6 +117,12 @@ const styles = stylex.create({
     display: "grid",
     gap: { [media.hiDpi]: "0.5px", default: "1px" },
     overflow: "hidden",
+  },
+  // No card: rows sit on the canvas, their text aligned to the screen's
+  // margin.
+  plainList: {
+    borderRadius: 0,
+    marginInline: `calc(${space.lg} - ${space.gutter})`,
   },
   pressable: {
     backgroundColor: {
@@ -164,8 +191,12 @@ export interface ListSectionProps {
   readonly header?: ReactNode;
   /** Help text below the section. */
   readonly footer?: ReactNode;
-  /** Rows start with an icon tile, so separators start after it. */
+  /** Rows start with 3.5rem artwork, so separators start after it. */
   readonly withIcons?: boolean;
+  /** A bold header, for sections of content rather than settings. */
+  readonly prominent?: boolean;
+  /** Rows sit on the canvas, edge to edge, instead of in a card. */
+  readonly plain?: boolean;
   readonly style?: StyleXStyles;
 }
 
@@ -174,12 +205,25 @@ export const ListSection = ({
   children,
   footer,
   header,
+  plain = false,
+  prominent = false,
   style,
   withIcons = false,
 }: ListSectionProps) => (
   <section {...stylex.props(styles.section, style)}>
-    {header && <h2 {...stylex.props(styles.header)}>{header}</h2>}
-    <ul {...stylex.props(styles.list, withIcons && styles.iconInset)}>
+    {header && (
+      <h2 {...stylex.props(styles.header, prominent && styles.headerProminent)}>
+        {header}
+      </h2>
+    )}
+    <ul
+      {...stylex.props(
+        plain && plainTheme,
+        styles.list,
+        withIcons && styles.iconInset,
+        plain && styles.plainList
+      )}
+    >
       {children}
     </ul>
     {footer && <div {...stylex.props(styles.footer)}>{footer}</div>}

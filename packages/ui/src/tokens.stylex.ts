@@ -15,75 +15,84 @@ export const media = stylex.defineConsts({
 });
 
 /**
- * Semantic colors, named for their role as in iOS. Backgrounds are a soft
- * paper tone and text is never pure black: glare and harsh contrast make
- * reading harder for many dyslexic readers.
+ * Semantic colors, named for their role as in iOS and close to its system
+ * colors, so Reader sits beside Apple's own apps. Text is never pure black or
+ * pure white: glare and harsh contrast make reading harder for many dyslexic
+ * readers.
  */
 export const color = stylex.defineVars({
   /** Filled controls. White text on it passes WCAG AA. */
-  accent: { default: "#1d6a46", [DARK]: "#2b8a5c" },
+  accent: { default: "#5856d6", [DARK]: "#5e5ce6" },
   /** Tinted button background. */
   accentFill: {
-    default: "rgb(29 106 70 / 0.12)",
-    [DARK]: "rgb(111 216 164 / 0.16)",
+    default: "rgb(88 86 214 / 0.12)",
+    [DARK]: "rgb(125 122 255 / 0.18)",
   },
   /** Pressed state of filled controls. */
-  accentPressed: { default: "#14533a", [DARK]: "#247550" },
+  accentPressed: { default: "#4644b8", [DARK]: "#4c4ad0" },
   /** Tinted text and icons on any background. */
-  accentText: { default: "#1d6a46", [DARK]: "#6fd8a4" },
-  background: { default: "#f3f1ea", [DARK]: "#0b0c0b" },
-  danger: { default: "#b3261e", [DARK]: "#ff7a6e" },
+  accentText: { default: "#4f4dcc", [DARK]: "#8e8cff" },
+  /** Behind grouped lists, such as settings. */
+  background: { default: "#f2f2f7", [DARK]: "#0d0d0f" },
+  /**
+   * Behind plain content, such as narrations and shelves. Lighter than the
+   * grouped gray but well off white, so a full screen of it does not glare.
+   */
+  canvas: { default: "#f7f7f9", [DARK]: "#0d0d0f" },
+  danger: { default: "#d70015", [DARK]: "#ff6961" },
   dangerFill: {
-    default: "rgb(179 38 30 / 0.1)",
-    [DARK]: "rgb(255 122 110 / 0.14)",
+    default: "rgb(215 0 21 / 0.1)",
+    [DARK]: "rgb(255 105 97 / 0.16)",
   },
   /** Behind white text on destructive actions, such as a swiped Delete. */
-  destructive: { default: "#b3261e", [DARK]: "#c4362c" },
+  destructive: { default: "#d70015", [DARK]: "#d83a34" },
   /** Sheets, which sit above the background. */
-  elevated: { default: "#fcfbf7", [DARK]: "#1b1c1a" },
+  elevated: { default: "#f2f2f7", [DARK]: "#1c1c1e" },
   /** Gray control fills, such as the gray button and switch track. */
   fill: {
-    default: "rgb(120 120 112 / 0.16)",
-    [DARK]: "rgb(120 120 112 / 0.32)",
+    default: "rgb(118 118 128 / 0.12)",
+    [DARK]: "rgb(118 118 128 / 0.24)",
   },
   fillPressed: {
-    default: "rgb(120 120 112 / 0.28)",
-    [DARK]: "rgb(120 120 112 / 0.44)",
+    default: "rgb(118 118 128 / 0.24)",
+    [DARK]: "rgb(118 118 128 / 0.36)",
   },
-  focus: { default: "#1d6a46", [DARK]: "#6fd8a4" },
-  /** Translucent chrome over scrolling content. */
-  glass: {
-    default: "rgb(252 251 247 / 0.72)",
-    [DARK]: "rgb(30 31 29 / 0.66)",
-  },
+  focus: { default: "#5856d6", [DARK]: "#8e8cff" },
+  /**
+   * Chrome over scrolling content, such as the tab bar and mini player.
+   * Opaque: text passing underneath must never show through text on it.
+   */
+  glass: { default: "#f7f7f9", [DARK]: "#1f1f22" },
   glassEdge: {
-    default: "rgb(255 255 255 / 0.7)",
+    default: "rgb(255 255 255 / 0.8)",
     [DARK]: "rgb(255 255 255 / 0.1)",
   },
-  label: { default: "#1d211f", [DARK]: "#eceae4" },
+  label: { default: "#1c1c1e", [DARK]: "#ececf1" },
   onAccent: "#ffffff",
-  scrim: { default: "rgb(18 20 19 / 0.32)", [DARK]: "rgb(0 0 0 / 0.56)" },
+  scrim: { default: "rgb(0 0 0 / 0.3)", [DARK]: "rgb(0 0 0 / 0.6)" },
   secondaryLabel: {
-    default: "rgb(45 52 48 / 0.72)",
-    [DARK]: "rgb(236 234 228 / 0.68)",
-    [MORE_CONTRAST]: "rgb(29 33 31 / 0.9)",
+    default: "rgb(60 60 67 / 0.78)",
+    [DARK]: "rgb(235 235 245 / 0.68)",
+    [MORE_CONTRAST]: "rgb(28 28 30 / 0.92)",
   },
   separator: {
-    default: "rgb(45 52 48 / 0.18)",
-    [DARK]: "rgb(236 234 228 / 0.16)",
+    default: "rgb(60 60 67 / 0.2)",
+    [DARK]: "rgb(84 84 88 / 0.6)",
   },
-  success: { default: "#1d6a46", [DARK]: "#6fd8a4" },
+  success: { default: "#248a3d", [DARK]: "#30d158" },
   /** Cells and cards on the background. */
-  surface: { default: "#fcfbf7", [DARK]: "#1b1c1a" },
-  surfacePressed: { default: "#e6e3da", [DARK]: "#2c2d2a" },
+  surface: { default: "#ffffff", [DARK]: "#1c1c1e" },
+  surfacePressed: { default: "#e5e5ea", [DARK]: "#2c2c2e" },
   tertiaryLabel: {
-    default: "rgb(45 52 48 / 0.46)",
-    [DARK]: "rgb(236 234 228 / 0.42)",
+    default: "rgb(60 60 67 / 0.5)",
+    [DARK]: "rgb(235 235 245 / 0.4)",
   },
-  warning: { default: "#8a5a00", [DARK]: "#ffc95c" },
+  /** The raised part of a control, such as a segmented control's thumb. */
+  thumb: { default: "#ffffff", [DARK]: "#636366" },
+  warning: { default: "#b25000", [DARK]: "#ffb340" },
   warningFill: {
-    default: "rgb(176 115 0 / 0.12)",
-    [DARK]: "rgb(255 201 92 / 0.14)",
+    default: "rgb(178 80 0 / 0.12)",
+    [DARK]: "rgb(255 179 64 / 0.16)",
   },
 });
 
@@ -104,9 +113,9 @@ export const space = stylex.defineVars({
 
 export const radius = stylex.defineVars({
   full: "999px",
-  /** Inset grouped list sections. */
-  lg: "1.375rem",
-  md: "0.75rem",
+  /** Inset grouped list sections and cards. */
+  lg: "0.875rem",
+  md: "0.625rem",
   sm: "0.5rem",
   /** Sheets. */
   xl: "2.25rem",

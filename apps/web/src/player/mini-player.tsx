@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  ForwardIcon,
   IconButton,
   PauseIcon,
   PlayIcon,
@@ -14,10 +15,10 @@ import {
   space,
 } from "@dyslexia/ui/tokens.stylex";
 import * as stylex from "@stylexjs/stylex";
-import { Time } from "@videojs/react";
+import { SeekButton, Time } from "@videojs/react";
 
+import { Cover } from "../components/cover";
 import type { Recording } from "../lib/recording";
-import { Artwork } from "./artwork";
 import type { PlaybackView } from "./player";
 
 const styles = stylex.create({
@@ -31,7 +32,7 @@ const styles = stylex.create({
       default: color.glass,
       [media.reducedTransparency]: color.elevated,
     },
-    borderRadius: radius.full,
+    borderRadius: radius.lg,
     boxShadow: `inset 0 0.5px 0 ${color.glassEdge}, 0 8px 30px rgb(0 0 0 / 0.16)`,
     display: "flex",
     gap: space.xs,
@@ -41,11 +42,20 @@ const styles = stylex.create({
     paddingInlineEnd: space.sm,
     pointerEvents: "auto",
   },
-  // Floats just above the tab bar.
+  // Floats just above the tab bar, with content fading out behind it.
   dock: {
+    "::before": {
+      backgroundImage: `linear-gradient(to top, ${color.canvas} 70%, transparent)`,
+      bottom: 0,
+      content: "''",
+      height: `calc(100% + ${space.xl})`,
+      insetInline: 0,
+      position: "absolute",
+      zIndex: -1,
+    },
     bottom: `calc(max(${space.sm}, env(safe-area-inset-bottom)) + ${size.tabBar} + ${space.sm})`,
     insetInline: 0,
-    paddingInline: `max(${space.md}, env(safe-area-inset-left))`,
+    paddingInline: `max(${space.sm}, env(safe-area-inset-left))`,
     pointerEvents: "none",
     position: "fixed",
     zIndex: 20,
@@ -60,7 +70,7 @@ const styles = stylex.create({
   open: {
     alignItems: "center",
     backgroundColor: "transparent",
-    borderRadius: radius.full,
+    borderRadius: radius.lg,
     borderStyle: "none",
     color: color.label,
     display: "flex",
@@ -80,6 +90,25 @@ const styles = stylex.create({
     },
     transitionDuration: motion.fast,
     transitionProperty: "transform",
+  },
+  // A plain glyph, as the play button beside it.
+  seek: {
+    alignItems: "center",
+    backgroundColor: "transparent",
+    borderRadius: radius.full,
+    borderStyle: "none",
+    color: color.label,
+    display: "flex",
+    flexShrink: 0,
+    fontSize: "1.35rem",
+    height: size.touch,
+    justifyContent: "center",
+    opacity: { ":active": 0.5, ":disabled": 0.35, default: 1 },
+    outlineColor: color.focus,
+    outlineStyle: { ":focus-visible": "solid", default: "none" },
+    outlineWidth: "2px",
+    padding: 0,
+    width: size.touch,
   },
   text: { display: "flex", flexDirection: "column", minWidth: 0 },
   time: {
@@ -122,7 +151,7 @@ export const MiniPlayer = ({
         onClick={onExpand}
         {...stylex.props(styles.open)}
       >
-        <Artwork size="small" />
+        <Cover url={recording.sourceUrl} size="mini" />
         <span {...stylex.props(styles.text)}>
           <span {...stylex.props(styles.title)}>{recording.title}</span>
           <span {...stylex.props(styles.time)}>
@@ -149,6 +178,14 @@ export const MiniPlayer = ({
           onClick={view.handleToggle}
         />
       )}
+      <SeekButton
+        seconds={15}
+        label="seek forward 15 seconds"
+        disabled={!view.canSeek}
+        {...stylex.props(styles.seek)}
+      >
+        <ForwardIcon />
+      </SeekButton>
     </div>
   </div>
 );

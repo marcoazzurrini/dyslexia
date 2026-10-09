@@ -3,9 +3,6 @@ import type { ComponentProps, ReactNode } from "react";
 
 import { color, media, motion, radius, size, space } from "./tokens.stylex.ts";
 
-// The bar's inner padding, which the selection pill keeps inside.
-const PADDING = "4px";
-
 const styles = stylex.create({
   bar: {
     backdropFilter: {
@@ -17,35 +14,37 @@ const styles = stylex.create({
       [media.reducedTransparency]: color.elevated,
     },
     borderRadius: radius.full,
-    boxShadow: `inset 0 0.5px 0 ${color.glassEdge}, 0 8px 30px rgb(0 0 0 / 0.16)`,
-    display: "flex",
-    height: size.tabBar,
+    boxShadow: `inset 0 0.5px 0 ${color.glassEdge}, 0 10px 30px rgb(0 0 0 / 0.14), 0 1px 3px rgb(0 0 0 / 0.08)`,
     marginInline: "auto",
     maxWidth: size.dock,
-    padding: PADDING,
     pointerEvents: "auto",
-    position: "relative",
   },
+  // Floats above the content and the home indicator. Content fades out
+  // behind it, so no row shows half cut beside the bar.
   dock: {
+    "::before": {
+      backgroundImage: `linear-gradient(to top, ${color.canvas} 50%, transparent)`,
+      bottom: `calc(-1 * max(${space.sm}, env(safe-area-inset-bottom)))`,
+      content: "''",
+      height: `calc(100% + max(${space.sm}, env(safe-area-inset-bottom)) + ${space.xl})`,
+      insetInline: 0,
+      position: "absolute",
+      zIndex: -1,
+    },
     bottom: `max(${space.sm}, env(safe-area-inset-bottom))`,
     insetInline: 0,
-    paddingInline: `max(${space.md}, env(safe-area-inset-left))`,
+    paddingInline: `max(${space.lg}, env(safe-area-inset-left))`,
     pointerEvents: "none",
     position: "fixed",
-    zIndex: 20,
+    // Above the mini player, whose fade must never cover the tabs.
+    zIndex: 21,
   },
-  icon: { display: "flex", fontSize: "1.4rem" },
-  // Slides to the selected tab, so the eye follows the change.
-  indicator: (count: number, index: number) => ({
-    transform: `translateX(${index * 100}%)`,
-    width: `calc((100% - 2 * ${PADDING}) / ${count})`,
-  }),
+  icon: { display: "flex", fontSize: "1.5rem" },
   item: {
     // Long-press opens no link preview, as with native tabs.
     WebkitTouchCallout: "none",
     alignItems: "center",
-    borderRadius: radius.full,
-    color: color.label,
+    color: color.secondaryLabel,
     display: "flex",
     flexBasis: 0,
     flexDirection: "column",
@@ -73,45 +72,25 @@ const styles = stylex.create({
     transitionTimingFunction: motion.easeOut,
     userSelect: "none",
   },
-  pill: {
-    backgroundColor: color.fill,
-    borderRadius: radius.full,
-    insetBlock: PADDING,
-    insetInlineStart: PADDING,
-    position: "absolute",
-    transitionDuration: { default: motion.slow, [media.reducedMotion]: "0s" },
-    transitionProperty: "transform",
-    transitionTimingFunction: motion.spring,
-  },
+  items: { display: "flex", height: size.tabBar },
   selected: { color: color.accentText },
 });
 
 export interface TabBarProps {
   /** The accessible name of the navigation, such as "Main". */
   readonly label: string;
-  /** The position of the selected tab, or -1 when none is selected. */
-  readonly selected: number;
   /** One keyed `TabBarLink` per tab, in order. */
   readonly tabs: readonly ReactNode[];
 }
 
 /**
  * The floating bar of top-level destinations at the bottom of the screen,
- * as in iOS. A pill marks the selected tab and slides when it changes.
+ * as in iOS. The selected tab takes the tint; no shape sits behind it.
  */
-export const TabBar = ({ label, selected, tabs }: TabBarProps) => (
+export const TabBar = ({ label, tabs }: TabBarProps) => (
   <nav aria-label={label} {...stylex.props(styles.dock)}>
     <div {...stylex.props(styles.bar)}>
-      {selected !== -1 && (
-        <span
-          aria-hidden="true"
-          {...stylex.props(
-            styles.pill,
-            styles.indicator(tabs.length, selected)
-          )}
-        />
-      )}
-      {tabs}
+      <div {...stylex.props(styles.items)}>{tabs}</div>
     </div>
   </nav>
 );

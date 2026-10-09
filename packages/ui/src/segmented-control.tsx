@@ -2,15 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
 import { useId } from "react";
 
-import {
-  color,
-  font,
-  media,
-  motion,
-  radius,
-  size,
-  space,
-} from "./tokens.stylex.ts";
+import { color, font, media, motion, size, space } from "./tokens.stylex.ts";
 
 // The group's inner padding, which the thumb keeps inside.
 const PADDING = "3px";
@@ -19,7 +11,7 @@ const styles = stylex.create({
   disabled: { opacity: 0.5 },
   group: {
     backgroundColor: color.fill,
-    borderRadius: radius.full,
+    borderRadius: "0.5625rem",
     display: "flex",
     padding: PADDING,
     position: "relative",
@@ -43,7 +35,7 @@ const styles = stylex.create({
   },
   segment: {
     alignItems: "center",
-    borderRadius: radius.full,
+    borderRadius: "0.4375rem",
     color: color.label,
     cursor: "pointer",
     display: "flex",
@@ -72,8 +64,8 @@ const styles = stylex.create({
   selected: { fontWeight: 600 },
   // Slides under the selected segment, as the iOS control does.
   thumb: {
-    backgroundColor: color.elevated,
-    borderRadius: radius.full,
+    backgroundColor: color.thumb,
+    borderRadius: "0.4375rem",
     boxShadow: "0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.06)",
     insetBlock: PADDING,
     insetInlineStart: PADDING,

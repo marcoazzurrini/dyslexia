@@ -2,6 +2,8 @@ import { PLAYBACK_RATES } from "@dyslexia/playback";
 import {
   BackIcon,
   Button,
+  Cover,
+  coverTint,
   ExternalIcon,
   ForwardIcon,
   IconButton,
@@ -17,6 +19,7 @@ import {
 import {
   color,
   font,
+  media,
   motion,
   radius,
   size,
@@ -25,8 +28,8 @@ import {
 import * as stylex from "@stylexjs/stylex";
 import { SeekButton, Time, TimeSlider } from "@videojs/react";
 
-import { Cover, hueOf } from "../components/cover";
 import type { Recording } from "../lib/recording";
+import { coverOf } from "../lib/recording";
 import type { PlaybackView } from "./player";
 
 const styles = stylex.create({
@@ -45,6 +48,25 @@ const styles = stylex.create({
     display: "flex",
     gap: space.huge,
     justifyContent: "center",
+  },
+  cover: {
+    borderRadius: "1.25rem",
+    boxShadow: "0 14px 36px rgb(0 0 0 / 0.24), 0 2px 6px rgb(0 0 0 / 0.12)",
+    display: "block",
+    marginInline: "auto",
+    maxWidth: "17rem",
+    overflow: "hidden",
+    transformOrigin: "50% 50%",
+    transitionDuration: motion.slow,
+    transitionProperty: "transform, box-shadow",
+    transitionTimingFunction: motion.spring,
+    // Smaller on short screens, so the controls stay in view.
+    width: "min(78%, 38vh)",
+  },
+  // As in Podcasts, the cover steps back while paused.
+  coverPaused: {
+    boxShadow: "0 6px 18px rgb(0 0 0 / 0.16), 0 1px 3px rgb(0 0 0 / 0.1)",
+    transform: { default: "scale(0.84)", [media.reducedMotion]: "none" },
   },
   // Room for the cover to grow back when playback starts.
   coverStage: { paddingBlock: space.sm },
@@ -191,14 +213,17 @@ export const NowPlaying = ({
     onClose={onClose}
     title="Now playing"
     hideTitle
-    tint={hueOf(recording.artist)}
+    tint={coverTint(recording.artist)}
   >
     <div {...stylex.props(styles.coverStage)}>
-      <Cover
-        url={recording.sourceUrl}
-        size="large"
-        paused={view.status !== "playing"}
-      />
+      <span
+        {...stylex.props(
+          styles.cover,
+          view.status !== "playing" && styles.coverPaused
+        )}
+      >
+        <Cover {...coverOf(recording.sourceUrl)} />
+      </span>
     </div>
     <div {...stylex.props(styles.heading)}>
       <Text as="h3" variant="title2">

@@ -7,6 +7,8 @@ export type {
 export { Button, ButtonLink } from "./button.tsx";
 export type { ChipGroupProps } from "./chip-group.tsx";
 export { ChipGroup } from "./chip-group.tsx";
+export type { CoverProps } from "./cover.tsx";
+export { Cover, coverTint } from "./cover.tsx";
 export type { EmptyStateProps } from "./empty-state.tsx";
 export { EmptyState } from "./empty-state.tsx";
 export type {

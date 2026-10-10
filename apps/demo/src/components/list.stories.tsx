@@ -1,5 +1,6 @@
 import {
   ChevronRightIcon,
+  Cover,
   ListButton,
   ListLink,
   ListRow,
@@ -7,7 +8,6 @@ import {
   PlayIcon,
   WarningIcon,
 } from "@dyslexia/ui";
-import { Cover } from "@dyslexia/web/components/cover";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 
@@ -85,7 +85,7 @@ export const Media: Story = {
   render: () => (
     <ListSection header="Ready to listen" variant="media">
       <ListButton
-        leading={<Cover url="https://example.org" size="row" />}
+        leading={<Cover seed="example.org" name="example" />}
         title="How the brain learns to read, and why some of us find it hard"
         subtitle="example.org"
         meta={{ text: "13 min" }}
@@ -94,7 +94,7 @@ export const Media: Story = {
         more={{ label: "Options", onClick: fn() }}
       />
       <ListButton
-        leading={<Cover url="https://newyorker.com" size="row" />}
+        leading={<Cover seed="newyorker.com" name="newyorker" />}
         title="The quiet history of the semicolon"
         subtitle="newyorker.com"
         meta={{ progress: 0.4, text: "8 min left" }}
@@ -103,7 +103,7 @@ export const Media: Story = {
         more={{ label: "Options", onClick: fn() }}
       />
       <ListRow
-        leading={<Cover url="https://example.org" size="row" tone="neutral" />}
+        leading={<Cover seed="example.org" name="example" tone="neutral" />}
         title="Why we sleep"
         subtitle="Reading the article…"
       />

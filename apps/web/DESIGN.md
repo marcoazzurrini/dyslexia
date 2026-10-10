@@ -231,7 +231,7 @@ Density is iOS default: 44px touch targets, 4-point rem spacing that grows with 
 
 - iOS structure and semantic colors, near the system values but never pure black or pure white text.
 - One indigo tint for actions, selection, and progress; cover hues for identity only.
-- Generated covers as the only imagery, in five fixed sizes.
+- Generated covers as the only imagery, in five fixed sizes, each set by the component that holds the cover.
 - Opaque floating chrome (tab bar, mini player) with content fading out behind it.
 - Soft, ambient shadows on covers and floating chrome only; cells are flat.
 - Every size in rem, so the whole interface follows Dynamic Type.

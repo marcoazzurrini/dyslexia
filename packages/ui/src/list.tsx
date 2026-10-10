@@ -24,6 +24,9 @@ const plainTheme = stylex.createTheme(color, {
   },
 });
 
+/** The width of a media row's cover. */
+const MEDIA_COVER = "3.5rem";
+
 const styles = stylex.create({
   accessory: {
     color: color.tertiaryLabel,
@@ -100,6 +103,12 @@ const styles = stylex.create({
     display: "flex",
     flexShrink: 0,
   },
+  // Holds a media row's cover.
+  leadingMedia: {
+    borderRadius: "0.625rem",
+    overflow: "hidden",
+    width: MEDIA_COVER,
+  },
   // Separators are the gaps between rows. The gradient leaves the first
   // part of each gap in the cell color, so separators start at the text.
   list: {
@@ -111,9 +120,9 @@ const styles = stylex.create({
     overflow: "hidden",
   },
   // No card: rows sit on the canvas, their text aligned to the screen's
-  // margin. Separators start after the 3.5rem artwork.
+  // margin. Separators start after the cover.
   mediaList: {
-    backgroundImage: `linear-gradient(to right, ${color.surface} calc(${space.lg} + 3.5rem + ${space.md}), ${color.separator} calc(${space.lg} + 3.5rem + ${space.md}))`,
+    backgroundImage: `linear-gradient(to right, ${color.surface} calc(${space.lg} + ${MEDIA_COVER} + ${space.md}), ${color.separator} calc(${space.lg} + ${MEDIA_COVER} + ${space.md}))`,
     borderRadius: 0,
     marginInline: `calc(${space.lg} - ${space.gutter})`,
   },
@@ -287,7 +296,7 @@ interface RowContent {
   readonly subtitle?: string;
   /** A third line, in media sections. */
   readonly meta?: RowMeta;
-  /** Before the text, such as an icon or artwork. */
+  /** Before the text: an icon, or in media sections a `Cover`, which the row sizes. */
   readonly leading?: ReactNode;
   /** Trailing text, such as a status. */
   readonly detail?: string;
@@ -332,7 +341,11 @@ const Content = ({
   const isMedia = useContext(VariantContext) === "media";
   return (
     <>
-      {leading && <span {...stylex.props(styles.leading)}>{leading}</span>}
+      {leading && (
+        <span {...stylex.props(styles.leading, isMedia && styles.leadingMedia)}>
+          {leading}
+        </span>
+      )}
       <span {...stylex.props(styles.text)}>
         <span
           {...stylex.props(

@@ -87,7 +87,13 @@ export interface LibraryScreenProps {
   readonly error?: string;
   readonly onReload: () => void;
   readonly onAdd: () => void;
-  readonly onPlay: (narration: Ready) => void;
+  /** Opens the full player with a narration. */
+  readonly onOpen: (narration: Ready) => void;
+  /** Plays a narration at once, leaving the player closed. */
+  readonly onListen: (narration: Ready) => void;
+  readonly onPause: () => void;
+  /** The narration playing now, if any. */
+  readonly playingId?: string;
   readonly onOpenFailed: (narration: Failed) => void;
   /** Opens the options for a ready narration, such as Delete. */
   readonly onOptions: (narration: Ready) => void;
@@ -99,7 +105,13 @@ export interface LibraryScreenProps {
 
 type RowActions = Pick<
   LibraryScreenProps,
-  "onDelete" | "onOpenFailed" | "onOptions" | "onPlay"
+  | "onDelete"
+  | "onListen"
+  | "onOpen"
+  | "onOpenFailed"
+  | "onOptions"
+  | "onPause"
+  | "playingId"
 >;
 
 /** The narrations one filter shows. */
@@ -109,9 +121,12 @@ const Results = ({
   listeningOf,
   narrations,
   onDelete,
+  onListen,
+  onOpen,
   onOpenFailed,
   onOptions,
-  onPlay,
+  onPause,
+  playingId,
 }: RowActions & {
   filter: LibraryFilter;
   listeningOf: LibraryScreenProps["listeningOf"];
@@ -158,7 +173,10 @@ const Results = ({
               key={narration.id}
               narration={narration}
               listening={listening}
-              onPlay={onPlay}
+              playing={narration.id === playingId}
+              onOpen={onOpen}
+              onListen={onListen}
+              onPause={onPause}
               onOptions={onOptions}
               onDelete={onDelete}
             />
@@ -201,10 +219,13 @@ export const LibraryScreen = ({
   onAdd,
   onDelete,
   onFilter,
+  onListen,
+  onOpen,
   onOpenFailed,
   onOptions,
-  onPlay,
+  onPause,
   onReload,
+  playingId,
 }: LibraryScreenProps) => {
   // Opening the library shows it at once; only a chosen filter animates.
   const [chosen, setChosen] = useState(false);
@@ -278,7 +299,10 @@ export const LibraryScreen = ({
             onDelete={onDelete}
             onOpenFailed={onOpenFailed}
             onOptions={onOptions}
-            onPlay={onPlay}
+            onOpen={onOpen}
+            onListen={onListen}
+            onPause={onPause}
+            playingId={playingId}
           />
         </>
       )}

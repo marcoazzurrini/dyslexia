@@ -5,6 +5,7 @@ import {
   makeNarration,
   mockNarrations,
   readAudio,
+  rowOf,
   setVisibility,
 } from "./fixtures";
 
@@ -262,7 +263,7 @@ test("playback continues behind the library, and each recording keeps its own pl
     );
   });
   await page.goto("/library");
-  await page.getByRole("button", { name: "Play First recording" }).click();
+  await rowOf(page, "First recording").click();
   const player = page.getByRole("dialog", { name: "Now playing" });
   await expect(
     player.getByRole("heading", { name: "First recording" })
@@ -298,7 +299,7 @@ test("playback continues behind the library, and each recording keeps its own pl
   ).toBe(true);
   await expect.poll(() => readAudio(page)).toMatchObject({ paused: false });
 
-  await page.getByRole("button", { name: "Play Second recording" }).click();
+  await rowOf(page, "Second recording").click();
   await expect
     .poll(() => readAudio(page))
     .toMatchObject({ duration: 60, paused: true, position: 24, rate: 1.5 });

@@ -5,6 +5,7 @@ import {
   ListRow,
   MediaCard,
   MediaTile,
+  PauseIcon,
   PlayIcon,
   WarningIcon,
 } from "@dyslexia/ui";
@@ -61,34 +62,54 @@ export const MakingRow = ({ narration }: { narration: Making }) => (
 export interface ReadyRowProps {
   readonly narration: Ready;
   readonly listening: Listening;
-  readonly onPlay: (narration: Ready) => void;
+  /** It is playing now, so its button pauses it. */
+  readonly playing: boolean;
+  /** Pressing the row opens the full player. */
+  readonly onOpen: (narration: Ready) => void;
+  /** Its Play button plays it at once, leaving the player closed. */
+  readonly onListen: (narration: Ready) => void;
+  readonly onPause: () => void;
   /** Offers Delete by swiping and through the more button. */
   readonly onOptions?: (narration: Ready) => void;
   readonly onDelete?: (narration: Ready) => void;
 }
 
-/** A narration ready to play, with how far the listener got. */
+/**
+ * A narration ready to play, with how far the listener got. Pressing it
+ * opens the player; its button plays or pauses it in place, as in Audible.
+ */
 export const ReadyRow = ({
   listening,
   narration,
   onDelete,
+  onListen,
+  onOpen,
   onOptions,
-  onPlay,
+  onPause,
+  playing,
 }: ReadyRowProps) => (
   <ListButton
     leading={<Cover url={narration.url} size="row" />}
     title={narration.title}
     subtitle={siteOf(narration.url)}
     meta={metaOf(narration, listening)}
-    onClick={() => onPlay(narration)}
+    onClick={() => onOpen(narration)}
     swipeAction={
       onDelete && { label: "Delete", onAction: () => onDelete(narration) }
     }
-    action={{
-      icon: <PlayIcon />,
-      label: `Play ${narration.title}`,
-      onClick: () => onPlay(narration),
-    }}
+    action={
+      playing
+        ? {
+            icon: <PauseIcon />,
+            label: `Pause ${narration.title}`,
+            onClick: onPause,
+          }
+        : {
+            icon: <PlayIcon />,
+            label: `Play ${narration.title}`,
+            onClick: () => onListen(narration),
+          }
+    }
     more={
       onOptions && {
         label: `Options for ${narration.title}`,
@@ -102,41 +123,41 @@ export const ReadyRow = ({
 export const ResumeCard = ({
   listening,
   narration,
-  onPlay,
+  onOpen,
   wide = false,
 }: {
   narration: Ready;
   listening: Listening;
-  onPlay: (narration: Ready) => void;
+  onOpen: (narration: Ready) => void;
   /** Spans the screen, when it is the only card on its shelf. */
   wide?: boolean;
 }) => (
   <MediaCard
-    label={`Play ${narration.title}`}
+    label={narration.title}
     artwork={<Cover url={narration.url} size="card" />}
     title={narration.title}
     meta={`${siteOf(narration.url)} · ${formatDuration(listening.remaining)} left`}
     progress={listening.position / narration.durationSeconds}
     tint={hueOf(siteOf(narration.url))}
     wide={wide}
-    onClick={() => onPlay(narration)}
+    onClick={() => onOpen(narration)}
   />
 );
 
 /** A narration on a shelf: its cover, title, and length. */
 export const ShelfTile = ({
   narration,
-  onPlay,
+  onOpen,
 }: {
   narration: Ready;
-  onPlay: (narration: Ready) => void;
+  onOpen: (narration: Ready) => void;
 }) => (
   <MediaTile
-    label={`Play ${narration.title}`}
+    label={narration.title}
     artwork={<Cover url={narration.url} size="shelf" />}
     title={narration.title}
     meta={`${siteOf(narration.url)} · ${formatDuration(narration.durationSeconds)}`}
-    onClick={() => onPlay(narration)}
+    onClick={() => onOpen(narration)}
   />
 );
 

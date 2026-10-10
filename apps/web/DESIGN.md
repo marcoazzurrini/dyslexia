@@ -349,7 +349,7 @@ A section's variant sets how every row in it looks, so rows of one kind always m
 
 ### Narration row
 
-Every row in a media section, whether ready, being made, or failed. As in Audible: the title in subheadline semibold, on one line ending in an ellipsis; the site in footnote; then how far the listener got in secondary caption. Started narrations show a short 3px indigo bar before the time left, unstarted ones their length, finished ones an indigo check and "Finished". A small outlined play button sits after the text, then the more button, whose sheet offers Mark as finished (or unfinished) and Delete.
+Every row in a media section, whether ready, being made, or failed. As in Audible: the title in subheadline semibold, on one line ending in an ellipsis; the site in footnote; then how far the listener got in secondary caption. Started narrations show a short 3px indigo bar before the time left, unstarted ones their length, finished ones an indigo check and "Finished". Pressing the row opens the full player. A small outlined play button after the text plays the narration in place, keeping the player in the mini bar, and turns into pause while that narration plays. Then the more button, whose sheet offers Mark as finished (or unfinished) and Delete.
 
 ### Filter chips
 

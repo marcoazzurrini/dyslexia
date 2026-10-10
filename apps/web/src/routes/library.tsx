@@ -38,7 +38,10 @@ const Library = () => {
       bottomInset={useBottomInset()}
       onReload={library.handleReload}
       onAdd={library.handleAdd}
-      onPlay={library.handlePlay}
+      onOpen={library.handleOpen}
+      onListen={library.handleListen}
+      onPause={library.handlePause}
+      playingId={library.playingId}
       onOpenFailed={library.handleOpenFailed}
       onOptions={library.handleOpenOptions}
       onDelete={library.handleRemove}

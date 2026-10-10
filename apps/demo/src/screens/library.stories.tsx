@@ -16,9 +16,11 @@ const meta = {
     onAdd: fn(),
     onDelete: fn(),
     onFilter: fn(),
+    onListen: fn(),
+    onOpen: fn(),
     onOpenFailed: fn(),
     onOptions: fn(),
-    onPlay: fn(),
+    onPause: fn(),
     onReload: fn(),
   },
   component: LibraryScreen,
@@ -33,6 +35,10 @@ type Story = StoryObj<typeof meta>;
 export const EveryState: Story = {};
 /** Narrations at every point of listening. */
 export const Listened: Story = { args: { narrations: listened } };
+/** One narration playing: its button pauses it. */
+export const Playing: Story = {
+  args: { narrations: listened, playingId: "e" },
+};
 export const InProgress: Story = {
   args: { filter: "in-progress", narrations: listened },
 };

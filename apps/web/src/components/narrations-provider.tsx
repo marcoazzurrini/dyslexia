@@ -15,7 +15,7 @@ import {
 import type { ReactNode } from "react";
 
 import { markFinished, useListening } from "../lib/listening";
-import { open, stop, useNowPlaying } from "../lib/now-playing";
+import { listen, open, pause, stop, useNowPlaying } from "../lib/now-playing";
 import { recordingOf } from "../lib/recording";
 import { expireIfUnauthorized } from "../lib/session";
 import { usePolling } from "../lib/use-polling";
@@ -34,7 +34,13 @@ interface Narrations {
   readonly deleteError?: string;
   readonly handleReload: () => void;
   readonly handleAdd: () => void;
-  readonly handlePlay: (narration: Ready) => void;
+  /** Opens the full player with a narration, without playing it. */
+  readonly handleOpen: (narration: Ready) => void;
+  /** Plays a narration at once, leaving the player closed. */
+  readonly handleListen: (narration: Ready) => void;
+  readonly handlePause: () => void;
+  /** The narration playing now, if any. */
+  readonly playingId?: string;
   readonly handleOpenFailed: (narration: Failed) => void;
   readonly handleOpenOptions: (narration: Ready) => void;
   readonly handleRemove: (narration: Ready | Failed) => void;
@@ -65,7 +71,7 @@ export const NarrationsProvider = ({ children }: { children: ReactNode }) => {
   const [failed, setFailed] = useState<Failed | null>(null);
   const [options, setOptions] = useState<Ready | null>(null);
   const [deleteError, setDeleteError] = useState("");
-  const { recording } = useNowPlaying();
+  const { paused, recording } = useNowPlaying();
   const listeningOf = useListening();
   const [busy, setBusy] = useState<"add" | "retry" | "remove" | null>(null);
   const [actionError, setActionError] = useState("");
@@ -142,12 +148,14 @@ export const NarrationsProvider = ({ children }: { children: ReactNode }) => {
         setActionError("");
         setAdding(true);
       },
+      handleListen: (narration) => listen(recordingOf(narration)),
+      handleOpen: (narration) => open(recordingOf(narration)),
       handleOpenFailed: (narration) => {
         setActionError("");
         setFailed(narration);
       },
       handleOpenOptions: setOptions,
-      handlePlay: (narration) => open(recordingOf(narration)),
+      handlePause: pause,
       handleReload: () => {
         setLoadError("");
         reload();
@@ -157,8 +165,9 @@ export const NarrationsProvider = ({ children }: { children: ReactNode }) => {
       },
       loadError: loadError || undefined,
       narrations,
+      playingId: paused ? undefined : recording?.id,
     }),
-    [deleteError, loadError, narrations, reload, remove]
+    [deleteError, loadError, narrations, paused, recording, reload, remove]
   );
 
   return (

@@ -216,6 +216,13 @@ export const readAudio = (page: Page) =>
 export const PLAYBACK_KEY = "dyslexia:playback:job-one:job-one";
 
 /**
+ * A narration's row in a list, which opens the player. Its name starts with
+ * the title; the row's own Play and more buttons are named after it.
+ */
+export const rowOf = (page: Page, title: string) =>
+  page.getByRole("button", { name: new RegExp(`^${title}`, "u") });
+
+/**
  * Opens the Library tab with one ready narration and opens its player. `audio`
  * replaces the recording's server, as for slow or missing audio.
  */
@@ -230,6 +237,6 @@ export const openPlayer = async (
     await page.route("**/api/narrations/job-one/audio", audio);
   }
   await page.goto("/library");
-  await page.getByRole("button", { name: "Play A new article" }).click();
+  await rowOf(page, "A new article").click();
   return state;
 };

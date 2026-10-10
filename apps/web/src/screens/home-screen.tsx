@@ -64,7 +64,13 @@ export interface HomeScreenProps {
   readonly error?: string;
   readonly onReload: () => void;
   readonly onAdd: () => void;
-  readonly onPlay: (narration: Ready) => void;
+  /** Opens the full player with a narration. */
+  readonly onOpen: (narration: Ready) => void;
+  /** Plays a narration at once, leaving the player closed. */
+  readonly onListen: (narration: Ready) => void;
+  readonly onPause: () => void;
+  /** The narration playing now, if any. */
+  readonly playingId?: string;
   readonly onOpenFailed: (narration: Failed) => void;
   readonly bottomInset?: string;
 }
@@ -80,9 +86,12 @@ export const HomeScreen = ({
   narrations,
   now,
   onAdd,
+  onListen,
+  onOpen,
   onOpenFailed,
-  onPlay,
+  onPause,
   onReload,
+  playingId,
 }: HomeScreenProps) => {
   const ready = (narrations ?? []).flatMap((narration) =>
     narration.state === "ready"
@@ -162,7 +171,7 @@ export const HomeScreen = ({
                 key={narration.id}
                 narration={narration}
                 listening={listening}
-                onPlay={onPlay}
+                onOpen={onOpen}
                 wide={resume.length === 1}
               />
             ))}
@@ -176,7 +185,10 @@ export const HomeScreen = ({
               key={narration.id}
               narration={narration}
               listening={listening}
-              onPlay={onPlay}
+              playing={narration.id === playingId}
+              onOpen={onOpen}
+              onListen={onListen}
+              onPause={onPause}
             />
           ))}
         </ListSection>
@@ -188,7 +200,7 @@ export const HomeScreen = ({
               <ShelfTile
                 key={narration.id}
                 narration={narration}
-                onPlay={onPlay}
+                onOpen={onOpen}
               />
             ))}
           </Shelf>

@@ -1,7 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
-import { makeNarration, mockNarrations, openPlayer } from "./fixtures";
+import { makeNarration, mockNarrations, openPlayer, rowOf } from "./fixtures";
 
 /**
  * Drags a row left by `distance` pixels, as a finger would. A slow drag
@@ -49,7 +49,7 @@ test("swiping a narration left reveals Delete, which deletes it", async ({
     narrations: [makeNarration("ready")],
   });
   await page.goto("/library");
-  const row = page.getByRole("button", { name: "Play A new article" });
+  const row = rowOf(page, "A new article");
   const rest = await restingX(row);
   await swipeLeft(page, row, 140);
   // The row settles open, showing the 88-pixel Delete button.
@@ -69,7 +69,7 @@ test("a short swipe springs back, and nothing is deleted", async ({ page }) => {
     narrations: [makeNarration("ready")],
   });
   await page.goto("/library");
-  const row = page.getByRole("button", { name: "Play A new article" });
+  const row = rowOf(page, "A new article");
   const rest = await restingX(row);
   await swipeLeft(page, row, 25, { slow: true });
   await expect.poll(() => offset(row, rest)).toBe(0);
@@ -84,8 +84,8 @@ test("swiping another row closes the open one", async ({ page }) => {
     ],
   });
   await page.goto("/library");
-  const first = page.getByRole("button", { name: "Play A new article" });
-  const second = page.getByRole("button", { name: "Play Second" });
+  const first = rowOf(page, "A new article");
+  const second = rowOf(page, "Second");
   const rest = await restingX(first);
   await swipeLeft(page, first, 140);
   await expect.poll(() => offset(first, rest)).toBe(-88);
@@ -94,10 +94,12 @@ test("swiping another row closes the open one", async ({ page }) => {
   await expect.poll(() => offset(first, rest)).toBe(0);
 });
 
-test("tapping an open row closes it instead of playing", async ({ page }) => {
+test("tapping an open row closes it instead of opening the player", async ({
+  page,
+}) => {
   await mockNarrations(page, { narrations: [makeNarration("ready")] });
   await page.goto("/library");
-  const row = page.getByRole("button", { name: "Play A new article" });
+  const row = rowOf(page, "A new article");
   const rest = await restingX(row);
   await swipeLeft(page, row, 140);
   await expect.poll(() => offset(row, rest)).toBe(-88);
@@ -107,7 +109,7 @@ test("tapping an open row closes it instead of playing", async ({ page }) => {
   await expect(page.getByRole("dialog", { name: "Now playing" })).toHaveCount(
     0
   );
-  // The next tap plays as usual.
+  // The next tap opens the player as usual.
   await row.click();
   await expect(page.getByRole("dialog", { name: "Now playing" })).toBeVisible();
 });
@@ -126,10 +128,8 @@ test("the options button deletes a narration without a gesture", async ({
   const sheet = page.getByRole("dialog", { name: "A new article" });
   await sheet.getByRole("button", { name: "Delete narration" }).click();
   await expect(sheet).toBeHidden();
-  await expect(
-    page.getByRole("button", { name: "Play A new article" })
-  ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Play Kept" })).toBeVisible();
+  await expect(rowOf(page, "A new article")).toHaveCount(0);
+  await expect(rowOf(page, "Kept")).toBeVisible();
   expect(state.mutations).toEqual([
     { body: null, method: "DELETE", path: "/job-one" },
   ]);
@@ -182,7 +182,5 @@ test("a refused deletion brings the narration back and says why", async ({
   await expect(page.getByRole("alert")).toContainText(
     "Could not delete the narration"
   );
-  await expect(
-    page.getByRole("button", { name: "Play A new article" })
-  ).toBeVisible();
+  await expect(rowOf(page, "A new article")).toBeVisible();
 });

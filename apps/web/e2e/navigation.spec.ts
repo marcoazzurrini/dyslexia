@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
-import { makeNarration, mockNarrations } from "./fixtures";
+import { makeNarration, mockNarrations, rowOf } from "./fixtures";
 
 /** Saves how far the listener got, as the player does. */
 const seedListening = (
@@ -87,13 +87,13 @@ test("listening moves a narration to Pick up where you left off", async ({
 }) => {
   await mockNarrations(page, { narrations: [narrations[0]] });
   await page.goto("/");
-  await page.getByRole("button", { name: "Play Fresh" }).click();
+  await rowOf(page, "Fresh").click();
   const player = page.getByRole("dialog", { name: "Now playing" });
   await player.getByRole("button", { name: "seek forward 15 seconds" }).click();
   await player.getByRole("button", { name: "Close" }).click();
   await expect(
     section(page, "Pick up where you left off").getByRole("button", {
-      name: "Play Fresh",
+      name: "Fresh",
     })
   ).toBeVisible();
   await expect(page.getByText("Recently added")).toHaveCount(0);

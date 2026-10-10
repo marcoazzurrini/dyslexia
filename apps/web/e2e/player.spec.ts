@@ -7,6 +7,7 @@ import {
   openPlayer,
   PLAYBACK_KEY,
   readAudio,
+  rowOf,
   serveAudio,
 } from "./fixtures";
 
@@ -372,7 +373,7 @@ test("the player slides up without passing its place", async ({ page }) => {
   await page.route("**/api/narrations/job-one/audio", serveAudio);
   await page.goto("/library");
   await page.evaluate(recordHighest);
-  await page.getByRole("button", { name: "Play A new article" }).click();
+  await rowOf(page, "A new article").click();
   // The sheet settles within its 500ms spring.
   await page.waitForTimeout(1000);
   const reached = await page.evaluate(() =>
@@ -472,4 +473,68 @@ test("Media Session metadata, actions, and valid position state", async ({
   expect(positionState.position).toBeGreaterThanOrEqual(15);
   expect(positionState.position).toBeLessThanOrEqual(60);
   expect(positionState.playbackRate).toBe(1);
+});
+
+test("a row's Play button plays in place, and pauses while it plays", async ({
+  page,
+}) => {
+  await mockNarrations(page, { narrations: [makeNarration("ready")] });
+  await page.route("**/api/narrations/job-one/audio", serveAudio);
+  await page.goto("/library");
+  await page.getByRole("button", { name: "Play A new article" }).click();
+  await expect.poll(() => audioValue(page, "paused")).toBe(false);
+  // The player stays closed, in reach in the mini player.
+  await expect(player(page)).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "Open player: A new article" })
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Pause A new article" }).click();
+  await expect.poll(() => audioValue(page, "paused")).toBe(true);
+  await expect(
+    page.getByRole("button", { name: "Play A new article" })
+  ).toBeVisible();
+  // Pressing the row opens the player, without playing.
+  await rowOf(page, "A new article").click();
+  await expect(player(page)).toBeVisible();
+  expect(await audioValue(page, "paused")).toBe(true);
+});
+
+test("playing another row switches recordings, and each keeps its place", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "dyslexia:playback:job-two:job-two",
+      JSON.stringify({ position: 24, rate: 1.5 })
+    );
+  });
+  await mockNarrations(page, {
+    narrations: [
+      makeNarration("ready"),
+      makeNarration("ready", { id: "job-two", title: "Second" }),
+    ],
+  });
+  await page.route("**/api/narrations/*/audio", serveAudio);
+  await page.goto("/library");
+  await page.getByRole("button", { name: "Play A new article" }).click();
+  await expect.poll(() => audioValue(page, "position")).toBeGreaterThan(0);
+
+  await page.getByRole("button", { name: "Play Second" }).click();
+  await expect
+    .poll(() => readAudio(page))
+    .toMatchObject({ paused: false, rate: 1.5 });
+  expect(await audioValue(page, "position")).toBeGreaterThanOrEqual(24);
+  await expect(
+    page.getByRole("button", { name: "Pause Second" })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Play A new article" })
+  ).toBeVisible();
+  const first = await page.evaluate(() =>
+    JSON.parse(
+      localStorage.getItem("dyslexia:playback:job-one:job-one") ?? "null"
+    )
+  );
+  expect(first.position).toBeGreaterThan(0);
+  expect(first.position).toBeLessThan(24);
 });

@@ -303,11 +303,22 @@ test("playback continues behind the library, and each recording keeps its own pl
     .poll(() => readAudio(page))
     .toMatchObject({ duration: 60, paused: true, position: 24, rate: 1.5 });
   await expect(page.locator("audio")).toHaveCount(1);
-  expect(
-    await page.evaluate(() =>
-      JSON.parse(
-        localStorage.getItem("dyslexia:playback:job-one:job-one") ?? "null"
-      )
-    )
-  ).toMatchObject({ rate: 1.25 });
+  const saved = (key: string) =>
+    page.evaluate(
+      (storageKey) => JSON.parse(localStorage.getItem(storageKey) ?? "null"),
+      key
+    );
+  // The first keeps the place it reached, never the second's.
+  const firstPlace = await saved("dyslexia:playback:job-one:job-one");
+  expect(firstPlace).toMatchObject({ rate: 1.25 });
+  expect(firstPlace.position).toBeGreaterThanOrEqual(8);
+  expect(firstPlace.position).toBeLessThan(24);
+  // The second starts from its own place, untouched by the first.
+  await page.evaluate(() => {
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  expect(await saved("dyslexia:playback:job-two:job-two")).toMatchObject({
+    position: 24,
+    rate: 1.5,
+  });
 });

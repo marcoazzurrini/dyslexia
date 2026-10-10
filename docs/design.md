@@ -31,6 +31,7 @@ This file records decisions and constraints that should hold as the code changes
 ## Playback
 
 - **The browser owns the media.** Use one native audio element and let it fetch the file directly. Never load whole recordings into application state.
+- **One audio element for the whole session.** It swaps recordings rather than being rebuilt, so a tap can start playback at once: Safari plays sound only when play is called during the tap. Switching saves the old recording's place before pointing saves at the new one, so places never leak between recordings.
 - **Recordings are immutable and versioned.** Saved positions are keyed by recording version, so replacing audio means a new key and URL.
 - **Audio delivery must support HTTP byte ranges.** Seeking depends on correct `206` responses. A missing audio path must return `404`, never the app shell.
 - **System controls are an enhancement.** Media Session improves lock-screen controls but cannot guarantee background playback. Feature-detect it.

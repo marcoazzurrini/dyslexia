@@ -60,7 +60,8 @@ test("swiping a narration left reveals Delete, which deletes it", async ({
   expect(state.mutations).toEqual([
     { body: null, method: "DELETE", path: "/job-one" },
   ]);
-  await expect(page.locator("audio")).toHaveCount(0);
+  // Nothing was loaded into the player.
+  await expect(page.locator("audio")).not.toHaveAttribute("src");
 });
 
 test("a short swipe springs back, and nothing is deleted", async ({ page }) => {
@@ -140,10 +141,14 @@ test("deleting the narration that is playing stops the player", async ({
   await openPlayer(page);
   const player = page.getByRole("dialog", { name: "Now playing" });
   await player.getByRole("button", { name: "Close" }).click();
-  await expect(page.locator("audio")).toHaveCount(1);
+  const miniPlayer = page.getByRole("button", {
+    name: "Open player: A new article",
+  });
+  await expect(miniPlayer).toBeVisible();
   await page.getByRole("button", { name: "Options for A new article" }).click();
   await page.getByRole("button", { name: "Delete narration" }).click();
-  await expect(page.locator("audio")).toHaveCount(0);
+  await expect(miniPlayer).toHaveCount(0);
+  await expect(page.locator("audio")).not.toHaveAttribute("src");
 });
 
 test("a failed narration can be swiped away too", async ({ page }) => {

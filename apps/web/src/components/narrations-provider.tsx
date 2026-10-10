@@ -15,7 +15,7 @@ import {
 import type { ReactNode } from "react";
 
 import { markFinished, useListening } from "../lib/listening";
-import { play, stop, useNowPlaying } from "../lib/now-playing";
+import { open, stop, useNowPlaying } from "../lib/now-playing";
 import { recordingOf } from "../lib/recording";
 import { expireIfUnauthorized } from "../lib/session";
 import { usePolling } from "../lib/use-polling";
@@ -147,7 +147,7 @@ export const NarrationsProvider = ({ children }: { children: ReactNode }) => {
         setFailed(narration);
       },
       handleOpenOptions: setOptions,
-      handlePlay: (narration) => play(recordingOf(narration)),
+      handlePlay: (narration) => open(recordingOf(narration)),
       handleReload: () => {
         setLoadError("");
         reload();

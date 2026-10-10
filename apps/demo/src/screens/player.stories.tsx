@@ -1,4 +1,4 @@
-import { collapse, play } from "@dyslexia/web/lib/now-playing";
+import { collapse, open } from "@dyslexia/web/lib/now-playing";
 import { Player } from "@dyslexia/web/player/player";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
@@ -23,14 +23,14 @@ type Story = StoryObj<typeof meta>;
 /** The full player, over whatever screen is open. */
 export const NowPlaying: Story = {
   beforeEach: () => {
-    play(recording);
+    open(recording);
   },
 };
 
 /** The bar that keeps playback in reach on every screen. */
 export const MiniPlayer: Story = {
   beforeEach: () => {
-    play(recording);
+    open(recording);
     collapse();
   },
 };

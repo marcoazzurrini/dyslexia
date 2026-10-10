@@ -1,9 +1,16 @@
 import { createPlayer } from "@videojs/react";
 import { Audio, audioFeatures } from "@videojs/react/audio";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
-import { collapse, expand, useNowPlaying } from "../lib/now-playing";
-import { connectPlayback } from "../lib/playback";
+import {
+  attachAudio,
+  collapse,
+  expand,
+  pause,
+  resume,
+  retry,
+  useNowPlaying,
+} from "../lib/now-playing";
 import type { Recording } from "../lib/recording";
 import { MiniPlayer } from "./mini-player";
 import { NowPlaying } from "./now-playing";
@@ -26,49 +33,15 @@ export interface PlaybackView {
   readonly handleRateChange: (rate: number) => void;
 }
 
-const usePlayback = (recording: Recording) => {
+const usePlayback = (): PlaybackView => {
   const player = usePlayer();
   const paused = usePlayer((state) => state.paused);
   const waiting = usePlayer((state) => state.waiting);
   const ended = usePlayer((state) => state.ended);
   const duration = usePlayer((state) => state.duration);
   const mediaError = usePlayer((state) => state.error);
-  const [playError, setPlayError] = useState(false);
-  const [rate, setRate] = useState(1);
-  const [source, setSource] = useState<string>();
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const playbackRef = useRef<ReturnType<typeof connectPlayback> | null>(null);
+  const { failed, rate } = useNowPlaying();
   const canSeek = Number.isFinite(duration) && duration > 0 && !mediaError;
-
-  const play = useCallback(async () => {
-    setPlayError(false);
-    try {
-      await player.state.play();
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) {
-        setPlayError(true);
-      }
-    }
-  }, [player]);
-
-  useEffect(() => {
-    if (!audioRef.current) {
-      return;
-    }
-    const playback = connectPlayback(
-      audioRef.current,
-      { onRate: setRate, play },
-      recording
-    );
-    playbackRef.current = playback;
-    // Start loading only after mounting, with persistence connected, so a
-    // saved position is restored before playback can begin.
-    setSource(recording.audioUrl);
-    return () => {
-      playback.dispose();
-      playbackRef.current = null;
-    };
-  }, [recording, play]);
 
   let status: PlaybackStatus = "paused";
   if (!canSeek || waiting) {
@@ -79,35 +52,27 @@ const usePlayback = (recording: Recording) => {
     status = "playing";
   }
 
-  const view: PlaybackView = {
+  return {
     canSeek,
-    failed: Boolean(mediaError) || playError,
+    failed: Boolean(mediaError) || failed,
     handleRateChange: (value) => player.state.setPlaybackRate(value),
-    handleRetry: () => playbackRef.current?.retry(),
-    handleToggle: () => {
-      if (paused) {
-        void play();
-      } else {
-        player.state.pause();
-      }
-    },
+    handleRetry: retry,
+    handleToggle: paused ? resume : pause,
     rate,
     status,
   };
-  return { audioRef, source, view };
 };
 
-const Session = ({
+const Controls = ({
   expanded,
   recording,
 }: {
   expanded: boolean;
   recording: Recording;
 }) => {
-  const { audioRef, source, view } = usePlayback(recording);
+  const view = usePlayback();
   return (
     <>
-      <Audio ref={audioRef} src={source} preload="metadata" />
       {/* The sheet covers the bar, so only one set of controls exists. */}
       {!expanded && (
         <MiniPlayer recording={recording} view={view} onExpand={expand} />
@@ -122,18 +87,23 @@ const Session = ({
   );
 };
 
+/** The app's one audio element, handed to the playback controller. */
+const AudioElement = () => {
+  const ref = useRef<HTMLAudioElement>(null);
+  useEffect(() => (ref.current ? attachAudio(ref.current) : undefined), []);
+  return <Audio ref={ref} preload="metadata" />;
+};
+
 /**
  * The app's one audio player. It stays mounted across navigation, so
  * playback never restarts when the screen changes.
  */
 export const Player = () => {
   const { expanded, recording } = useNowPlaying();
-  if (!recording) {
-    return null;
-  }
   return (
-    <PlayerProvider key={`${recording.id}:${recording.version}`}>
-      <Session expanded={expanded} recording={recording} />
+    <PlayerProvider>
+      <AudioElement />
+      {recording && <Controls expanded={expanded} recording={recording} />}
     </PlayerProvider>
   );
 };

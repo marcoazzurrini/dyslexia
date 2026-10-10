@@ -3,15 +3,8 @@ import type { StyleXStyles } from "@stylexjs/stylex";
 import type { ComponentProps, ReactNode } from "react";
 
 import { ActivityIndicator } from "./progress.tsx";
-import {
-  color,
-  font,
-  media,
-  motion,
-  radius,
-  size,
-  space,
-} from "./tokens.stylex.ts";
+import { recipes } from "./recipes.ts";
+import { color, font, radius, size, space } from "./tokens.stylex.ts";
 
 const styles = stylex.create({
   base: {
@@ -23,20 +16,8 @@ const styles = stylex.create({
     fontWeight: 600,
     gap: space.sm,
     justifyContent: "center",
-    outlineColor: color.focus,
-    outlineOffset: "2px",
-    outlineStyle: { ":focus-visible": "solid", default: "none" },
-    outlineWidth: "2px",
     textAlign: "center",
     textDecoration: "none",
-    touchAction: "manipulation",
-    transform: {
-      ":active": { default: "scale(0.97)", [media.reducedMotion]: "none" },
-      default: "none",
-    },
-    transitionDuration: motion.fast,
-    transitionProperty: "transform, background-color, opacity",
-    transitionTimingFunction: motion.easeOut,
     userSelect: "none",
   },
   block: { width: "100%" },
@@ -125,6 +106,8 @@ const appearance = (
   disabled: boolean
 ) =>
   stylex.props(
+    recipes.focusRing,
+    recipes.press,
     styles.base,
     sizes[sizeName],
     variants[variant],

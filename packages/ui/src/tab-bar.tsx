@@ -1,7 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ComponentProps, ReactNode } from "react";
 
-import { color, media, motion, radius, size, space } from "./tokens.stylex.ts";
+import { recipes } from "./recipes.ts";
+import { color, media, radius, size, space } from "./tokens.stylex.ts";
 
 const styles = stylex.create({
   bar: {
@@ -56,20 +57,8 @@ const styles = stylex.create({
     justifyContent: "center",
     lineHeight: 1.2,
     minWidth: 0,
-    outlineColor: color.focus,
-    outlineOffset: "-2px",
-    outlineStyle: { ":focus-visible": "solid", default: "none" },
-    outlineWidth: "2px",
     position: "relative",
     textDecoration: "none",
-    touchAction: "manipulation",
-    transform: {
-      ":active": { default: "scale(0.94)", [media.reducedMotion]: "none" },
-      default: "none",
-    },
-    transitionDuration: motion.fast,
-    transitionProperty: "color, transform",
-    transitionTimingFunction: motion.easeOut,
     userSelect: "none",
   },
   items: { display: "flex", height: size.tabBar },
@@ -117,7 +106,12 @@ export const TabBarLink = ({
   <a
     aria-current={selected ? "page" : undefined}
     {...props}
-    {...stylex.props(styles.item, selected && styles.selected)}
+    {...stylex.props(
+      recipes.focusRingInset,
+      recipes.press,
+      styles.item,
+      selected && styles.selected
+    )}
   >
     <span {...stylex.props(styles.icon)}>{icon}</span>
     {label}

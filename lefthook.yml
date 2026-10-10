@@ -14,6 +14,9 @@ pre-commit:
       exclude:
         - apps/web/src/routeTree.gen.ts
       run: bunx oxlint --deny-warnings {staged_files}
+    - name: screens
+      glob: "apps/web/src/screens/*.tsx"
+      run: node apps/web/scripts/check-screens.ts
     - name: typecheck
       run: bun run typecheck
 

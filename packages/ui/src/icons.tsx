@@ -39,8 +39,13 @@ export const ChevronRightIcon = icon(<path d="m9 5 7 7-7 7" />);
 export const ChevronDownIcon = icon(<path d="m5 9 7 7 7-7" />);
 export const CloseIcon = icon(<path d="M6 6l12 12M18 6 6 18" />);
 export const CheckIcon = icon(<path d="m5 12.5 4.5 4.5L19 7.5" />);
+// Centered halfway between its box and its weight: a triangle centered by
+// its box looks pushed left, and by its weight, pushed right.
 export const PlayIcon = icon(
-  <path d="M7.5 4.6v14.8a1 1 0 0 0 1.5.86l12.3-7.4a1 1 0 0 0 0-1.72L9 3.74a1 1 0 0 0-1.5.86Z" />,
+  <path
+    transform="translate(-1.25 0)"
+    d="M7.5 4.6v14.8a1 1 0 0 0 1.5.86l12.3-7.4a1 1 0 0 0 0-1.72L9 3.74a1 1 0 0 0-1.5.86Z"
+  />,
   true
 );
 export const PauseIcon = icon(

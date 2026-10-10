@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./components/*": "./src/components/*.tsx",
     "./screens/*": "./src/screens/*.tsx",
     "./player/*": "./src/player/*.tsx",
     "./lib/*": "./src/lib/*.ts"

@@ -17,7 +17,7 @@
     "check": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run build && bun run test:e2e",
     "format": "oxfmt --write",
     "format:check": "oxfmt --check",
-    "lint": "oxlint --deny-warnings",
+    "lint": "oxlint --deny-warnings && node apps/web/scripts/check-screens.ts",
     "lint:fix": "oxlint --fix --deny-warnings"
   },
   "devDependencies": {

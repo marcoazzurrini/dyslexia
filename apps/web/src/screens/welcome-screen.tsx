@@ -1,5 +1,12 @@
-import { ActivityIndicator, Button, Notice, Text } from "@dyslexia/ui";
-import { color, radius, size, space } from "@dyslexia/ui/tokens.stylex";
+import {
+  ActivityIndicator,
+  AppIcon,
+  Button,
+  Notice,
+  Page,
+  Text,
+} from "@dyslexia/ui";
+import { space } from "@dyslexia/ui/tokens.stylex";
 import * as stylex from "@stylexjs/stylex";
 
 import type { SessionState } from "../lib/session";
@@ -18,28 +25,8 @@ const styles = stylex.create({
     gap: space.md,
     textAlign: "center",
   },
-  icon: {
-    borderRadius: radius.xl,
-    boxShadow: "0 10px 30px rgb(0 0 0 / 0.14)",
-    marginBottom: space.md,
-  },
   lead: { maxWidth: "24rem", textWrap: "pretty" },
   note: { textAlign: "center" },
-  screen: {
-    backgroundColor: color.background,
-    color: color.label,
-    display: "flex",
-    flexDirection: "column",
-    gap: space.huge,
-    justifyContent: "space-between",
-    marginInline: "auto",
-    maxWidth: size.measure,
-    minHeight: "100dvh",
-    outlineStyle: "none",
-    paddingBottom: `max(${space.xxxl}, env(safe-area-inset-bottom))`,
-    paddingInline: space.gutter,
-    paddingTop: `calc(env(safe-area-inset-top) + 18vh)`,
-  },
 });
 
 export interface WelcomeScreenProps {
@@ -59,15 +46,9 @@ export const WelcomeScreen = ({
   session,
   signInError,
 }: WelcomeScreenProps) => (
-  <main id="main-content" tabIndex={-1} {...stylex.props(styles.screen)}>
+  <Page>
     <div {...stylex.props(styles.hero)}>
-      <img
-        src="/icon.svg"
-        alt=""
-        width={96}
-        height={96}
-        {...stylex.props(styles.icon)}
-      />
+      <AppIcon src="/icon.svg" />
       <Text as="h1" variant="largeTitle">
         Reader
       </Text>
@@ -133,5 +114,5 @@ export const WelcomeScreen = ({
         </>
       )}
     </div>
-  </main>
+  </Page>
 );

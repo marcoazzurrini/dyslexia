@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
 import { useId } from "react";
 
+import { recipes } from "./recipes.ts";
 import { color, font, media, motion, size, space } from "./tokens.stylex.ts";
 
 // The group's inner padding, which the thumb keeps inside.
@@ -52,12 +53,6 @@ const styles = stylex.create({
     outlineWidth: "2px",
     paddingInline: space.sm,
     position: "relative",
-    transform: {
-      ":active": { default: "scale(0.96)", [media.reducedMotion]: "none" },
-      default: "none",
-    },
-    transitionDuration: motion.fast,
-    transitionProperty: "transform",
     userSelect: "none",
     whiteSpace: "nowrap",
   },
@@ -129,7 +124,11 @@ export const SegmentedControl = <Value extends string | number>({
         return (
           <label
             key={option.value}
-            {...stylex.props(styles.segment, checked && styles.selected)}
+            {...stylex.props(
+              recipes.press,
+              styles.segment,
+              checked && styles.selected
+            )}
           >
             <input
               type="radio"

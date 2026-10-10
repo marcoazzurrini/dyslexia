@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  Avatar,
   ListButton,
   ListRow,
   ListSection,
@@ -7,22 +8,10 @@ import {
   Screen,
   Text,
 } from "@dyslexia/ui";
-import { color, font, radius, space } from "@dyslexia/ui/tokens.stylex";
+import { space } from "@dyslexia/ui/tokens.stylex";
 import * as stylex from "@stylexjs/stylex";
 
 const styles = stylex.create({
-  avatar: {
-    alignItems: "center",
-    backgroundColor: color.accent,
-    borderRadius: radius.full,
-    color: color.onAccent,
-    display: "flex",
-    fontSize: font.title1,
-    fontWeight: 600,
-    height: "4.5rem",
-    justifyContent: "center",
-    width: "4.5rem",
-  },
   identity: {
     alignItems: "center",
     display: "flex",
@@ -32,7 +21,6 @@ const styles = stylex.create({
     textAlign: "center",
   },
   loading: { display: "flex", justifyContent: "center", padding: space.xl },
-  signOut: { color: color.danger },
 });
 
 export interface Account {
@@ -71,9 +59,7 @@ export const ProfileScreen = ({
     )}
     {account && (
       <div {...stylex.props(styles.identity)}>
-        <span aria-hidden="true" {...stylex.props(styles.avatar)}>
-          {(account.name || account.email).charAt(0).toUpperCase()}
-        </span>
+        <Avatar name={account.name || account.email} />
         <Text as="h2" variant="title2">
           {account.name}
         </Text>
@@ -89,7 +75,8 @@ export const ProfileScreen = ({
     </ListSection>
     <ListSection>
       <ListButton
-        title={<span {...stylex.props(styles.signOut)}>Sign out</span>}
+        title="Sign out"
+        tone="destructive"
         accessory={busy ? <ActivityIndicator /> : null}
         disabled={busy}
         aria-busy={busy}

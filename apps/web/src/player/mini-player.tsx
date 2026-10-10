@@ -4,12 +4,12 @@ import {
   IconButton,
   PauseIcon,
   PlayIcon,
+  recipes,
 } from "@dyslexia/ui";
 import {
   color,
   font,
   media,
-  motion,
   radius,
   size,
   space,
@@ -77,19 +77,9 @@ const styles = stylex.create({
     flexGrow: 1,
     gap: space.md,
     minWidth: 0,
-    outlineColor: color.focus,
-    outlineOffset: "-2px",
-    outlineStyle: { ":focus-visible": "solid", default: "none" },
-    outlineWidth: "2px",
     paddingBlock: space.sm,
     paddingInlineStart: space.sm,
     textAlign: "start",
-    transform: {
-      ":active": { default: "scale(0.98)", [media.reducedMotion]: "none" },
-      default: "none",
-    },
-    transitionDuration: motion.fast,
-    transitionProperty: "transform",
   },
   // A plain glyph, as the play button beside it.
   seek: {
@@ -104,9 +94,6 @@ const styles = stylex.create({
     height: size.touch,
     justifyContent: "center",
     opacity: { ":active": 0.5, ":disabled": 0.35, default: 1 },
-    outlineColor: color.focus,
-    outlineStyle: { ":focus-visible": "solid", default: "none" },
-    outlineWidth: "2px",
     padding: 0,
     width: size.touch,
   },
@@ -121,9 +108,6 @@ const styles = stylex.create({
     fontSize: font.subheadline,
     fontWeight: 600,
     lineHeight: 1.3,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
   },
 });
 
@@ -149,11 +133,17 @@ export const MiniPlayer = ({
         type="button"
         aria-label={`Open player: ${recording.title}`}
         onClick={onExpand}
-        {...stylex.props(styles.open)}
+        {...stylex.props(
+          recipes.focusRingInset,
+          recipes.pressSurface,
+          styles.open
+        )}
       >
         <Cover url={recording.sourceUrl} size="mini" />
         <span {...stylex.props(styles.text)}>
-          <span {...stylex.props(styles.title)}>{recording.title}</span>
+          <span {...stylex.props(styles.title, recipes.truncate)}>
+            {recording.title}
+          </span>
           <span {...stylex.props(styles.time)}>
             {view.failed ? (
               "Audio could not play"
@@ -182,7 +172,7 @@ export const MiniPlayer = ({
         seconds={15}
         label="seek forward 15 seconds"
         disabled={!view.canSeek}
-        {...stylex.props(styles.seek)}
+        {...stylex.props(recipes.focusRing, styles.seek)}
       >
         <ForwardIcon />
       </SeekButton>

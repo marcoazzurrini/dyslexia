@@ -1,16 +1,13 @@
-import {
-  listNarrations,
-  removeNarration,
-  retryNarration,
-  startNarration,
-} from "@dyslexia/narrations/client";
+import { createLibrary } from "@dyslexia/narrations/client";
 import type { Narration } from "@dyslexia/narrations/client";
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
 } from "react";
 import type { ReactNode } from "react";
 
@@ -18,7 +15,6 @@ import { markFinished, useListening } from "../lib/listening";
 import { open, playback, stop, useNowPlaying } from "../lib/now-playing";
 import { recordingOf } from "../lib/recording";
 import { expireIfUnauthorized } from "../lib/session";
-import { usePolling } from "../lib/use-polling";
 import { FailedSheet } from "../screens/failed-sheet";
 import { NarrationOptionsSheet } from "../screens/narration-options-sheet";
 import { NewNarrationSheet } from "../screens/new-narration-sheet";
@@ -58,87 +54,71 @@ export const useNarrations = () => {
 };
 
 /**
- * Loads the library, keeps it fresh while narrations are being made, and
- * holds the sheets for adding, retrying, and deleting. Every tab shares it,
- * so switching tabs never loads the library again.
+ * Shows the live library, and holds the sheets for adding, retrying, and
+ * deleting. Every tab shares it, so switching tabs never loads the library
+ * again.
  */
 export const NarrationsProvider = ({ children }: { children: ReactNode }) => {
-  const [narrations, setNarrations] = useState<readonly Narration[] | null>(
-    null
+  // One per sign-in, so a new account never sees the last one's library.
+  // eslint-disable-next-line react/hook-use-state -- Created once, never replaced.
+  const [library] = useState(createLibrary);
+  const { error: loadError, narrations } = useSyncExternalStore(
+    library.subscribe,
+    library.getSnapshot
   );
-  const [loadError, setLoadError] = useState("");
   const [adding, setAdding] = useState(false);
   const [failed, setFailed] = useState<Failed | null>(null);
   const [options, setOptions] = useState<Ready | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const { paused, recording } = useNowPlaying();
   const listeningOf = useListening();
-  const [busy, setBusy] = useState<"add" | "retry" | "remove" | null>(null);
+  const [busy, setBusy] = useState<"add" | "retry" | null>(null);
   const [actionError, setActionError] = useState("");
 
-  const reload = usePolling(listNarrations, {
-    enabled: busy === null,
-    keepPolling: (list) => list.some((item) => item.state === "making"),
-    onData: (list) => {
-      setNarrations(list);
-      setLoadError("");
-    },
-    onError: (error) => {
-      if (!expireIfUnauthorized(error)) {
-        setLoadError(error.message);
-      }
-    },
-  });
+  useEffect(() => library.connect(), [library]);
+  useEffect(() => {
+    if (loadError) {
+      expireIfUnauthorized(loadError);
+    }
+  }, [loadError]);
 
-  /** Runs an action, then closes its sheet and shows the new library. */
+  /** Runs a change, then closes its sheet. */
   const act = useCallback(
-    async (kind: "add" | "retry", action: () => Promise<void>) => {
+    async (kind: "add" | "retry", change: () => Promise<void>) => {
       setBusy(kind);
       setActionError("");
       try {
-        await action();
+        await change();
         setAdding(false);
         setFailed(null);
-        reload();
       } catch (error) {
-        const failure =
-          error instanceof Error ? error : new Error("The request failed.");
-        if (!expireIfUnauthorized(failure)) {
-          setActionError(failure.message);
+        if (error instanceof Error && !expireIfUnauthorized(error)) {
+          setActionError(error.message);
         }
       }
       setBusy(null);
     },
-    [reload]
+    []
   );
 
-  /** Removes a narration at once, and brings it back if the server refuses. */
+  /** Removes a narration at once; it comes back if the server refuses. */
   const remove = useCallback(
     async (narration: Ready | Failed) => {
       setOptions(null);
       setFailed(null);
       setDeleteError("");
-      setNarrations(
-        (list) => list?.filter((item) => item.id !== narration.id) ?? null
-      );
       if (recording?.id === narration.id) {
         stop();
       }
-      // Polling pauses meanwhile, so a list read before the deletion cannot
-      // bring the narration back; it resumes with a fresh read.
-      setBusy("remove");
       try {
-        await removeNarration(narration.id);
+        await library.remove(narration.id);
       } catch (error) {
-        const failure =
-          error instanceof Error ? error : new Error("The request failed.");
-        if (!expireIfUnauthorized(failure)) {
-          setDeleteError(failure.message);
+        if (error instanceof Error && !expireIfUnauthorized(error)) {
+          setDeleteError(error.message);
         }
       }
-      setBusy(null);
     },
-    [recording]
+    [library, recording]
   );
 
   const value = useMemo<Narrations>(
@@ -156,18 +136,18 @@ export const NarrationsProvider = ({ children }: { children: ReactNode }) => {
       },
       handleOpenOptions: setOptions,
       handlePause: playback.pause,
-      handleReload: () => {
-        setLoadError("");
-        reload();
-      },
+      handleReload: library.reload,
       handleRemove: (narration) => {
         void remove(narration);
       },
-      loadError: loadError || undefined,
+      loadError:
+        loadError && loadError.kind !== "signed-out"
+          ? loadError.message
+          : undefined,
       narrations,
       playingId: paused ? undefined : recording?.id,
     }),
-    [deleteError, loadError, narrations, paused, recording, reload, remove]
+    [deleteError, library, loadError, narrations, paused, recording, remove]
   );
 
   return (
@@ -179,21 +159,17 @@ export const NarrationsProvider = ({ children }: { children: ReactNode }) => {
         busy={busy === "add"}
         error={(adding && actionError) || undefined}
         onSubmit={(url) => {
-          void act("add", async () => {
-            await startNarration(url);
-          });
+          void act("add", () => library.add(url));
         }}
       />
       <FailedSheet
         narration={failed}
         onClose={() => setFailed(null)}
-        busy={busy === "retry" || busy === "remove" ? busy : null}
+        busy={busy === "retry" ? busy : null}
         error={(failed && actionError) || undefined}
         onRetry={() => {
           if (failed) {
-            void act("retry", async () => {
-              await retryNarration(failed.id);
-            });
+            void act("retry", () => library.retry(failed.id));
           }
         }}
         onRemove={() => {

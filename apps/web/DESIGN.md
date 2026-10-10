@@ -154,14 +154,17 @@ components:
     height: "44px"
   list-row-pressed:
     backgroundColor: "{colors.cell-pressed}"
-  play-capsule:
-    backgroundColor: "{colors.indigo-wash}"
-    textColor: "{colors.indigo-text}"
-    typography: "{typography.footnote}"
-    rounded: "{rounded.full}"
-  play-capsule-finished:
-    backgroundColor: "{colors.control-fill}"
+  listening-line:
     textColor: "{colors.label-secondary}"
+    typography: "{typography.caption}"
+  listening-track:
+    backgroundColor: "{colors.control-fill}"
+    rounded: "{rounded.full}"
+    height: "3px"
+  row-play:
+    textColor: "{colors.label-graphite}"
+    rounded: "{rounded.full}"
+    size: "1.5rem"
   segmented-control:
     backgroundColor: "{colors.control-fill}"
     textColor: "{colors.label-graphite}"
@@ -240,8 +243,8 @@ An iOS system palette with one indigo tint, plus eight deep cover hues that carr
 ### Primary
 
 - **Indigo Tint** (accent): filled buttons, the selected tab, list progress bars, the avatar, the caret and selection highlight. Light and dark differ slightly to keep contrast; white on it passes AA.
-- **Indigo Text** (accentText): tinted text and glyphs on any background, such as the add glyph, the source link in the player, play capsules, the selected tab label. Lifts to a pale indigo in dark mode.
-- **Indigo Wash** (accentFill): the background of tinted buttons and play capsules.
+- **Indigo Text** (accentText): tinted text and glyphs on any background, such as the add glyph, the source link in the player, finished checks, the selected tab label. Lifts to a pale indigo in dark mode.
+- **Indigo Wash** (accentFill): the background of tinted buttons.
 - **Indigo Pressed** (accentPressed): the pressed state of filled controls.
 
 ### Secondary
@@ -281,7 +284,7 @@ An iOS system palette with one indigo tint, plus eight deep cover hues that carr
 - **Headline** (600, 1rem, 1.35): sheet titles and the compact nav bar title.
 - **Body** (400, 1rem, 1.5): running text and list row titles (rows use 500).
 - **Callout / Subheadline** (0.94rem / 0.88rem): medium buttons; row subtitles, shelf titles, segmented labels, mini player title.
-- **Footnote** (400, 0.8rem, 1.4): times, list headers and footers, capsule labels, status lines.
+- **Footnote** (400, 0.8rem, 1.4): times, list headers and footers, listening lines, status lines.
 - **Caption** (500, 0.75rem, 0.01em): the smallest metadata.
 
 ### Named Rules
@@ -318,7 +321,7 @@ Hybrid: cells and lists are flat and tonal (white on gray, hairline separators),
 
 ## Shapes
 
-Continuous-feeling rounded rectangles at tight iOS radii: 0.5rem for the mini cover, 0.625rem for buttons, row covers and shelf covers, 0.875rem for inset grouped sections, cards, and the mini player, 1.25rem for the large cover, 2.25rem for the top corners of sheets. Capsules (full radius) for the tab bar, play capsules, progress tracks, the grabber, and round icon buttons. The segmented control uses its own nested radii (0.5625rem outside, 0.4375rem thumb).
+Continuous-feeling rounded rectangles at tight iOS radii: 0.5rem for the mini cover, 0.625rem for buttons, row covers and shelf covers, 0.875rem for inset grouped sections, cards, and the mini player, 1.25rem for the large cover, 2.25rem for the top corners of sheets. Capsules (full radius) for the tab bar, filter chips, row play glyphs, progress tracks, the grabber, and round icon buttons. The segmented control uses its own nested radii (0.5625rem outside, 0.4375rem thumb).
 
 ## Components
 
@@ -343,13 +346,17 @@ Round, 44px. Navigation actions (add) are bare tinted glyphs with no disc, as in
 - **Row:** 44px minimum, 0.75rem by 1rem padding, title 500 weight, subtitle in secondary label; pressed or hovered rows turn cell-pressed. Rows with covers inset separators past the 3.5rem cover. Swipe reveals a red Delete.
 - **Section headers:** footnote semibold secondary, or a prominent Title 3 bold variant on media screens.
 
-### Play capsule
+### Narration row
 
-A small pill in the indigo wash under a narration's site: play glyph, an inline 3px progress track when started, and the time left. Finished narrations show a gray capsule with a check.
+As in Audible: the title in subheadline semibold, on one line ending in an ellipsis; the site in footnote; then how far the listener got in secondary caption. Started narrations show a short 3px indigo bar before the time left, unstarted ones their length, finished ones an indigo check and "Finished". A round outlined play glyph sits after the text, then the more button, whose sheet offers Mark as finished (or unfinished) and Delete.
+
+### Filter chips
+
+Gray capsules in a row that scrolls sideways when the labels do not fit; the selected chip is filled indigo. Used for Library filters, which outgrow a segmented control on a phone.
 
 ### Segmented control
 
-Gray track with 3px padding, a white thumb that slides on a spring; used for Library filters and playback speed.
+Gray track with 3px padding, a white thumb that slides on a spring; used for playback speed.
 
 ### Navigation
 

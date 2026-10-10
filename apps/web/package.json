@@ -22,6 +22,7 @@
   "dependencies": {
     "@dyslexia/auth": "workspace:*",
     "@dyslexia/narrations": "workspace:*",
+    "@dyslexia/playback": "workspace:*",
     "@dyslexia/ui": "workspace:*",
     "@stylexjs/stylex": "0.19.1",
     "@tanstack/react-router": "1.170.40",

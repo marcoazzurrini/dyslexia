@@ -2,15 +2,7 @@ import { createPlayer } from "@videojs/react";
 import { Audio, audioFeatures } from "@videojs/react/audio";
 import { useEffect, useRef } from "react";
 
-import {
-  attachAudio,
-  collapse,
-  expand,
-  pause,
-  resume,
-  retry,
-  useNowPlaying,
-} from "../lib/now-playing";
+import { collapse, expand, playback, useNowPlaying } from "../lib/now-playing";
 import type { Recording } from "../lib/recording";
 import { MiniPlayer } from "./mini-player";
 import { NowPlaying } from "./now-playing";
@@ -34,7 +26,6 @@ export interface PlaybackView {
 }
 
 const usePlayback = (): PlaybackView => {
-  const player = usePlayer();
   const paused = usePlayer((state) => state.paused);
   const waiting = usePlayer((state) => state.waiting);
   const ended = usePlayer((state) => state.ended);
@@ -55,9 +46,9 @@ const usePlayback = (): PlaybackView => {
   return {
     canSeek,
     failed: Boolean(mediaError) || failed,
-    handleRateChange: (value) => player.state.setPlaybackRate(value),
-    handleRetry: retry,
-    handleToggle: paused ? resume : pause,
+    handleRateChange: playback.setRate,
+    handleRetry: playback.retry,
+    handleToggle: paused ? playback.resume : playback.pause,
     rate,
     status,
   };
@@ -87,10 +78,10 @@ const Controls = ({
   );
 };
 
-/** The app's one audio element, handed to the playback controller. */
+/** The app's one audio element, handed to the player. */
 const AudioElement = () => {
   const ref = useRef<HTMLAudioElement>(null);
-  useEffect(() => (ref.current ? attachAudio(ref.current) : undefined), []);
+  useEffect(() => (ref.current ? playback.attach(ref.current) : undefined), []);
   return <Audio ref={ref} preload="metadata" />;
 };
 

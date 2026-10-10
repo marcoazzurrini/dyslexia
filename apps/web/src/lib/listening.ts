@@ -1,74 +1,34 @@
 import type { Narration } from "@dyslexia/narrations/client";
+import type { Progress, ProgressStatus } from "@dyslexia/playback";
 import { useSyncExternalStore } from "react";
 
-import { markPosition } from "./now-playing";
-import { onPlaybackSaved, playbackKey, readPlayback } from "./playback";
+import { playback } from "./now-playing";
 import { recordingOf } from "./recording";
 
 type Ready = Extract<Narration, { state: "ready" }>;
 
 /** How far the listener got with a narration, on this device. */
-export type ListeningStatus = "not-started" | "in-progress" | "finished";
+export type Listening = Progress;
+export type ListeningStatus = ProgressStatus;
 
-export interface Listening {
-  readonly status: ListeningStatus;
-  /** Seconds listened to. */
-  readonly position: number;
-  /** Seconds left to listen to. */
-  readonly remaining: number;
-  /** When it was last listened to, in milliseconds, or 0 if never. */
-  readonly playedAt: number;
-}
-
-// Stopping in the last few seconds still counts as listening to the end.
-const finishMargin = (duration: number) => Math.min(30, duration * 0.05);
-
-/** How far the listener got with a narration, from its saved position. */
-export const listeningOf = (narration: Ready): Listening => {
-  const { playedAt = 0, position } = readPlayback(
-    playbackKey(recordingOf(narration))
-  );
-  const duration = narration.durationSeconds;
-  let status: ListeningStatus = "in-progress";
-  if (position <= 0) {
-    status = "not-started";
-  } else if (position >= duration - finishMargin(duration)) {
-    status = "finished";
-  }
-  return {
-    playedAt,
-    position,
-    remaining: Math.max(0, duration - position),
-    status,
-  };
-};
+/** How far the listener got with a narration, from its saved place. */
+export const listeningOf = (narration: Ready): Listening =>
+  playback.progressOf(recordingOf(narration));
 
 /** Marks a narration finished, or not started again, on this device. */
 export const markFinished = (narration: Ready, finished: boolean) =>
-  markPosition(
-    recordingOf(narration),
-    finished ? narration.durationSeconds : 0
-  );
+  playback.markFinished(recordingOf(narration), finished);
 
 let version = 0;
-const listeners = new Set<() => void>();
-onPlaybackSaved(() => {
-  version += 1;
-  for (const listener of listeners) {
+const subscribe = (listener: () => void) =>
+  playback.subscribeProgress(() => {
+    version += 1;
     listener();
-  }
-});
-
-const subscribe = (listener: () => void) => {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-};
+  });
 
 /**
  * Reads how far the listener got with each narration, and renders again
- * whenever the player saves a position.
+ * whenever the player saves a place.
  */
 export const useListening = () => {
   useSyncExternalStore(

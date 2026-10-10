@@ -1,3 +1,4 @@
+import { PLAYBACK_RATES } from "@dyslexia/playback";
 import {
   BackIcon,
   Button,
@@ -25,9 +26,7 @@ import * as stylex from "@stylexjs/stylex";
 import { SeekButton, Time, TimeSlider } from "@videojs/react";
 
 import { Cover, hueOf } from "../components/cover";
-import { PLAYBACK_RATES } from "../lib/playback";
 import type { Recording } from "../lib/recording";
-import { siteOf } from "../lib/recording";
 import type { PlaybackView } from "./player";
 
 const styles = stylex.create({
@@ -192,7 +191,7 @@ export const NowPlaying = ({
     onClose={onClose}
     title="Now playing"
     hideTitle
-    tint={hueOf(siteOf(recording.sourceUrl))}
+    tint={hueOf(recording.artist)}
   >
     <div {...stylex.props(styles.coverStage)}>
       <Cover
@@ -211,7 +210,7 @@ export const NowPlaying = ({
         rel="noreferrer"
         {...stylex.props(styles.source)}
       >
-        {siteOf(recording.sourceUrl)}
+        {recording.artist}
         <ExternalIcon />
         <VisuallyHidden>
           (opens the original article in a new tab)

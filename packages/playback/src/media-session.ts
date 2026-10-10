@@ -1,20 +1,24 @@
-import type { Recording } from "./recording";
-import { siteOf } from "./recording";
+import type { Track } from "./track.ts";
 
 const validDuration = (audio: HTMLAudioElement) =>
   Number.isFinite(audio.duration) && audio.duration > 0;
 
-export const seekAudio = (audio: HTMLAudioElement, position: number) => {
+const seekAudio = (audio: HTMLAudioElement, position: number) => {
   if (!validDuration(audio) || !Number.isFinite(position)) {
     return;
   }
   audio.currentTime = Math.min(audio.duration, Math.max(0, position));
 };
 
+/**
+ * Shows a track on the lock screen and in Control Center, and answers
+ * their buttons, until disposed.
+ */
 export const connectMediaSession = (
   audio: HTMLAudioElement,
   play: () => void,
-  recording: Pick<Recording, "sourceUrl" | "title">
+  { artist, title }: Pick<Track, "artist" | "title">,
+  artwork: readonly MediaImage[]
 ) => {
   // Some Safari versions expose Audio Session separately from Media Session.
   try {
@@ -37,12 +41,9 @@ export const connectMediaSession = (
     try {
       if (typeof MediaMetadata !== "undefined") {
         session.metadata = new MediaMetadata({
-          artist: siteOf(recording.sourceUrl),
-          artwork: [
-            { sizes: "192x192", src: "/icons/icon-192.png", type: "image/png" },
-            { sizes: "512x512", src: "/icons/icon-512.png", type: "image/png" },
-          ],
-          title: recording.title,
+          artist,
+          artwork: [...artwork],
+          title,
         });
       }
     } catch {

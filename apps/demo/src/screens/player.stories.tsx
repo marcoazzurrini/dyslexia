@@ -3,10 +3,11 @@ import { Player } from "@dyslexia/web/player/player";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 const recording = {
-  audioUrl: "/audio/a.mp3",
-  durationSeconds: 1,
+  artist: "example.org",
+  duration: 1,
   id: "story",
   sourceUrl: "https://www.example.org/science/reading-brain",
+  src: "/audio/a.mp3",
   title: "How the brain learns to read",
   version: "story",
 };

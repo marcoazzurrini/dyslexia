@@ -2,13 +2,13 @@ import type { Narration } from "@dyslexia/narrations/client";
 import {
   ActivityIndicator,
   Button,
+  ChipGroup,
   EmptyState,
   IconButton,
   ListSection,
   Notice,
   PlusIcon,
   Screen,
-  SegmentedControl,
   WaveformIcon,
 } from "@dyslexia/ui";
 import { media, motion, space } from "@dyslexia/ui/tokens.stylex";
@@ -264,7 +264,7 @@ export const LibraryScreen = ({
       )}
       {narrations && narrations.length > 0 && (
         <>
-          <SegmentedControl
+          <ChipGroup
             label="Show"
             options={FILTERS}
             value={filter}

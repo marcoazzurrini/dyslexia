@@ -113,7 +113,9 @@ export const NarrationOptions: Story = {
       <LibraryScreen {...args} />
       <NarrationOptionsSheet
         narration={ready()}
+        finished={false}
         onClose={fn()}
+        onMarkFinished={fn()}
         onDelete={fn()}
       />
     </>

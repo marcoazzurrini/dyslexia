@@ -48,6 +48,15 @@ export const readPlayback = (storageKey: string): SavedPlayback => {
 
 const saveListeners = new Set<() => void>();
 
+const notifySaved = () => {
+  for (const listener of saveListeners) {
+    listener();
+  }
+};
+
+// The connected player for each recording, so marking moves it too.
+const sessions = new Map<string, (position: number) => void>();
+
 /** Calls `listener` whenever a position is saved, until unsubscribed. */
 export const onPlaybackSaved = (listener: () => void) => {
   saveListeners.add(listener);
@@ -99,12 +108,18 @@ export const connectPlayback = (
       // Playback remains usable when storage is unavailable.
       return;
     }
-    for (const listener of saveListeners) {
-      listener();
-    }
+    notifySaved();
   };
 
   const mediaSession = connectMediaSession(audio, play, recording);
+  // Marking moves the player, so its next save keeps the mark.
+  const mark = (position: number) => {
+    pendingPosition = position;
+    if (restored && hasDuration()) {
+      audio.currentTime = Math.min(position, audio.duration);
+    }
+  };
+  sessions.set(storageKey, mark);
   const sync = () => {
     save();
     mediaSession.update();
@@ -181,8 +196,33 @@ export const connectPlayback = (
     }
     document.removeEventListener("visibilitychange", sync);
     window.removeEventListener("pagehide", sync);
+    if (sessions.get(storageKey) === mark) {
+      sessions.delete(storageKey);
+    }
     mediaSession.dispose();
   };
 
   return { dispose, retry };
+};
+
+/**
+ * Saves `position` for a recording, as when marking it finished or not
+ * started, and moves the player there if it holds the recording.
+ */
+export const markPlayback = (
+  recording: Pick<Recording, "id" | "version">,
+  position: number
+) => {
+  const storageKey = playbackKey(recording);
+  const { rate } = readPlayback(storageKey);
+  try {
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify({ playedAt: Date.now(), position, rate })
+    );
+  } catch {
+    // The mark is lost, but playback remains usable.
+  }
+  sessions.get(storageKey)?.(position);
+  notifySaved();
 };

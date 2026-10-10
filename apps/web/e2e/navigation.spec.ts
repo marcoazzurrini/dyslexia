@@ -137,6 +137,26 @@ test("the library filters by how far you got, and keeps the filter", async ({
   await expect(plays).toHaveCount(3);
 });
 
+test("a narration can be marked finished, and unfinished again", async ({
+  page,
+}) => {
+  await mockNarrations(page, { narrations: [narrations[0]] });
+  await page.goto("/library");
+  const play = page.getByRole("button", { name: "Play Fresh" });
+  await expect(play).toContainText("10 min");
+
+  await page.getByRole("button", { name: "Options for Fresh" }).click();
+  await page.getByRole("button", { name: "Mark as finished" }).click();
+  await expect(page.getByRole("dialog", { name: "Fresh" })).toBeHidden();
+  await expect(play).toContainText("Finished");
+  await page.getByRole("radio", { name: "Finished" }).check();
+  await expect(play).toBeVisible();
+
+  await page.getByRole("button", { name: "Options for Fresh" }).click();
+  await page.getByRole("button", { name: "Mark as unfinished" }).click();
+  await expect(page.getByText("Nothing finished yet")).toBeVisible();
+});
+
 test("an empty filter says what would appear there", async ({ page }) => {
   await mockNarrations(page, { narrations: [narrations[0]] });
   await page.goto("/library?show=finished");

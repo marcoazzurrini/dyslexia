@@ -14,6 +14,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 
+import { markFinished, useListening } from "../lib/listening";
 import { play, stop, useNowPlaying } from "../lib/now-playing";
 import { recordingOf } from "../lib/recording";
 import { expireIfUnauthorized } from "../lib/session";
@@ -65,6 +66,7 @@ export const NarrationsProvider = ({ children }: { children: ReactNode }) => {
   const [options, setOptions] = useState<Ready | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const { recording } = useNowPlaying();
+  const listeningOf = useListening();
   const [busy, setBusy] = useState<"add" | "retry" | "remove" | null>(null);
   const [actionError, setActionError] = useState("");
 
@@ -193,7 +195,14 @@ export const NarrationsProvider = ({ children }: { children: ReactNode }) => {
       />
       <NarrationOptionsSheet
         narration={options}
+        finished={options ? listeningOf(options).status === "finished" : false}
         onClose={() => setOptions(null)}
+        onMarkFinished={(finished) => {
+          if (options) {
+            markFinished(options, finished);
+            setOptions(null);
+          }
+        }}
         onDelete={() => {
           if (options) {
             void remove(options);

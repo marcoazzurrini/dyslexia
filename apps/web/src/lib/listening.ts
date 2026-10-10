@@ -1,7 +1,12 @@
 import type { Narration } from "@dyslexia/narrations/client";
 import { useSyncExternalStore } from "react";
 
-import { onPlaybackSaved, playbackKey, readPlayback } from "./playback";
+import {
+  markPlayback,
+  onPlaybackSaved,
+  playbackKey,
+  readPlayback,
+} from "./playback";
 import { recordingOf } from "./recording";
 
 type Ready = Extract<Narration, { state: "ready" }>;
@@ -41,6 +46,13 @@ export const listeningOf = (narration: Ready): Listening => {
     status,
   };
 };
+
+/** Marks a narration finished, or not started again, on this device. */
+export const markFinished = (narration: Ready, finished: boolean) =>
+  markPlayback(
+    recordingOf(narration),
+    finished ? narration.durationSeconds : 0
+  );
 
 let version = 0;
 const listeners = new Set<() => void>();

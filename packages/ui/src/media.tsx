@@ -23,6 +23,14 @@ const styles = stylex.create({
     textAlign: "start",
     width: "min(17rem, 78vw)",
   },
+  // Leads the card, over a darker shade of its own color.
+  cardCover: {
+    borderRadius: radius.md,
+    boxShadow: "0 4px 12px rgb(0 0 0 / 0.24)",
+    flexShrink: 0,
+    overflow: "hidden",
+    width: "4.25rem",
+  },
   cardMeta: { fontSize: font.subheadline, lineHeight: 1.4, opacity: 0.9 },
   cardPlay: {
     alignItems: "center",
@@ -74,6 +82,12 @@ const styles = stylex.create({
     textAlign: "start",
     width: "9.5rem",
   },
+  tileCover: {
+    borderRadius: radius.md,
+    boxShadow: "0 6px 16px rgb(0 0 0 / 0.14), 0 1px 3px rgb(0 0 0 / 0.08)",
+    display: "block",
+    overflow: "hidden",
+  },
   tileMeta: {
     color: color.secondaryLabel,
     fontSize: font.footnote,
@@ -90,6 +104,7 @@ const styles = stylex.create({
 interface MediaProps {
   /** The accessible name, such as "Play How the brain learns to read". */
   readonly label: string;
+  /** A `Cover`, which the card or tile sizes. */
   readonly artwork: ReactNode;
   readonly title: string;
   /** A line under the title, such as the site and the time left. */
@@ -130,7 +145,7 @@ export const MediaCard = ({
     )}
   >
     <span {...stylex.props(styles.cardTop)}>
-      {artwork}
+      <span {...stylex.props(styles.cardCover)}>{artwork}</span>
       <span
         aria-hidden="true"
         {...stylex.props(styles.cardPlay, styles.cardPlayTint(tint))}
@@ -170,7 +185,7 @@ export const MediaTile = ({
     onClick={onClick}
     {...stylex.props(recipes.focusRing, recipes.press, styles.tile)}
   >
-    {artwork}
+    <span {...stylex.props(styles.tileCover)}>{artwork}</span>
     <span {...stylex.props(styles.tileTitle, recipes.clampTwo)}>{title}</span>
     <span {...stylex.props(styles.tileMeta)}>{meta}</span>
   </button>

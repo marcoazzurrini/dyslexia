@@ -16,6 +16,15 @@ export const siteOf = (url: string) => {
   }
 };
 
+/**
+ * What a link's cover shows: colored by its site, and named without the
+ * domain ending, such as "stilldrinking".
+ */
+export const coverOf = (url: string) => {
+  const site = siteOf(url);
+  return { name: site.split(".").slice(0, -1).join(".") || site, seed: site };
+};
+
 export const recordingOf = (
   narration: Extract<Narration, { state: "ready" }>
 ): Recording => ({

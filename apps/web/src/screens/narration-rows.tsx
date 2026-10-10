@@ -1,6 +1,8 @@
 import type { Narration } from "@dyslexia/narrations/client";
 import {
   ActivityIndicator,
+  Cover,
+  coverTint,
   ListButton,
   ListRow,
   MediaCard,
@@ -11,9 +13,8 @@ import {
 } from "@dyslexia/ui";
 import type { RowMeta } from "@dyslexia/ui";
 
-import { Cover, hueOf } from "../components/cover";
 import type { Listening } from "../lib/listening";
-import { formatDuration, siteOf } from "../lib/recording";
+import { coverOf, formatDuration, siteOf } from "../lib/recording";
 
 type Making = Extract<Narration, { state: "making" }>;
 type Ready = Extract<Narration, { state: "ready" }>;
@@ -50,7 +51,7 @@ const metaOf = (narration: Ready, listening: Listening): RowMeta => {
 export const MakingRow = ({ narration }: { narration: Making }) => (
   <ListRow
     leading={
-      <Cover url={narration.url} size="row" tone="neutral">
+      <Cover {...coverOf(narration.url)} tone="neutral">
         <ActivityIndicator />
       </Cover>
     }
@@ -89,7 +90,7 @@ export const ReadyRow = ({
   playing,
 }: ReadyRowProps) => (
   <ListButton
-    leading={<Cover url={narration.url} size="row" />}
+    leading={<Cover {...coverOf(narration.url)} />}
     title={narration.title}
     subtitle={siteOf(narration.url)}
     meta={metaOf(narration, listening)}
@@ -134,11 +135,11 @@ export const ResumeCard = ({
 }) => (
   <MediaCard
     label={narration.title}
-    artwork={<Cover url={narration.url} size="card" />}
+    artwork={<Cover {...coverOf(narration.url)} />}
     title={narration.title}
     meta={`${siteOf(narration.url)} · ${formatDuration(listening.remaining)} left`}
     progress={listening.position / narration.durationSeconds}
-    tint={hueOf(siteOf(narration.url))}
+    tint={coverTint(siteOf(narration.url))}
     wide={wide}
     onClick={() => onOpen(narration)}
   />
@@ -154,7 +155,7 @@ export const ShelfTile = ({
 }) => (
   <MediaTile
     label={narration.title}
-    artwork={<Cover url={narration.url} size="shelf" />}
+    artwork={<Cover {...coverOf(narration.url)} />}
     title={narration.title}
     meta={`${siteOf(narration.url)} · ${formatDuration(narration.durationSeconds)}`}
     onClick={() => onOpen(narration)}
@@ -173,7 +174,7 @@ export const FailedRow = ({
 }) => (
   <ListButton
     leading={
-      <Cover url={narration.url} size="row" tone="danger">
+      <Cover {...coverOf(narration.url)} tone="danger">
         <WarningIcon />
       </Cover>
     }

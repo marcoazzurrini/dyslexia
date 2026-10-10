@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  Cover,
   ForwardIcon,
   IconButton,
   PauseIcon,
@@ -17,8 +18,8 @@ import {
 import * as stylex from "@stylexjs/stylex";
 import { SeekButton, Time } from "@videojs/react";
 
-import { Cover } from "../components/cover";
 import type { Recording } from "../lib/recording";
+import { coverOf } from "../lib/recording";
 import type { PlaybackView } from "./player";
 
 const styles = stylex.create({
@@ -41,6 +42,12 @@ const styles = stylex.create({
     minHeight: "3.75rem",
     paddingInlineEnd: space.sm,
     pointerEvents: "auto",
+  },
+  cover: {
+    borderRadius: radius.sm,
+    flexShrink: 0,
+    overflow: "hidden",
+    width: "2.75rem",
   },
   // Floats just above the tab bar, with content fading out behind it.
   dock: {
@@ -139,7 +146,9 @@ export const MiniPlayer = ({
           styles.open
         )}
       >
-        <Cover url={recording.sourceUrl} size="mini" />
+        <span {...stylex.props(styles.cover)}>
+          <Cover {...coverOf(recording.sourceUrl)} />
+        </span>
         <span {...stylex.props(styles.text)}>
           <span {...stylex.props(styles.title, recipes.truncate)}>
             {recording.title}

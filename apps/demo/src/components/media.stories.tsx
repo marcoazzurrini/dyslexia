@@ -1,16 +1,22 @@
-import { MediaCard, MediaTile, Section, Shelf } from "@dyslexia/ui";
-import { Cover, hueOf } from "@dyslexia/web/components/cover";
+import {
+  Cover,
+  coverTint,
+  MediaCard,
+  MediaTile,
+  Section,
+  Shelf,
+} from "@dyslexia/ui";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 
 const meta = {
   args: {
-    artwork: <Cover url="https://pages.cs.wisc.edu" size="card" />,
+    artwork: <Cover seed="pages.cs.wisc.edu" name="pages.cs.wisc" />,
     label: "Play Programming as theory building",
     meta: "pages.cs.wisc.edu · 18 min left",
     onClick: fn(),
     progress: 0.4,
-    tint: hueOf("pages.cs.wisc.edu"),
+    tint: coverTint("pages.cs.wisc.edu"),
     title: "Programming as theory building",
   },
   component: MediaCard,
@@ -28,10 +34,10 @@ export const Cards: Story = {
         <MediaCard {...args} />
         <MediaCard
           {...args}
-          artwork={<Cover url="https://newyorker.com" size="card" />}
+          artwork={<Cover seed="newyorker.com" name="newyorker" />}
           title="The quiet history of the semicolon"
           meta="newyorker.com · 8 min left"
-          tint={hueOf("newyorker.com")}
+          tint={coverTint("newyorker.com")}
           progress={0.7}
         />
       </Shelf>
@@ -51,7 +57,7 @@ export const Tiles: Story = {
           <MediaTile
             key={site}
             label={`Play an article from ${site}`}
-            artwork={<Cover url={`https://${site}`} size="shelf" />}
+            artwork={<Cover seed={site} name={site.split(".")[0] ?? site} />}
             title="A field guide to clouds, and how to read them"
             meta={`${site} · 13 min`}
             onClick={fn()}

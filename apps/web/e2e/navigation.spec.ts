@@ -75,9 +75,9 @@ test("Home picks up the three latest listens and lists what is new", async ({
     /Middle listen.*5 min left/u,
     /Fourth listen.*10 min left/u,
   ]);
-  await expect(section(page, "Recently added").getByRole("button")).toHaveText([
-    /Fresh/u,
-  ]);
+  await expect(
+    section(page, "Recently added").getByRole("listitem")
+  ).toHaveText([/Fresh/u]);
   // Finished narrations stay in the library, off Home.
   await expect(page.getByText("Done")).toHaveCount(0);
 });
@@ -115,7 +115,10 @@ test("the library filters by how far you got, and keeps the filter", async ({
     ],
   });
   await page.goto("/library");
-  const plays = page.getByRole("button", { name: /^Play /u });
+  // Each narration ready to play is a row with its own Play button.
+  const plays = page
+    .getByRole("listitem")
+    .filter({ has: page.getByRole("button", { name: /^Play /u }) });
   await expect(plays).toHaveCount(3);
   await expect(page.getByText("Being read")).toBeVisible();
 
@@ -142,7 +145,7 @@ test("a narration can be marked finished, and unfinished again", async ({
 }) => {
   await mockNarrations(page, { narrations: [narrations[0]] });
   await page.goto("/library");
-  const play = page.getByRole("button", { name: "Play Fresh" });
+  const play = page.getByRole("listitem").filter({ hasText: "Fresh" });
   await expect(play).toContainText("10 min");
 
   await page.getByRole("button", { name: "Options for Fresh" }).click();

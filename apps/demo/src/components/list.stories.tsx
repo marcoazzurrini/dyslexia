@@ -1,7 +1,5 @@
 import {
   ChevronRightIcon,
-  EllipsisIcon,
-  IconButton,
   ListButton,
   ListLink,
   ListRow,
@@ -9,6 +7,7 @@ import {
   PlayIcon,
   WarningIcon,
 } from "@dyslexia/ui";
+import { Cover } from "@dyslexia/web/components/cover";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 
@@ -70,17 +69,44 @@ export const SwipeToDelete: Story = {
             subtitle="example.org · 13 min"
             onClick={fn()}
             swipeAction={{ label: "Delete", onAction: fn() }}
-            trailing={
-              <IconButton
-                label={`Options for ${title}`}
-                icon={<EllipsisIcon />}
-                variant="plain"
-                onClick={fn()}
-              />
-            }
+            more={{ label: `Options for ${title}`, onClick: fn() }}
           />
         )
       )}
+    </ListSection>
+  ),
+};
+
+/**
+ * Narrations on the canvas, as in Podcasts: one-line titles, the site, and
+ * how far the listener got, with Play and more buttons.
+ */
+export const Media: Story = {
+  render: () => (
+    <ListSection header="Ready to listen" variant="media">
+      <ListButton
+        leading={<Cover url="https://example.org" size="row" />}
+        title="How the brain learns to read, and why some of us find it hard"
+        subtitle="example.org"
+        meta={{ text: "13 min" }}
+        onClick={fn()}
+        action={{ icon: <PlayIcon />, label: "Play", onClick: fn() }}
+        more={{ label: "Options", onClick: fn() }}
+      />
+      <ListButton
+        leading={<Cover url="https://newyorker.com" size="row" />}
+        title="The quiet history of the semicolon"
+        subtitle="newyorker.com"
+        meta={{ progress: 0.4, text: "8 min left" }}
+        onClick={fn()}
+        action={{ icon: <PlayIcon />, label: "Play", onClick: fn() }}
+        more={{ label: "Options", onClick: fn() }}
+      />
+      <ListRow
+        leading={<Cover url="https://example.org" size="row" tone="neutral" />}
+        title="Why we sleep"
+        subtitle="Reading the article…"
+      />
     </ListSection>
   ),
 };

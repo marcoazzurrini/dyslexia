@@ -333,22 +333,23 @@ Quiet and system-like; feedback starts on press.
 - **Filled:** indigo with white, semibold; one per screen at most.
 - **Tinted / Gray / Destructive / Plain:** indigo wash, control fill, red wash, or text only.
 - **Sizes:** small 34px, medium 44px (default), large 50px.
-- **States:** press scales to 0.97 (none under reduced motion) and darkens or fades; 2px indigo focus ring offset 2px; disabled at 45% opacity.
+- **States:** press scales to 0.96 (none under reduced motion) and darkens or fades; 2px indigo focus ring offset 2px; disabled at 45% opacity.
 
 ### Icon buttons
 
-Round, 44px. Navigation actions (add) are bare tinted glyphs with no disc, as in iOS bars. The play/pause glyph in the player is a 5rem plain glyph without a disc; skip controls are 3.5rem glyphs. Icons are SVG on a 24-unit grid in the SF Symbols style, sized to the text.
+Round, 44px. Navigation actions (add) are bare tinted glyphs with no disc, as in iOS bars. The small outline variant, a 24px ring with a 44px touch area, is a row's play button. The play/pause glyph in the player is a 5rem plain glyph without a disc; skip controls are 3.5rem glyphs. Icons are SVG on a 24-unit grid in the SF Symbols style, sized to the text.
 
 ### Lists
 
-- **Grouped:** white cells in a 0.875rem inset section on grouped gray, hairline separators inset past the leading content.
-- **Plain:** cells take the canvas color and run edge to edge within the gutter.
-- **Row:** 44px minimum, 0.75rem by 1rem padding, title 500 weight, subtitle in secondary label; pressed or hovered rows turn cell-pressed. Rows with covers inset separators past the 3.5rem cover. Swipe reveals a red Delete.
-- **Section headers:** footnote semibold secondary, or a prominent Title 3 bold variant on media screens.
+A section's variant sets how every row in it looks, so rows of one kind always match.
+
+- **Grouped**, for settings: white cells in a 0.875rem inset section on grouped gray, a footnote semibold secondary header, body titles at 500, subheadline subtitles.
+- **Media**, for narrations: cells take the canvas color and run edge to edge within the gutter, under a bold Title 3 heading. Rows lead with a 3.5rem cover, separators start past it, and the text is compact: see Narration row.
+- **Row:** 44px minimum, 0.75rem by 1rem padding; pressed or hovered rows turn cell-pressed. Swipe reveals a red Delete. Rows take their text as plain strings, never styled markup.
 
 ### Narration row
 
-As in Audible: the title in subheadline semibold, on one line ending in an ellipsis; the site in footnote; then how far the listener got in secondary caption. Started narrations show a short 3px indigo bar before the time left, unstarted ones their length, finished ones an indigo check and "Finished". A round outlined play glyph sits after the text, then the more button, whose sheet offers Mark as finished (or unfinished) and Delete.
+Every row in a media section, whether ready, being made, or failed. As in Audible: the title in subheadline semibold, on one line ending in an ellipsis; the site in footnote; then how far the listener got in secondary caption. Started narrations show a short 3px indigo bar before the time left, unstarted ones their length, finished ones an indigo check and "Finished". A small outlined play button sits after the text, then the more button, whose sheet offers Mark as finished (or unfinished) and Delete.
 
 ### Filter chips
 
@@ -360,7 +361,7 @@ Gray track with 3px padding, a white thumb that slides on a spring; used for pla
 
 ### Navigation
 
-- **Tab bar:** a floating opaque capsule, no highlight shape; the selected tab is tinted indigo, others secondary label; fixed 11px semibold labels under 1.5rem glyphs; press scales to 0.94.
+- **Tab bar:** a floating opaque capsule, no highlight shape; the selected tab is tinted indigo, others secondary label; fixed 11px semibold labels under 1.5rem glyphs; press scales to 0.96.
 - **Nav bar:** transparent over the large title, turning opaque with a hairline once scrolled while the compact title fades in.
 - **Mini player:** an opaque floating rounded rectangle above the tab bar: mini cover, title, time left, play/pause and skip forward.
 
@@ -371,6 +372,10 @@ Grabber (36 by 5px), 2.25rem top corners, elevated gray, a 30px close button, sc
 ### Cover (signature)
 
 A rounded square in the site's hue, the initial in bold white, the site name at the lower left on shelf and large sizes. Sizes: mini 2.75rem, row 3.5rem, card 4.25rem, shelf 9.5rem, large up to 17rem. Being made shows a gray cover with a spinner; failed shows a red-washed cover. The large cover scales to 0.84 when paused, on a spring over 500ms.
+
+### Sections and shelves
+
+A bold Title 3 heading over its content. A shelf lays cards or tiles side by side and scrolls sideways under the screen's margins, snapping to each item.
 
 ### Resume card
 
@@ -386,6 +391,7 @@ Home's "pick up where you left off": a 13rem-tall card in a darker mix of the co
 - **Do** keep touch targets at 44px or more and sizes in rem, so text size changes scale the interface.
 - **Do** respect reduced motion (no press scaling, no cover breathing), reduced transparency, and increased contrast.
 - **Do** keep floating chrome opaque and fade content out behind it.
+- **Do** define how things look in the component library. Screens only lay components out; a lint check fails a screen that sets type, color, or shape.
 
 ### Don't:
 

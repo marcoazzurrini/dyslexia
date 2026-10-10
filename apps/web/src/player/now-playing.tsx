@@ -7,6 +7,7 @@ import {
   Notice,
   PauseIcon,
   PlayIcon,
+  recipes,
   SegmentedControl,
   Sheet,
   Text,
@@ -75,9 +76,6 @@ const styles = stylex.create({
     height: "3.5rem",
     justifyContent: "center",
     opacity: { ":active": 0.5, ":disabled": 0.35, default: 1 },
-    outlineColor: color.focus,
-    outlineStyle: { ":focus-visible": "solid", default: "none" },
-    outlineWidth: "2px",
     transitionDuration: motion.fast,
     transitionProperty: "opacity",
     width: "3.5rem",
@@ -247,7 +245,7 @@ export const NowPlaying = ({
         seconds={-15}
         label="seek back 15 seconds"
         disabled={!view.canSeek}
-        {...stylex.props(styles.seek)}
+        {...stylex.props(recipes.focusRing, styles.seek)}
       >
         <BackIcon />
       </SeekButton>
@@ -263,7 +261,7 @@ export const NowPlaying = ({
         seconds={15}
         label="seek forward 15 seconds"
         disabled={!view.canSeek}
-        {...stylex.props(styles.seek)}
+        {...stylex.props(recipes.focusRing, styles.seek)}
       >
         <ForwardIcon />
       </SeekButton>

@@ -1,16 +1,9 @@
 import * as stylex from "@stylexjs/stylex";
 import { useId } from "react";
 
+import { recipes } from "./recipes.ts";
 import type { SegmentedOption } from "./segmented-control.tsx";
-import {
-  color,
-  font,
-  media,
-  motion,
-  radius,
-  size,
-  space,
-} from "./tokens.stylex.ts";
+import { color, font, radius, size, space } from "./tokens.stylex.ts";
 
 const styles = stylex.create({
   chip: {
@@ -34,27 +27,13 @@ const styles = stylex.create({
     paddingInline: space.lg,
     position: "relative",
     scrollSnapAlign: "start",
-    transform: {
-      ":active": { default: "scale(0.96)", [media.reducedMotion]: "none" },
-      default: "none",
-    },
-    transitionDuration: motion.fast,
-    transitionProperty: "background-color, color, transform",
-    transitionTimingFunction: motion.easeOut,
     userSelect: "none",
     whiteSpace: "nowrap",
   },
-  // Bleeds to the screen edges, so chips scroll under the margins.
   group: {
-    display: "flex",
     gap: space.sm,
-    marginInline: `calc(-1 * ${space.gutter})`,
-    overflowX: "auto",
     paddingBlock: space.xxs,
-    paddingInline: space.gutter,
-    scrollPaddingInline: space.gutter,
     scrollSnapType: "x proximity",
-    scrollbarWidth: "none",
   },
   input: {
     appearance: "none",
@@ -104,14 +83,18 @@ export const ChipGroup = <Value extends string>({
 }: ChipGroupProps<Value>) => {
   const name = useId();
   return (
-    <fieldset {...stylex.props(styles.group)}>
+    <fieldset {...stylex.props(recipes.bleedScroll, styles.group)}>
       <legend {...stylex.props(styles.legend)}>{label}</legend>
       {options.map((option) => {
         const selected = option.value === value;
         return (
           <label
             key={option.value}
-            {...stylex.props(styles.chip, selected && styles.selected)}
+            {...stylex.props(
+              recipes.press,
+              styles.chip,
+              selected && styles.selected
+            )}
           >
             <input
               type="radio"

@@ -9,7 +9,8 @@ import {
   Notice,
   PlusIcon,
   Screen,
-  Text,
+  Section,
+  Shelf,
   WaveformIcon,
 } from "@dyslexia/ui";
 import { space } from "@dyslexia/ui/tokens.stylex";
@@ -25,24 +26,10 @@ import {
 } from "./narration-rows";
 
 const styles = stylex.create({
-  group: { display: "flex", flexDirection: "column", gap: space.sm },
-  heading: { fontWeight: 700, paddingInline: space.xxs },
   loading: {
     display: "flex",
     justifyContent: "center",
     paddingBlock: space.huge,
-  },
-  // Scrolls sideways under the screen's margins, as Podcasts' shelves do.
-  shelf: {
-    display: "flex",
-    gap: space.md,
-    marginInline: `calc(-1 * ${space.gutter})`,
-    overflowX: "auto",
-    paddingBlock: `${space.xs} ${space.lg}`,
-    paddingInline: space.gutter,
-    scrollPaddingInline: space.gutter,
-    scrollSnapType: "x mandatory",
-    scrollbarWidth: "none",
   },
 });
 
@@ -168,11 +155,8 @@ export const HomeScreen = ({
         />
       )}
       {resume.length > 0 && (
-        <section {...stylex.props(styles.group)}>
-          <Text as="h2" variant="title3" style={styles.heading}>
-            Pick up where you left off
-          </Text>
-          <div {...stylex.props(styles.shelf)}>
+        <Section title="Pick up where you left off">
+          <Shelf>
             {resume.map(({ listening, narration }) => (
               <ResumeCard
                 key={narration.id}
@@ -182,11 +166,11 @@ export const HomeScreen = ({
                 wide={resume.length === 1}
               />
             ))}
-          </div>
-        </section>
+          </Shelf>
+        </Section>
       )}
       {fresh.length > 0 && fresh.length < SHELF_MIN && (
-        <ListSection header="Recently added" plain prominent withIcons>
+        <ListSection header="Recently added" variant="media">
           {fresh.map(({ listening, narration }) => (
             <ReadyRow
               key={narration.id}
@@ -198,11 +182,8 @@ export const HomeScreen = ({
         </ListSection>
       )}
       {fresh.length >= SHELF_MIN && (
-        <section {...stylex.props(styles.group)}>
-          <Text as="h2" variant="title3" style={styles.heading}>
-            Recently added
-          </Text>
-          <div {...stylex.props(styles.shelf)}>
+        <Section title="Recently added">
+          <Shelf>
             {fresh.map(({ narration }) => (
               <ShelfTile
                 key={narration.id}
@@ -210,15 +191,13 @@ export const HomeScreen = ({
                 onPlay={onPlay}
               />
             ))}
-          </div>
-        </section>
+          </Shelf>
+        </Section>
       )}
       {making.length > 0 && (
         <ListSection
           header="Being made"
-          plain
-          prominent
-          withIcons
+          variant="media"
           footer="You can leave the app while narrations are made."
         >
           {making.map((narration) => (
@@ -227,7 +206,7 @@ export const HomeScreen = ({
         </ListSection>
       )}
       {failed.length > 0 && (
-        <ListSection header="Could not be made" plain prominent withIcons>
+        <ListSection header="Could not be made" variant="media">
           {failed.map((narration) => (
             <FailedRow
               key={narration.id}

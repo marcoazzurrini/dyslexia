@@ -140,9 +140,7 @@ const Results = ({
       {all && making.length > 0 && (
         <ListSection
           header="Being made"
-          plain
-          prominent
-          withIcons
+          variant="media"
           footer="You can leave the app while narrations are made."
         >
           {making.map((narration) => (
@@ -153,9 +151,7 @@ const Results = ({
       {ready.length > 0 && (
         <ListSection
           header={all ? "Ready to listen" : undefined}
-          plain
-          prominent
-          withIcons
+          variant="media"
         >
           {ready.map(({ listening, narration }) => (
             <ReadyRow
@@ -170,7 +166,7 @@ const Results = ({
         </ListSection>
       )}
       {all && failed.length > 0 && (
-        <ListSection header="Could not be made" plain prominent withIcons>
+        <ListSection header="Could not be made" variant="media">
           {failed.map((narration) => (
             <FailedRow
               key={narration.id}

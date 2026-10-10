@@ -1,8 +1,11 @@
 import * as stylex from "@stylexjs/stylex";
-import type { StyleXStyles } from "@stylexjs/stylex";
 import type { ComponentProps, ReactNode } from "react";
+import { createContext, useContext } from "react";
 
-import { ChevronRightIcon } from "./icons.tsx";
+import { IconButton } from "./icon-button.tsx";
+import { CheckIcon, ChevronRightIcon, EllipsisIcon } from "./icons.tsx";
+import { recipes } from "./recipes.ts";
+import { Section } from "./section.tsx";
 import { useSwipe } from "./swipe.ts";
 import type { SwipeAction } from "./swipe.ts";
 import { color, font, media, radius, size, space } from "./tokens.stylex.ts";
@@ -11,7 +14,7 @@ import { color, font, media, radius, size, space } from "./tokens.stylex.ts";
 const ACTION_WIDTH = 88;
 
 /**
- * Plain lists sit straight on the canvas, as in Podcasts, so their rows take
+ * Media lists sit straight on the canvas, as in Podcasts, so their rows take
  * the canvas color instead of the grouped cell color.
  */
 const plainTheme = stylex.createTheme(color, {
@@ -51,6 +54,7 @@ const styles = stylex.create({
     justifyContent: "center",
     width: `${ACTION_WIDTH}px`,
   },
+  destructive: { color: color.danger },
   detail: {
     color: color.secondaryLabel,
     flexShrink: 0,
@@ -85,18 +89,6 @@ const styles = stylex.create({
     lineHeight: 1.35,
     paddingInline: space.lg,
   },
-  // A bold heading, as content apps such as Podcasts head their sections.
-  headerProminent: {
-    color: color.label,
-    fontSize: font.title3,
-    fontWeight: 700,
-    letterSpacing: "-0.01em",
-    paddingInline: space.xxs,
-  },
-  // Leading artwork is 3.5rem wide, followed by the row gap.
-  iconInset: {
-    backgroundImage: `linear-gradient(to right, ${color.surface} calc(${space.lg} + 3.5rem + ${space.md}), ${color.separator} calc(${space.lg} + 3.5rem + ${space.md}))`,
-  },
   item: {
     backgroundColor: color.surface,
     display: "flex",
@@ -119,21 +111,51 @@ const styles = stylex.create({
     overflow: "hidden",
   },
   // No card: rows sit on the canvas, their text aligned to the screen's
-  // margin.
-  plainList: {
+  // margin. Separators start after the 3.5rem artwork.
+  mediaList: {
+    backgroundImage: `linear-gradient(to right, ${color.surface} calc(${space.lg} + 3.5rem + ${space.md}), ${color.separator} calc(${space.lg} + 3.5rem + ${space.md}))`,
     borderRadius: 0,
     marginInline: `calc(${space.lg} - ${space.gutter})`,
   },
+  // How far the listener got: a short bar, or a check, then the time.
+  meta: {
+    alignItems: "center",
+    color: color.secondaryLabel,
+    display: "flex",
+    fontSize: font.caption,
+    fontVariantNumeric: "tabular-nums",
+    gap: space.sm,
+    lineHeight: 1.3,
+    marginTop: space.xs,
+    whiteSpace: "nowrap",
+  },
+  metaFill: (share: number) => ({
+    backgroundColor: color.accent,
+    borderRadius: radius.full,
+    display: "block",
+    height: "100%",
+    width: `${Math.round(Math.min(1, Math.max(0, share)) * 100)}%`,
+  }),
+  metaIcon: { color: color.accentText, display: "flex" },
+  metaTrack: {
+    backgroundColor: color.fill,
+    borderRadius: radius.full,
+    display: "block",
+    // Gives way to the text on narrow rows.
+    flexShrink: 1,
+    height: "3px",
+    minWidth: "1.5rem",
+    overflow: "hidden",
+    width: "4rem",
+  },
+  // A touch smaller than a regular icon button's glyph.
+  more: { fontSize: font.callout },
   pressable: {
     backgroundColor: {
       ":active": color.surfacePressed,
       ":hover": { [media.hover]: color.surfacePressed, default: null },
       default: "transparent",
     },
-    outlineColor: color.focus,
-    outlineOffset: "-3px",
-    outlineStyle: { ":focus-visible": "solid", default: "none" },
-    outlineWidth: "2px",
     touchAction: "manipulation",
     transitionDuration: "150ms",
     transitionProperty: "background-color",
@@ -165,6 +187,8 @@ const styles = stylex.create({
     fontSize: font.subheadline,
     lineHeight: 1.35,
   },
+  // Smaller than a settings row, in step with the media title.
+  subtitleMedia: { fontSize: font.footnote },
   text: {
     display: "flex",
     flexDirection: "column",
@@ -176,89 +200,172 @@ const styles = stylex.create({
     fontWeight: 500,
     lineHeight: 1.35,
   },
+  // As in Audible: one line, so every row keeps a steady height.
+  titleMedia: {
+    fontSize: font.subheadline,
+    fontWeight: 600,
+    lineHeight: 1.3,
+  },
+  // Clear of the text, and close to the more button.
   trailing: {
+    alignItems: "center",
     display: "flex",
     flexShrink: 0,
     paddingInlineEnd: space.sm,
+    paddingInlineStart: space.xs,
   },
 });
 
-const CHEVRON = <ChevronRightIcon />;
+/** How a section sets its rows. */
+export type ListVariant = "grouped" | "media";
+
+const VariantContext = createContext<ListVariant>("grouped");
 
 export interface ListSectionProps {
   readonly children: ReactNode;
   /** A short heading above the section. */
-  readonly header?: ReactNode;
+  readonly header?: string;
   /** Help text below the section. */
-  readonly footer?: ReactNode;
-  /** Rows start with 3.5rem artwork, so separators start after it. */
-  readonly withIcons?: boolean;
-  /** A bold header, for sections of content rather than settings. */
-  readonly prominent?: boolean;
-  /** Rows sit on the canvas, edge to edge, instead of in a card. */
-  readonly plain?: boolean;
-  readonly style?: StyleXStyles;
+  readonly footer?: string;
+  /**
+   * `grouped` sets settings in a rounded card, as iOS Settings does.
+   * `media` sets narrations on the canvas, edge to edge, under a bold
+   * heading, with artwork and compact one-line text, as Podcasts does.
+   */
+  readonly variant?: ListVariant;
 }
 
-/** An inset grouped list section, as in iOS Settings. Holds list rows. */
+/** A section of list rows. Its variant sets how every row in it looks. */
 export const ListSection = ({
   children,
   footer,
   header,
-  plain = false,
-  prominent = false,
-  style,
-  withIcons = false,
-}: ListSectionProps) => (
-  <section {...stylex.props(styles.section, style)}>
-    {header && (
-      <h2 {...stylex.props(styles.header, prominent && styles.headerProminent)}>
-        {header}
-      </h2>
-    )}
-    <ul
-      {...stylex.props(
-        plain && plainTheme,
-        styles.list,
-        withIcons && styles.iconInset,
-        plain && styles.plainList
-      )}
-    >
-      {children}
-    </ul>
-    {footer && <div {...stylex.props(styles.footer)}>{footer}</div>}
-  </section>
-);
+  variant = "grouped",
+}: ListSectionProps) => {
+  const isMedia = variant === "media";
+  const list = (
+    <VariantContext value={variant}>
+      <ul
+        {...stylex.props(
+          isMedia && plainTheme,
+          styles.list,
+          isMedia && styles.mediaList
+        )}
+      >
+        {children}
+      </ul>
+    </VariantContext>
+  );
+  if (isMedia && header) {
+    return (
+      <Section title={header} footer={footer}>
+        {list}
+      </Section>
+    );
+  }
+  return (
+    <section {...stylex.props(styles.section)}>
+      {header && <h2 {...stylex.props(styles.header)}>{header}</h2>}
+      {list}
+      {footer && <div {...stylex.props(styles.footer)}>{footer}</div>}
+    </section>
+  );
+};
+
+/** A third line under a media row's subtitle, such as the time left. */
+export interface RowMeta {
+  readonly text: string;
+  /** How much is done, from 0 to 1, shown as a short bar. */
+  readonly progress?: number;
+  /** All done, shown as a check. */
+  readonly done?: boolean;
+}
 
 interface RowContent {
-  readonly title: ReactNode;
+  readonly title: string;
   /** A second line under the title. */
-  readonly subtitle?: ReactNode;
+  readonly subtitle?: string;
+  /** A third line, in media sections. */
+  readonly meta?: RowMeta;
   /** Before the text, such as an icon or artwork. */
   readonly leading?: ReactNode;
   /** Trailing text, such as a status. */
-  readonly detail?: ReactNode;
+  readonly detail?: string;
   /** After the detail. Pressable rows show a chevron by default. */
   readonly accessory?: ReactNode;
+  /** A destructive action, such as Sign out, reads in red. */
+  readonly tone?: "destructive";
 }
+
+const Meta = ({ meta }: { meta: RowMeta }) => {
+  let mark: ReactNode = null;
+  if (meta.done) {
+    mark = (
+      <span {...stylex.props(styles.metaIcon)}>
+        <CheckIcon />
+      </span>
+    );
+  } else if (meta.progress !== undefined) {
+    mark = (
+      <span aria-hidden="true" {...stylex.props(styles.metaTrack)}>
+        <span {...stylex.props(styles.metaFill(meta.progress))} />
+      </span>
+    );
+  }
+  return (
+    <span {...stylex.props(styles.meta)}>
+      {mark}
+      {meta.text}
+    </span>
+  );
+};
 
 const Content = ({
   accessory,
   detail,
   leading,
+  meta,
   subtitle,
   title,
-}: RowContent) => (
-  <>
-    {leading && <span {...stylex.props(styles.leading)}>{leading}</span>}
-    <span {...stylex.props(styles.text)}>
-      <span {...stylex.props(styles.title)}>{title}</span>
-      {subtitle && <span {...stylex.props(styles.subtitle)}>{subtitle}</span>}
-    </span>
-    {detail && <span {...stylex.props(styles.detail)}>{detail}</span>}
-    {accessory && <span {...stylex.props(styles.accessory)}>{accessory}</span>}
-  </>
-);
+  tone,
+}: RowContent) => {
+  const isMedia = useContext(VariantContext) === "media";
+  return (
+    <>
+      {leading && <span {...stylex.props(styles.leading)}>{leading}</span>}
+      <span {...stylex.props(styles.text)}>
+        <span
+          {...stylex.props(
+            styles.title,
+            isMedia && styles.titleMedia,
+            isMedia && recipes.truncate,
+            tone === "destructive" && styles.destructive
+          )}
+        >
+          {title}
+        </span>
+        {subtitle && (
+          <span
+            {...stylex.props(
+              styles.subtitle,
+              isMedia && styles.subtitleMedia,
+              isMedia && recipes.truncate
+            )}
+          >
+            {subtitle}
+          </span>
+        )}
+        {meta && <Meta meta={meta} />}
+      </span>
+      {detail && <span {...stylex.props(styles.detail)}>{detail}</span>}
+      {accessory && (
+        <span {...stylex.props(styles.accessory)}>{accessory}</span>
+      )}
+    </>
+  );
+};
+
+const CHEVRON = <ChevronRightIcon />;
 
 export type ListRowProps = RowContent;
 
@@ -278,22 +385,35 @@ export interface ListButtonProps
   /**
    * Revealed by swiping the row left, as iOS reveals Delete. A swipe is easy
    * to miss and needs a finger, so also offer the action through a visible
-   * control, such as a `trailing` more button.
+   * control, such as the more button.
    */
   readonly swipeAction?: SwipeAction;
-  /** A control after the row's own button, such as a more button. */
-  readonly trailing?: ReactNode;
+  /** A small round button after the text, such as Play. */
+  readonly action?: RowAction;
+  /** A more button at the end, opening the row's other actions. */
+  readonly more?: Omit<RowAction, "icon">;
+}
+
+/** A control a row offers besides pressing it. */
+export interface RowAction {
+  /** The accessible name, such as "Play How the brain learns to read". */
+  readonly label: string;
+  readonly icon: ReactNode;
+  readonly onClick: () => void;
 }
 
 /** A row that performs an action. */
 export const ListButton = ({
   accessory,
+  action,
   detail,
   leading,
+  meta,
+  more,
   subtitle,
   swipeAction,
   title,
-  trailing,
+  tone,
   type = "button",
   ...props
 }: ListButtonProps) => {
@@ -328,6 +448,7 @@ export const ListButton = ({
           type={type === "submit" ? "submit" : "button"}
           {...props}
           {...stylex.props(
+            recipes.focusRingInset,
             styles.row,
             styles.pressable,
             props.disabled && styles.disabled
@@ -337,11 +458,34 @@ export const ListButton = ({
             accessory={accessory}
             detail={detail}
             leading={leading}
+            meta={meta}
             subtitle={subtitle}
             title={title}
+            tone={tone}
           />
         </button>
-        {trailing && <span {...stylex.props(styles.trailing)}>{trailing}</span>}
+        {(action || more) && (
+          <span {...stylex.props(styles.trailing)}>
+            {action && (
+              <IconButton
+                label={action.label}
+                icon={action.icon}
+                variant="outline"
+                size="small"
+                onClick={() => action.onClick()}
+              />
+            )}
+            {more && (
+              <IconButton
+                label={more.label}
+                icon={<EllipsisIcon />}
+                variant="plain"
+                style={styles.more}
+                onClick={() => more.onClick()}
+              />
+            )}
+          </span>
+        )}
       </div>
     </li>
   );
@@ -360,18 +504,25 @@ export const ListLink = ({
   accessory = CHEVRON,
   detail,
   leading,
+  meta,
   subtitle,
   title,
+  tone,
   ...props
 }: ListLinkProps) => (
   <li {...stylex.props(styles.item)}>
-    <a {...props} {...stylex.props(styles.row, styles.pressable)}>
+    <a
+      {...props}
+      {...stylex.props(recipes.focusRingInset, styles.row, styles.pressable)}
+    >
       <Content
         accessory={accessory}
         detail={detail}
         leading={leading}
+        meta={meta}
         subtitle={subtitle}
         title={title}
+        tone={tone}
       />
     </a>
   </li>

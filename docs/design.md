@@ -26,6 +26,7 @@ This file records decisions and constraints that should hold as the code changes
 - **One main action per screen.** The next step is the most visible control.
 - **Every state explains itself.** Loading, empty, in-progress, and failed states say what happened and what to do next.
 - **Design system first.** Screens are built from the shared components and tokens, and each component and screen state has a story to review it in isolation.
+- **Screens arrange, components style.** Type, color, and shape are decided once, in the shared components; screens only lay them out, and a check enforces it. Components take plain data, not styled content, so one screen cannot restyle what another shows and rows of one kind always match.
 
 ## Playback
 

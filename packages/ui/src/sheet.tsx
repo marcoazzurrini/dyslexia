@@ -8,6 +8,7 @@ import {
   currentY,
   lockScroll,
   project,
+  REST_MS,
   rubberband,
   settle,
 } from "./sheet-motion.ts";
@@ -139,6 +140,8 @@ export const Sheet = ({
   const drag = useRef<{ start: number; samples: [number, number][] } | null>(
     null
   );
+  // A flick that dismisses hands its speed to the closing motion.
+  const releaseVelocity = useRef(0);
   const titleId = useId();
 
   useEffect(() => {
@@ -159,7 +162,9 @@ export const Sheet = ({
         panel.style.transform = `translateY(${panel.offsetHeight}px)`;
         await settle(panel, scrim, 0);
       } else if (!open && dialog.open) {
-        await settle(panel, scrim, panel.offsetHeight);
+        const velocity = releaseVelocity.current;
+        releaseVelocity.current = 0;
+        await settle(panel, scrim, panel.offsetHeight, velocity);
         dialog.close();
         lockScroll(false);
       }
@@ -207,7 +212,7 @@ export const Sheet = ({
     ];
   };
 
-  const onPointerUp = () => {
+  const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
     const panel = panelRef.current;
     const scrim = scrimRef.current;
     const gesture = drag.current;
@@ -217,16 +222,18 @@ export const Sheet = ({
     }
     const [first, last] = [gesture.samples[0], gesture.samples.at(-1)];
     const elapsed = first && last ? last[0] - first[0] : 0;
+    const resting = last ? event.timeStamp - last[0] > REST_MS : true;
     const velocity =
-      first && last && elapsed > 0
+      first && last && elapsed > 0 && !resting
         ? ((last[1] - first[1]) / elapsed) * 1000
         : 0;
     const y = currentY(panel);
     // Decide from where the flick would land, not where the finger lifted.
     if (y + project(velocity) > panel.offsetHeight / 2) {
+      releaseVelocity.current = velocity;
       onClose();
     } else {
-      void settle(panel, scrim, 0, Math.abs(velocity));
+      void settle(panel, scrim, 0, velocity);
     }
   };
 

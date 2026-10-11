@@ -157,8 +157,9 @@ export const size = stylex.defineVars({
 });
 
 /**
- * Motion. `spring` approximates a critically damped spring with a 0.35s
- * response, which settles without overshoot.
+ * Motion. `spring` is a critically damped spring with a 0.35s response,
+ * which settles without overshoot. It is sampled every 10ms over `slow`,
+ * so its speed changes smoothly instead of in visible steps.
  */
 export const motion = stylex.defineVars({
   easeOut: "cubic-bezier(0.2, 0.8, 0.2, 1)",
@@ -166,5 +167,5 @@ export const motion = stylex.defineVars({
   regular: "240ms",
   slow: "500ms",
   spring:
-    "linear(0, 0.227, 0.536, 0.75, 0.873, 0.938, 0.971, 0.986, 0.994, 0.997, 1)",
+    "linear(0, 0.0143, 0.0509, 0.1021, 0.1621, 0.2266, 0.2926, 0.3577, 0.4206, 0.4801, 0.5357, 0.5871, 0.6341, 0.6769, 0.7154, 0.75, 0.781, 0.8085, 0.8328, 0.8544, 0.8734, 0.89, 0.9046, 0.9174, 0.9286, 0.9383, 0.9468, 0.9541, 0.9605, 0.966, 0.9707, 0.9749, 0.9784, 0.9815, 0.9841, 0.9864, 0.9884, 0.99, 0.9915, 0.9927, 0.9938, 0.9947, 0.9955, 0.9961, 0.9967, 0.9972, 0.9976, 0.998, 0.9983, 0.9985, 1)",
 });

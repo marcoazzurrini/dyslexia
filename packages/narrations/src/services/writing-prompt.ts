@@ -11,7 +11,7 @@ The listener can also follow the script on screen while the voice reads it, with
 Include the whole article
 
 - Narrate the entire article, from its own headline, if it has one, to its last paragraph, in its original order and language. Keep every heading where it is and read it once: never move a heading from later in the article to the start. This is a narration, not a summary: never shorten, condense, or skip any part of the article, including quotations, lists, tables, code, and footnotes.
-- Add nothing of your own: no facts, opinions, introduction, or conclusion.
+- Add nothing of your own: no facts, opinions, introduction, or conclusion. Audio tags, described below, are not words of your own.
 
 Leave out everything that is not the article The extracted text usually includes parts of the web page around the article. Leave these out entirely:
 
@@ -32,6 +32,25 @@ Make it work when heard
 - Say mathematics and calculations in words, exactly, as part of the sentence: every number, variable, and operation, such as "a plus b, divided by c" for (a+b)/c, and "3 times 4 dollars" for 3 * $4. Do not announce that a formula follows.
 - When a sentence mentions code, such as a function, a component, a tag, or a command option, say its name as a programmer would say it aloud, without brackets, slashes, or dashes, such as "the fetchData function" or "the verbose option".
 - Read every code block. Say briefly that an example follows, then read it so a listener can follow it: keep its words, names, and values exact, say symbols that carry meaning as words, leave out formatting marks such as Markdown inside it, and say what HTML codes such as &lt; and &amp; stand for.
+
+Add audio tags
+
+The voice performs audio tags in square brackets, such as [sighs], instead of saying them, and the listener never sees them. Use them to add expression, emotion, and realism to the narration, so it holds the listener's attention. Give most paragraphs a tag that sets how they are said, and change it as the article moves. Use strong ones only where the article itself is strong.
+
+- Read each paragraph for its mood, context, and emotional tone, and choose one or more tags that fit it. Place them where they have the most impact: directly before the words they shape, or directly after, such as "[annoyed] This is hard." or "This is hard. [sighs]".
+- A tag must describe something auditory, and only for the voice. Never use tags for actions, such as [standing], [grinning], or [pacing], or for music or sound effects.
+- Every tag must fit the emotion or subtext of the words it goes with, and never contradict or change their meaning. Strive for a diverse range of expression across the article, reflecting its nuances.
+- Tags are new additions for expression, never a reformatting of the article's words: when the article says "He laughed loudly", keep those words, and add a tag only if it fits, such as "He laughed loudly [chuckles]".
+- Use square brackets only for tags: the voice never says what is inside them.
+- Keep every tag inside the words of a heading or paragraph: an item must always say words, never only a tag, so a pause goes at the end of the paragraph before it.
+- Add emphasis without changing the words: write some words in capitals, or add a question mark, an exclamation mark, or an ellipsis, where it makes sense.
+
+Tags to use, as a guide, not a complete list: choose similar ones that fit.
+
+- Directions: [happy], [sad], [excited], [angry], [whispers], [annoyed], [appalled], [thoughtful], [surprised]
+- Non-verbal: [laughing], [chuckles], [sighs], [clears throat], [short pause], [long pause], [exhales sharply], [inhales deeply]
+
+For example, "Are you serious? I can't believe you did that!" becomes "[appalled] Are you serious? [sighs] I can't believe you did that!", and "I guess you're right. It's just... difficult." becomes "I guess you're right. [sighs] It's just... [muttering] difficult."
 
 Name the article
 

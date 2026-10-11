@@ -229,6 +229,26 @@ const characterTimes = (planned: Plan, recorded: readonly Recorded[]) => {
   return { duration: offset, times };
 };
 
+// A direction to the voice, such as [sighs], which the voice performs rather
+// than says, with the space that sets it apart from the words.
+const DIRECTION = /^\[[^\]\n]*\][ \t]*|[ \t]*\[[^\]\n]*\]/gmu;
+
+/**
+ * Text as it is shown, without directions to the voice, and where each of
+ * its characters is in the text as it is said.
+ */
+const shown = (said: string) => {
+  const hidden = Array.from({ length: said.length }, () => false);
+  for (const { 0: direction, index } of said.matchAll(DIRECTION)) {
+    hidden.fill(true, index, index + direction.length);
+  }
+  const at = hidden.flatMap((isHidden, index) => (isHidden ? [] : [index]));
+  const text = at.map((index) => said[index]).join("");
+  const from = text.length - text.trimStart().length;
+  const to = text.trimEnd().length;
+  return { at: at.slice(from, to), text: text.slice(from, to) };
+};
+
 /** The first time at or after `index`. */
 const timeFrom = (times: readonly (number | undefined)[], index: number) =>
   times.slice(index).find((time) => time !== undefined);
@@ -269,13 +289,17 @@ export const assemble = (
         : { ...item, end, start };
     }
     const itemTimes = times[index] ?? [];
+    const { at: said, text } = shown(item.text);
     return {
       ...item,
       end,
       start: start ?? end,
-      words: [...words.segment(item.text)].flatMap(
+      text,
+      words: [...words.segment(text)].flatMap(
         ({ index: at, isWordLike, segment }) => {
-          const time = isWordLike ? timeFrom(itemTimes, at) : undefined;
+          const time = isWordLike
+            ? timeFrom(itemTimes, said[at] ?? 0)
+            : undefined;
           return time === undefined
             ? []
             : [[at, at + segment.length, round(time)] as const];

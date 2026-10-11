@@ -168,6 +168,30 @@ describe("timing the transcript", () => {
     ]);
   });
 
+  test("shows text without its directions to the voice, timed as said", () => {
+    const script = {
+      items: [
+        {
+          kind: "paragraph" as const,
+          say: "[excited] It worked [sighs] at last. [laughs]",
+          visual: null,
+        },
+      ],
+      title: "Caching",
+    };
+    const planned = Result.getOrThrow(plan(PAGE, script, 100));
+    const [item] = assemble(planned, record(planned)).items;
+    expect(item).toMatchObject({
+      text: "It worked at last.",
+      words: [
+        [0, 2, 0.5],
+        [3, 9, 0.65],
+        [10, 12, 1.4],
+        [13, 17, 1.55],
+      ],
+    });
+  });
+
   test("refuses recordings that do not match the plan", () => {
     const planned = Result.getOrThrow(
       plan(

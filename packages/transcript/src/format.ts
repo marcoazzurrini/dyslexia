@@ -29,7 +29,10 @@ export type Visual = typeof VisualSchema.Type;
  */
 const WordSchema = Schema.Tuple([Schema.Int, Schema.Int, Seconds]);
 
-/** A heading or paragraph, shown exactly as the voice says it. */
+/**
+ * A heading or paragraph, shown exactly as the voice says it, without the
+ * directions that tell the voice how, such as [sighs].
+ */
 const SpokenTextSchema = Schema.Struct({
   end: Seconds,
   kind: Schema.Literals(["heading", "paragraph"]),

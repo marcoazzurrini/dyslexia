@@ -53,6 +53,18 @@ describe("planning the parts to record", () => {
     });
   });
 
+  test("never cuts a direction to the voice between parts", async () => {
+    await holds(scripts(), (script) => {
+      const result = planned(script, 40);
+      return (
+        Result.isFailure(result) ||
+        result.success.parts.every(
+          ({ text }) => !/\[[^\]]*$|^[^[]*\]/u.test(text)
+        )
+      );
+    });
+  });
+
   test("says items in the order of the script", async () => {
     await holds(scripts(), (script) => {
       const result = planned(script);

@@ -1,7 +1,13 @@
 import type { PointerEvent as ReactPointerEvent, MouseEvent } from "react";
 import { useEffect, useRef } from "react";
 
-import { project, reducedMotion, rubberband, SPRING } from "./sheet-motion.ts";
+import {
+  project,
+  reducedMotion,
+  REST_MS,
+  rubberband,
+  spring,
+} from "./sheet-motion.ts";
 
 /** An action revealed by swiping a row to the left, such as Delete. */
 export interface SwipeAction {
@@ -12,8 +18,6 @@ export interface SwipeAction {
 
 // Movement before the gesture decides between a swipe and a scroll.
 const SLOP = 10;
-const SETTLE_MS = 400;
-const REST_MS = 100;
 
 // Only one row stays open at a time, as in iOS lists.
 let closeOpenRow: (() => void) | null = null;
@@ -47,19 +51,13 @@ const slide = (element: HTMLElement, to: number, velocity = 0) => {
     }
     return;
   }
-  // A fast release shortens the motion, so the row keeps the finger's speed.
-  const distance = Math.abs(to - from);
-  const speed = Math.abs(velocity);
-  const duration =
-    speed > 0
-      ? Math.min(SETTLE_MS, Math.max(160, (distance / speed) * 2000))
-      : SETTLE_MS;
+  // The row leaves at the finger's speed, so release has no seam.
   const animation = element.animate(
     [
       { transform: `translateX(${from}px)` },
       { transform: `translateX(${to}px)` },
     ],
-    { duration, easing: SPRING }
+    spring(velocity / (to - from))
   );
   if (to === 0) {
     animation.addEventListener("finish", () => reveal(element, false));

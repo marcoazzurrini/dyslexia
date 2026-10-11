@@ -1,9 +1,14 @@
-import { collapse, open, stop } from "@dyslexia/web/lib/now-playing";
+import {
+  collapse,
+  open,
+  readAlong as readAlongWith,
+  stop,
+} from "@dyslexia/web/lib/now-playing";
 import { recordingOf } from "@dyslexia/web/lib/recording";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { DemoApp } from "../demo-app";
-import { bookshelf, making, ready } from "../fixtures";
+import { bookshelf, making, readAlong, ready } from "../fixtures";
 
 const meta = {
   args: { narrations: bookshelf, path: "/" },
@@ -54,5 +59,13 @@ export const FirstNarrations: Story = {
       making({ id: "a", stage: "recording", title: "Why we sleep" }),
       ready({ id: "b" }),
     ],
+  },
+};
+
+/** Reading along with a narration, over the app. Press play to follow. */
+export const ReadingAlong: Story = {
+  beforeEach: () => {
+    open(recordingOf(readAlong));
+    readAlongWith();
   },
 };

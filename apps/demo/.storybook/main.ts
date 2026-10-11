@@ -12,9 +12,11 @@ const config: StorybookConfig = {
 <link rel="stylesheet" href="/virtual:stylex.css" />
 <script type="module" src="/@id/virtual:stylex:runtime"></script>`
       : head,
-  // A short MP3 for player stories, shared with the MP3 package tests.
+  // A short MP3 for player stories, shared with the MP3 package tests, and
+  // a narration to read along with.
   staticDirs: [
     { from: "../../../packages/narrations/test/fixtures", to: "/audio" },
+    "../public",
   ],
   stories: ["../src/**/*.stories.tsx"],
   viteFinal: (vite) => ({

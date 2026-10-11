@@ -44,6 +44,8 @@ secrets/
 *.flac
 # Small synthetic test fixtures are source files.
 !packages/narrations/test/fixtures/*.mp3
+# The stories' narration of an article written for them, to read along with.
+!apps/demo/public/read-along/audio.mp3
 
 # Test output and local caches
 coverage/

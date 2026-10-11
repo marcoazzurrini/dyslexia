@@ -162,6 +162,32 @@ describe("playback", () => {
     expect(audio.currentTime).toBe(0);
   });
 
+  test("tells where the audio is, and moves it there", () => {
+    store("test:playback:a:1", JSON.stringify({ position: 30, rate: 1 }));
+    const { audio, playback } = setup();
+    expect(playback.position()).toBe(0);
+    playback.load(track("a"));
+    expect(playback.position()).toBe(30);
+
+    audio.loadMetadata(100);
+    audio.playTo(42);
+    expect(playback.position()).toBe(42);
+    playback.seek(70);
+    expect(audio.currentTime).toBe(70);
+    expect(placeOf("a")).toMatchObject({ position: 70 });
+    playback.seek(500);
+    expect(audio.currentTime).toBe(100);
+  });
+
+  test("seeking before the audio can seek moves where it starts", () => {
+    const { audio, playback } = setup();
+    playback.load(track("a"));
+    playback.seek(12);
+    expect(playback.position()).toBe(12);
+    audio.loadMetadata(100);
+    expect(audio.currentTime).toBe(12);
+  });
+
   test("marking a track that is not loaded leaves the audio alone", () => {
     const { audio, playback } = setup();
     playback.play(track("a"));

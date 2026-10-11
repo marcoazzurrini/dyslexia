@@ -1,0 +1,218 @@
+{
+  "duration": 123.873,
+  "items": [
+    {
+      "end": 3.44,
+      "kind": "heading",
+      "start": 0,
+      "text": "Why caches make apps feel fast.",
+      "words": [
+        [0, 3, 0],
+        [4, 10, 0.32],
+        [11, 15, 0.88],
+        [16, 20, 1.2],
+        [21, 25, 1.6],
+        [26, 30, 1.92]
+      ]
+    },
+    {
+      "end": 16.64,
+      "kind": "paragraph",
+      "start": 3.44,
+      "text": "Every time an app asks a server for something, it waits. On a good connection the wait is short, but it adds up: a screen that needs ten answers can feel slow even when each answer is quick.",
+      "words": [
+        [0, 5, 3.44],
+        [6, 10, 3.76],
+        [11, 13, 4],
+        [14, 17, 4.32],
+        [18, 22, 4.56],
+        [23, 24, 4.92],
+        [25, 31, 5.04],
+        [32, 35, 5.44],
+        [36, 45, 5.72],
+        [47, 49, 6.24],
+        [50, 55, 6.48],
+        [57, 59, 7.52],
+        [60, 61, 7.64],
+        [62, 66, 7.8],
+        [67, 77, 8.16],
+        [78, 81, 8.64],
+        [82, 86, 8.72],
+        [87, 89, 9.04],
+        [90, 95, 9.2],
+        [97, 100, 9.96],
+        [101, 103, 10.08],
+        [104, 108, 10.24],
+        [109, 111, 10.56],
+        [113, 114, 11.36],
+        [115, 121, 11.64],
+        [122, 126, 11.88],
+        [127, 132, 12],
+        [133, 136, 12.32],
+        [137, 144, 12.56],
+        [145, 148, 13.12],
+        [149, 153, 13.4],
+        [154, 158, 13.84],
+        [159, 163, 14.32],
+        [164, 168, 14.6],
+        [169, 173, 14.84],
+        [174, 180, 15.12],
+        [181, 183, 15.4],
+        [184, 189, 15.68]
+      ]
+    },
+    {
+      "end": 23.68,
+      "kind": "paragraph",
+      "start": 16.64,
+      "text": "A cache keeps a copy of an answer close by, so the next time the app needs it, the answer is already there.",
+      "words": [
+        [0, 1, 16.64],
+        [2, 7, 16.8],
+        [8, 13, 17.24],
+        [14, 15, 17.48],
+        [16, 20, 17.6],
+        [21, 23, 17.92],
+        [24, 26, 18],
+        [27, 33, 18.28],
+        [34, 39, 18.6],
+        [40, 42, 18.88],
+        [44, 46, 19.6],
+        [47, 50, 19.72],
+        [51, 55, 19.84],
+        [56, 60, 20.2],
+        [61, 64, 20.36],
+        [65, 68, 20.52],
+        [69, 74, 20.72],
+        [75, 77, 21.04],
+        [79, 82, 21.44],
+        [83, 89, 21.6],
+        [90, 92, 22],
+        [93, 100, 22.36],
+        [101, 106, 22.76]
+      ]
+    },
+    {
+      "end": 30.96,
+      "kind": "visual",
+      "say": "The picture shows the app asking the cache first, and going to the server only when the cache does not have the answer.",
+      "start": 23.68,
+      "visual": {
+        "alt": "The app asks the cache first, and goes to the server only when the cache does not have the answer.",
+        "kind": "image",
+        "src": "/read-along/cache-diagram.svg"
+      }
+    },
+    {
+      "end": 33.44,
+      "kind": "heading",
+      "start": 30.96,
+      "text": "A cache in a few lines.",
+      "words": [
+        [0, 1, 30.96],
+        [2, 7, 31.12],
+        [8, 10, 31.6],
+        [11, 12, 31.733],
+        [13, 16, 31.84],
+        [17, 22, 32.08]
+      ]
+    },
+    {
+      "end": 39.44,
+      "kind": "paragraph",
+      "start": 33.44,
+      "text": "Here is the smallest useful cache. It remembers each answer by the question that produced it.",
+      "words": [
+        [0, 4, 33.44],
+        [5, 7, 33.76],
+        [8, 11, 33.92],
+        [12, 20, 34.08],
+        [21, 27, 34.64],
+        [28, 33, 35.04],
+        [35, 37, 36],
+        [38, 47, 36.16],
+        [48, 52, 36.72],
+        [53, 59, 36.96],
+        [60, 62, 37.44],
+        [63, 66, 37.56],
+        [67, 75, 37.76],
+        [76, 80, 38.16],
+        [81, 89, 38.32],
+        [90, 92, 38.8]
+      ]
+    },
+    {
+      "end": 94.56,
+      "kind": "visual",
+      "say": "An example follows. const cache equals new Map, less than string comma string greater than, open parenthesis close parenthesis, semicolon. async function lookUp, open parenthesis question colon string close parenthesis, open brace. const known equals cache dot get, open parenthesis question close parenthesis, semicolon. if, open parenthesis known close parenthesis, return known semicolon. const answer equals await askServer, open parenthesis question close parenthesis, semicolon. cache dot set, open parenthesis question comma answer close parenthesis, semicolon. return answer semicolon. Close brace.",
+      "start": 39.44,
+      "visual": {
+        "code": "const cache = new Map<string, string>();\n\nasync function lookUp(question: string) {\n  const known = cache.get(question);\n  if (known) return known;\n  const answer = await askServer(question);\n  cache.set(question, answer);\n  return answer;\n}",
+        "kind": "code",
+        "language": "ts"
+      }
+    },
+    {
+      "end": 96.64,
+      "kind": "heading",
+      "start": 94.56,
+      "text": "How much it saves.",
+      "words": [
+        [0, 3, 94.56],
+        [4, 8, 94.8],
+        [9, 11, 95.04],
+        [12, 17, 95.2]
+      ]
+    },
+    {
+      "end": 114.96,
+      "kind": "visual",
+      "say": "Where the answer comes from: memory. Typical wait: under a millisecond. Where the answer comes from: disk. Typical wait: a few milliseconds. Where the answer comes from: network. Typical wait: fifty to five hundred milliseconds.",
+      "start": 96.64,
+      "visual": {
+        "head": ["Where the answer comes from", "Typical wait"],
+        "kind": "table",
+        "rows": [
+          ["Memory", "under a millisecond"],
+          ["Disk", "a few milliseconds"],
+          ["Network", "50 to 500 milliseconds"]
+        ]
+      }
+    },
+    {
+      "end": 123.873,
+      "kind": "paragraph",
+      "start": 114.96,
+      "text": "The trade-off is freshness. A cached answer can go stale, so real caches decide how long to keep each copy, and when to ask again.",
+      "words": [
+        [0, 3, 114.96],
+        [4, 9, 115.12],
+        [10, 13, 115.42],
+        [14, 16, 115.68],
+        [17, 26, 115.92],
+        [28, 29, 117.04],
+        [30, 36, 117.2],
+        [37, 43, 117.6],
+        [44, 47, 118],
+        [48, 50, 118.24],
+        [51, 56, 118.4],
+        [58, 60, 119.2],
+        [61, 65, 119.48],
+        [66, 72, 119.68],
+        [73, 79, 120.28],
+        [80, 83, 120.64],
+        [84, 88, 120.88],
+        [89, 91, 121.12],
+        [92, 96, 121.28],
+        [97, 101, 121.52],
+        [102, 106, 121.84],
+        [108, 111, 122.48],
+        [112, 116, 122.64],
+        [117, 119, 122.8],
+        [120, 123, 122.96],
+        [124, 129, 123.2]
+      ]
+    }
+  ],
+  "version": 1
+}

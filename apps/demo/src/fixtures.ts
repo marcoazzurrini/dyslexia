@@ -84,6 +84,19 @@ export const listened: Narration[] = [
   failed({ id: "f" }),
 ];
 
+/**
+ * A narration to read along with: a short article written for these
+ * stories, narrated and timed by the real services.
+ */
+export const readAlong = ready({
+  audioUrl: "/read-along/audio.mp3",
+  durationSeconds: 123.873,
+  id: "read-along",
+  title: "Why caches make apps feel fast",
+  transcriptUrl: "/read-along/transcript.json",
+  url: "https://www.example.org/why-caches-feel-fast",
+});
+
 /** A regular listener's library, long enough to scroll. */
 export const bookshelf: Narration[] = [
   making({
@@ -99,6 +112,7 @@ export const bookshelf: Narration[] = [
     title: "Why we sleep",
     url: "https://aeon.co/essays/why-we-sleep",
   }),
+  readAlong,
   ready({
     durationSeconds: 1140,
     id: "r1",

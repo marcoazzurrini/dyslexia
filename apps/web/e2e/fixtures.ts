@@ -40,6 +40,73 @@ export const serveAudio = async (route: Route) => {
   });
 };
 
+/**
+ * The text of the minute of audio: a heading, three paragraphs twenty
+ * seconds apart, and code the voice leaves out.
+ */
+export const TRANSCRIPT = {
+  duration: 60,
+  items: [
+    {
+      end: 1,
+      kind: "heading",
+      start: 0,
+      text: "A new article",
+      words: [
+        [0, 1, 0],
+        [2, 5, 0.3],
+        [6, 13, 0.6],
+      ],
+    },
+    {
+      end: 20,
+      kind: "paragraph",
+      start: 1,
+      text: "The first paragraph starts here.",
+      words: [
+        [0, 3, 1],
+        [4, 9, 2],
+        [10, 19, 3],
+        [20, 26, 4],
+        [27, 31, 5],
+      ],
+    },
+    {
+      end: 20,
+      kind: "visual",
+      say: "",
+      start: 20,
+      visual: { code: "const answer = 42;", kind: "code", language: "js" },
+    },
+    {
+      end: 40,
+      kind: "paragraph",
+      start: 20,
+      text: "The second paragraph follows.",
+      words: [
+        [0, 3, 20],
+        [4, 10, 22],
+        [11, 20, 24],
+        [21, 28, 26],
+      ],
+    },
+    {
+      end: 60,
+      kind: "paragraph",
+      start: 40,
+      text: "The last paragraph ends it.",
+      words: [
+        [0, 3, 40],
+        [4, 8, 42],
+        [9, 18, 44],
+        [19, 23, 46],
+        [24, 26, 48],
+      ],
+    },
+  ],
+  version: 1,
+};
+
 const BASE = {
   createdAt: "2026-01-01T00:00:00Z",
   id: "job-one",
@@ -53,9 +120,11 @@ export const makeNarration = (
   overrides: Partial<typeof BASE> & {
     durationSeconds?: number;
     reason?: string;
+    /** Whether a ready narration has its text to read along. */
+    transcript?: boolean;
   } = {}
 ): Narration => {
-  const { durationSeconds = 60, reason, ...base } = overrides;
+  const { durationSeconds = 60, reason, transcript, ...base } = overrides;
   const fields = { ...BASE, ...base };
   if (state === "ready") {
     return {
@@ -63,6 +132,9 @@ export const makeNarration = (
       audioUrl: `/api/narrations/${fields.id}/audio`,
       durationSeconds,
       state,
+      ...(transcript && {
+        transcriptUrl: `/api/narrations/${fields.id}/transcript`,
+      }),
     };
   }
   if (state === "failed") {
@@ -174,6 +246,8 @@ export const mockNarrations = async (
       await route.fulfill({ json: { _tag: "NarrationNotFound" }, status: 404 });
     } else if (action === "audio") {
       await serveAudio(route);
+    } else if (action === "transcript" && "transcriptUrl" in narration) {
+      await route.fulfill({ json: TRANSCRIPT });
     } else if (action === "retry" && method === "POST") {
       const next = makeNarration("making", {
         id: `${id}-again`,

@@ -12,6 +12,7 @@ const RecordingSchema = Schema.Struct({
   sourceUrl: Schema.String,
   src: Schema.String,
   title: Schema.String,
+  transcriptUrl: Schema.optionalKey(Schema.String),
   version: Schema.String,
 });
 
@@ -28,15 +29,22 @@ export const playback = createPlayback<Recording>({
   storagePrefix: "dyslexia",
 });
 
-// Whether the full player is open; the mini player shows otherwise.
+// Whether the full player is open; the mini player shows otherwise. Over
+// the full player, the text can be open to read along.
 let expanded = false;
+let readingAlong = false;
 const listeners = new Set<() => void>();
 
-const setExpanded = (next: boolean) => {
-  expanded = next;
+const notify = () => {
   for (const listener of listeners) {
     listener();
   }
+};
+
+const setExpanded = (next: boolean) => {
+  expanded = next;
+  readingAlong &&= next;
+  notify();
 };
 
 const subscribe = (listener: () => void) => {
@@ -55,6 +63,19 @@ export const open = (recording: Recording) => {
 export const expand = () => setExpanded(true);
 export const collapse = () => setExpanded(false);
 
+/** Opens the text over the full player, to read along with the voice. */
+export const readAlong = () => {
+  expanded = true;
+  readingAlong = true;
+  notify();
+};
+
+/** Closes the text, back to the full player. */
+export const stopReadingAlong = () => {
+  readingAlong = false;
+  notify();
+};
+
 /** Empties the player and forgets the recording, as when signing out. */
 export const stop = () => {
   playback.stop();
@@ -65,6 +86,8 @@ export interface NowPlaying {
   readonly recording: Recording | null;
   /** Whether the full player is open. */
   readonly expanded: boolean;
+  /** Whether the text is open over it, to read along. */
+  readonly readingAlong: boolean;
   /** Whether the audio is paused, or nothing is loaded. */
   readonly paused: boolean;
   /** The browser refused to play, such as without a tap; offer a retry. */
@@ -90,5 +113,17 @@ export const useNowPlaying = (): NowPlaying => {
     () => expanded,
     () => false
   );
-  return { expanded: isExpanded, failed, paused, rate, recording: track };
+  const isReadingAlong = useSyncExternalStore(
+    subscribe,
+    () => readingAlong,
+    () => false
+  );
+  return {
+    expanded: isExpanded,
+    failed,
+    paused,
+    rate,
+    readingAlong: isReadingAlong,
+    recording: track,
+  };
 };

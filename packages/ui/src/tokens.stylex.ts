@@ -142,12 +142,15 @@ export const font = stylex.defineVars({
 /** Fixed sizes for controls, which iOS does not scale with text. */
 export const size = stylex.defineVars({
   control: "50px",
-  /** The widest the floating bars at the bottom of the screen get. */
-  dock: "28rem",
+  /**
+   * The widest the floating bars at the bottom of the screen get: as wide
+   * as screen content, so they span a phone's width.
+   */
+  dock: "42.5rem",
   /** Readable line length for long text. */
   measure: "40rem",
   navBar: "52px",
-  /** The floating tab bar at the bottom of the screen. */
+  /** Each floating bar at the bottom: the tab bar, and the mini player. */
   tabBar: "62px",
   /** The smallest comfortable touch target. */
   touch: "44px",

@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 
-import { color, media, motion, space } from "./tokens.stylex.ts";
+import { color, media, motion, radius, size, space } from "./tokens.stylex.ts";
 
 /**
  * Looks every component shares, defined once so they cannot drift apart.
@@ -18,6 +18,33 @@ export const recipes = stylex.create({
     paddingInline: space.gutter,
     scrollPaddingInline: space.gutter,
     scrollbarWidth: "none",
+  },
+  /**
+   * A bar floating at the bottom of the screen, such as the tab bar: a glass
+   * capsule as wide as the screen allows. Every such bar looks the same.
+   */
+  bottomBar: {
+    backdropFilter: {
+      default: "blur(24px) saturate(180%)",
+      [media.reducedTransparency]: "none",
+    },
+    backgroundColor: {
+      default: color.glass,
+      [media.reducedTransparency]: color.elevated,
+    },
+    borderRadius: radius.full,
+    boxShadow: `inset 0 0.5px 0 ${color.glassEdge}, 0 10px 30px rgb(0 0 0 / 0.14), 0 1px 3px rgb(0 0 0 / 0.08)`,
+    height: size.tabBar,
+    marginInline: "auto",
+    maxWidth: size.dock,
+    pointerEvents: "auto",
+  },
+  /** Fixes a bottom bar over the content, at the same margins as the others. */
+  bottomDock: {
+    insetInline: 0,
+    paddingInline: `max(${space.sm}, env(safe-area-inset-left))`,
+    pointerEvents: "none",
+    position: "fixed",
   },
   /** Two lines at most, the second ending in an ellipsis. */
   clampTwo: {

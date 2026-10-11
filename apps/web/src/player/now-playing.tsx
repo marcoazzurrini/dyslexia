@@ -70,9 +70,14 @@ const styles = stylex.create({
   },
   // Room for the cover to grow back when playback starts.
   coverStage: { paddingBlock: space.sm },
+  // The audio catches up with a drag only after each seek, so while
+  // dragging the fill and the thumb follow the finger instead.
   fill: {
     backgroundColor: color.label,
-    width: "var(--media-slider-fill)",
+    width: {
+      default: "var(--media-slider-fill)",
+      [stylex.when.ancestor("[data-dragging]")]: "var(--media-slider-pointer)",
+    },
   },
   heading: {
     alignItems: "flex-start",
@@ -157,7 +162,10 @@ const styles = stylex.create({
     display: "flex",
     height: size.touch,
     justifyContent: "center",
-    left: "var(--media-slider-fill)",
+    left: {
+      default: "var(--media-slider-fill)",
+      [stylex.when.ancestor("[data-dragging]")]: "var(--media-slider-pointer)",
+    },
     outlineStyle: "none",
     position: "absolute",
     transform: "translateX(-50%)",

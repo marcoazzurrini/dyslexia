@@ -31,6 +31,7 @@ import { SeekButton, Time, TimeSlider } from "@videojs/react";
 import type { Recording } from "../lib/recording";
 import { coverOf } from "../lib/recording";
 import type { PlaybackView } from "./player";
+import { ReadAlongPanel } from "./read-along";
 
 const styles = stylex.create({
   bar: {
@@ -208,11 +209,14 @@ const RATE_OPTIONS = PLAYBACK_RATES.map((rate) => ({
 export const NowPlaying = ({
   onClose,
   open,
+  readingAlong,
   recording,
   view,
 }: {
   onClose: () => void;
   open: boolean;
+  /** Whether the text is open over the player, to read along. */
+  readingAlong: boolean;
   recording: Recording;
   view: PlaybackView;
 }) => (
@@ -331,5 +335,12 @@ export const NowPlaying = ({
         {STATUS_TEXT[view.status]}
       </output>
     )}
+
+    <ReadAlongPanel
+      open={open}
+      readingAlong={readingAlong}
+      recording={recording}
+      view={view}
+    />
   </Sheet>
 );

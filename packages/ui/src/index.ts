@@ -30,6 +30,14 @@ export type { NoticeProps, NoticeTone } from "./notice.tsx";
 export { Notice } from "./notice.tsx";
 export type { ActivityIndicatorProps, ProgressBarProps } from "./progress.tsx";
 export { ActivityIndicator, ProgressBar } from "./progress.tsx";
+export type {
+  ReadAlongCardProps,
+  ReadAlongItem,
+  ReadAlongPosition,
+  ReadAlongProps,
+  ReadAlongWord,
+} from "./read-along.tsx";
+export { ReadAlong, ReadAlongCard } from "./read-along.tsx";
 export type { ScreenProps } from "./screen.tsx";
 export { Screen, scrollScreenToTop } from "./screen.tsx";
 export type {

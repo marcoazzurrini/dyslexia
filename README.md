@@ -15,7 +15,7 @@ An audio-first web app for people who find reading hard. Give it an article and 
 2. The app extracts the article's text.
 3. A language model adapts the text for listening.
 4. A text-to-speech service narrates it.
-5. The audio is stored and played back in the web app.
+5. The audio is stored and played back in the web app, with the text to read along with the voice.
 
 ## Working on the project
 

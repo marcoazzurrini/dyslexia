@@ -5,6 +5,8 @@ import type { Track } from "@dyslexia/playback";
 export interface Recording extends Track {
   /** The article it reads. */
   readonly sourceUrl: string;
+  /** Its text, timed against the audio, to read along; older ones have none. */
+  readonly transcriptUrl?: string;
 }
 
 /** The site name of a link, such as "overreacted.io". */
@@ -34,6 +36,7 @@ export const recordingOf = (
   sourceUrl: narration.url,
   src: narration.audioUrl,
   title: narration.title,
+  ...(narration.transcriptUrl && { transcriptUrl: narration.transcriptUrl }),
   // A narration's audio never changes; making it again gives a new id.
   version: narration.id,
 });

@@ -13,6 +13,9 @@ This file records decisions and constraints that should hold as the code changes
 - **Extracted pages are untrusted data.** The adaptation model gets no tools or credentials, and treats the page as material to narrate, never as instructions.
 - **Trust the model; fix quality in the prompt.** The page arrives with its clutter, and the prompt tells the model what to leave out. Do not check the model's output with word-counting heuristics. When narrations go wrong, improve the prompt first, then try a better model.
 - **Site quirks live in one place.** When a site needs special help to be read, that help goes in one list next to the reader, with the reason it exists. The rest of the app never asks which site a link is on.
+- **The script is what the listener reads.** The writer returns the script item by item and places the article's visuals, such as pictures, code, and tables, where they stand by referring to them, never by copying them. What is shown is exactly what the voice says, so it can be followed word by word, and a visual the voice leaves out is still there to see.
+- **The voice keeps the time.** When each word is said comes from the voice service's own report for the audio it made. Nothing is estimated.
+- **Pictures are kept, not linked.** The pictures a script shows are stored with the narration, so they outlive the page and the page never learns who reads it. A picture that cannot be kept stays a link to the page's own; a missing picture never fails a narration.
 - **Measure prompt and model changes before shipping them.** The narration eval writes scripts for a fixed set of articles and a judge model checks each one: complete, faithful, free of page clutter, and easy to hear. Compare a change against the current version and ship it only if it is better and nothing got worse. Some articles are held out and used only to check a finished version.
 - **The eval's articles are not ours to publish.** Their text lives in a private Langfuse dataset, never in git.
 - **Trace narration runs in Langfuse, API requests in Honeycomb.** A narration's trace shows the article, prompt, script, and cost of each step; HTTP requests under a step are left out.
@@ -21,6 +24,7 @@ This file records decisions and constraints that should hold as the code changes
 ## Interface
 
 - **It should feel like an iPhone app.** Follow iOS patterns people already know: large titles, inset grouped lists, sheets, a tab bar, and a player that stays in reach on every screen.
+- **Read along, as with lyrics.** The full player shows a glimpse of the text, and the whole text opens over it: it follows the voice, marks the word being said, shows the article's visuals in place, and plays from any paragraph the listener taps. Scrolling away stops the following until the listener asks for it again. Narrations made before this have no text and show none.
 - **Three tabs, as in Audible.** Home greets the listener and offers what to pick up next, Library holds every narration with filters by how far the listener got, and Profile holds the account.
 - **Comfortable to read.** Use a soft background and never pure black text, at least 1.5 line spacing for running text, sentence case rather than capitals, and the system font at the size the reader chose in iOS settings.
 - **One main action per screen.** The next step is the most visible control.

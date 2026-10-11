@@ -56,9 +56,11 @@ const usePlayback = (): PlaybackView => {
 
 const Controls = ({
   expanded,
+  readingAlong,
   recording,
 }: {
   expanded: boolean;
+  readingAlong: boolean;
   recording: Recording;
 }) => {
   const view = usePlayback();
@@ -71,6 +73,7 @@ const Controls = ({
       <NowPlaying
         open={expanded}
         onClose={collapse}
+        readingAlong={readingAlong}
         recording={recording}
         view={view}
       />
@@ -90,11 +93,17 @@ const AudioElement = () => {
  * playback never restarts when the screen changes.
  */
 export const Player = () => {
-  const { expanded, recording } = useNowPlaying();
+  const { expanded, readingAlong, recording } = useNowPlaying();
   return (
     <PlayerProvider>
       <AudioElement />
-      {recording && <Controls expanded={expanded} recording={recording} />}
+      {recording && (
+        <Controls
+          expanded={expanded}
+          readingAlong={readingAlong}
+          recording={recording}
+        />
+      )}
     </PlayerProvider>
   );
 };

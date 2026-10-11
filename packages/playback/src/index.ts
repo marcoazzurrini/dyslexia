@@ -56,6 +56,13 @@ export interface Playback<T extends Track> {
   readonly retry: () => void;
   /** Sets the speed, which the track keeps. */
   readonly setRate: (rate: number) => void;
+  /**
+   * How far into the loaded track the audio is, in seconds: its saved place
+   * until the audio can seek there, and 0 when nothing is loaded.
+   */
+  readonly position: () => number;
+  /** Moves the loaded track to `seconds`, now or once the audio can seek. */
+  readonly seek: (seconds: number) => void;
   /** Empties the player and forgets the track, as when signing out. */
   readonly stop: () => void;
   /** How far the listener got with a track, on this device. */
@@ -335,6 +342,12 @@ export const createPlayback = <T extends Track>({
       set({ track: sameOrNew(track) });
       resume();
     },
+    position: () => {
+      if (!audio || !loaded) {
+        return 0;
+      }
+      return restored ? audio.currentTime : pending;
+    },
     progressOf: (track) =>
       progressFrom(readPlace(placeKey(track)), track.duration),
     resume,
@@ -350,6 +363,18 @@ export const createPlayback = <T extends Track>({
       audio.load();
       // Keep play() in the tap, for browsers that require one.
       resume();
+    },
+    seek: (seconds) => {
+      if (!audio || !loaded || !Number.isFinite(seconds)) {
+        return;
+      }
+      const position = Math.max(0, seconds);
+      if (restored && hasDuration(audio)) {
+        audio.currentTime = Math.min(position, audio.duration);
+        save();
+      } else {
+        pending = position;
+      }
     },
     setRate: (rate) => {
       if (!validRate(rate)) {

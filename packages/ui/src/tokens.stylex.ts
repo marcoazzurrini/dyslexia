@@ -91,9 +91,9 @@ export const color = stylex.defineVars({
   thumb: { default: "#ffffff", [DARK]: "#636366" },
   /**
    * A tray tucked behind a bar, such as the mini player behind the tab bar:
-   * a step apart from the bar, so the two read as layers.
+   * a step lighter than the bar, so it stands out from the canvas.
    */
-  tray: { default: "#ebebf0", [DARK]: "#161618" },
+  tray: { default: "#ffffff", [DARK]: "#2a2a2e" },
   warning: { default: "#b25000", [DARK]: "#ffb340" },
   warningFill: {
     default: "rgb(178 80 0 / 0.12)",
@@ -155,10 +155,10 @@ export const size = stylex.defineVars({
   /** Readable line length for long text. */
   measure: "40rem",
   /** The mini player, in its tray above the tab bar. */
-  miniPlayer: "48px",
+  miniPlayer: "64px",
   navBar: "52px",
-  /** The tab bar's row of tabs. */
-  tabBar: "50px",
+  /** The tab bar's row of tabs, above the home indicator. */
+  tabBar: "60px",
   /** The smallest comfortable touch target. */
   touch: "44px",
 });

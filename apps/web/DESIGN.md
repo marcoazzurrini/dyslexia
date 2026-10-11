@@ -176,9 +176,8 @@ components:
   tab-bar:
     backgroundColor: "{colors.media-canvas}"
     textColor: "{colors.label-secondary}"
-    rounded: "{rounded.full}"
-    height: "50px"
-    width: "28rem"
+    height: "60px"
+    width: "100%"
   tab-bar-selected:
     textColor: "{colors.indigo-text}"
   mini-player:
@@ -221,7 +220,7 @@ components:
 
 **Creative North Star: "The First-Party Sibling"**
 
-Reader looks like an app Apple shipped beside Podcasts. Every structural choice is the iOS one: grouped settings on system gray, plain media screens on a near-white canvas, large titles that hand off to a compact bar, sheets with a grabber, a floating tab bar, a mini player above it. The system's personality is not invented; it is borrowed on purpose from the category standard, because the listener should never have to learn the app.
+Reader looks like an app Apple shipped beside Podcasts. Every structural choice is the iOS one: grouped settings on system gray, plain media screens on a near-white canvas, large titles that hand off to a compact bar, sheets with a grabber, a tab bar along the bottom, a mini player above it. The system's personality is not invented; it is borrowed on purpose from the category standard, because the listener should never have to learn the app.
 
 What makes it Reader rather than a template is the cover. Narrations have no art, so each gets a generated square in a deep hue chosen from its site, with the site's initial in white. Covers give every list row, shelf, card, and the player a face, and the large cover in the player breathes with playback: full size while playing, stepping back while paused, as Podcasts does. One indigo tint marks everything that can be pressed, selected, or is progressing; the cover hues never use it.
 
@@ -232,7 +231,7 @@ Density is iOS default: 44px touch targets, 4-point rem spacing that grows with 
 - iOS structure and semantic colors, near the system values but never pure black or pure white text.
 - One indigo tint for actions, selection, and progress; cover hues for identity only.
 - Generated covers as the only imagery, in five fixed sizes, each set by the component that holds the cover.
-- Opaque floating chrome (tab bar, mini player) with content fading out behind it.
+- Opaque bottom chrome (tab bar, mini player) with content fading out behind it.
 - Soft, ambient shadows on covers and floating chrome only; cells are flat.
 - Every size in rem, so the whole interface follows Dynamic Type.
 
@@ -297,7 +296,7 @@ An iOS system palette with one indigo tint, plus eight deep cover hues that carr
 
 A single column capped at a 40rem measure plus a 1.25rem gutter on each side, honoring safe-area insets. Screens stack sections with a 1.5rem gap. Spacing follows a 4-point scale in rem (0.125rem to 3rem). Home uses horizontal shelves that scroll under the screen margins with snap and hidden scrollbars; a lone card spans the width. Library and Profile are lists. The full player is a sheet: grabber, cover at min(78%, 38vh) up to 17rem so controls stay in view on short screens, left-aligned title and site, scrubber, transport controls 3rem apart, speed control at the bottom.
 
-The bottom of each screen is reserved for floating chrome: the tab bar (50px) floats above the home indicator, capped at 28rem; while something plays, the mini player (48px) slides up from behind it as a narrower tray. Content pads its bottom to clear them.
+The bottom of each screen is reserved for chrome: the tab bar runs edge to edge along the bottom, its 60px of tabs above the home indicator; while something plays, the mini player (64px) slides up from behind it as a tray. Content pads its bottom to clear them.
 
 ### Named Rules
 
@@ -311,7 +310,7 @@ Hybrid: cells and lists are flat and tonal (white on gray, hairline separators),
 
 - **Cover large** (`0 14px 36px rgb(0 0 0 / 0.24), 0 2px 6px rgb(0 0 0 / 0.12)`; paused `0 6px 18px rgb(0 0 0 / 0.16), 0 1px 3px rgb(0 0 0 / 0.1)`): the player cover.
 - **Cover shelf** (`0 6px 16px rgb(0 0 0 / 0.14), 0 1px 3px rgb(0 0 0 / 0.08)`) and **cover card** (`0 4px 12px rgb(0 0 0 / 0.24)`): Home.
-- **Floating bar** (tab bar `inset 0 0.5px 0 glassEdge, 0 10px 30px rgb(0 0 0 / 0.14), 0 1px 3px rgb(0 0 0 / 0.08)`; mini player `inset 0 0.5px 0 glassEdge, 0 8px 30px rgb(0 0 0 / 0.16)`).
+- **Bottom chrome** (tab bar: a hairline along its top, no shadow; mini player tray `inset 0 0.5px 0 glassEdge, 0 8px 30px rgb(0 0 0 / 0.16)`).
 - **Sheet** (`0 -8px 40px rgb(0 0 0 / 0.18)`).
 - **Segmented thumb** (`0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.06)`).
 
@@ -321,7 +320,7 @@ Hybrid: cells and lists are flat and tonal (white on gray, hairline separators),
 
 ## Shapes
 
-Continuous-feeling rounded rectangles at tight iOS radii: 0.5rem for the mini cover, 0.625rem for buttons, row covers and shelf covers, 0.875rem for inset grouped sections, cards, and the mini player, 1.25rem for the large cover, 2.25rem for the top corners of sheets. Capsules (full radius) for the tab bar, filter chips, row play glyphs, progress tracks, the grabber, and round icon buttons. The segmented control uses its own nested radii (0.5625rem outside, 0.4375rem thumb).
+Continuous-feeling rounded rectangles at tight iOS radii: 0.5rem for the mini cover, 0.625rem for buttons, row covers and shelf covers, 0.875rem for inset grouped sections, cards, and the mini player, 1.25rem for the large cover, 2.25rem for the top corners of sheets. Capsules (full radius) for filter chips, row play glyphs, progress tracks, the grabber, and round icon buttons. The segmented control uses its own nested radii (0.5625rem outside, 0.4375rem thumb).
 
 ## Components
 
@@ -361,9 +360,9 @@ Gray track with 3px padding, a white thumb that slides on a spring; used for pla
 
 ### Navigation
 
-- **Tab bar:** a floating opaque capsule, no highlight shape; the selected tab is tinted indigo, others secondary label; fixed 10px semibold labels under 1.3rem glyphs; press scales to 0.96. Adding an article sits in its end: a gray circle concentric with the capsule, neutral so the tint only marks the open tab.
+- **Tab bar:** opaque and edge to edge along the bottom, under the home indicator, with a hairline along its top; no highlight shape; the selected tab is tinted indigo, others secondary label; fixed 11px semibold labels under 1.4rem glyphs; press scales to 0.96. Adding an article sits at its end: a gray circle, neutral so the tint only marks the open tab.
 - **Nav bar:** transparent over the large title, turning opaque with a hairline once scrolled while the compact title fades in.
-- **Mini player:** a tray tucked behind the tab bar, a step darker and narrower, that slides up out of it while something plays: round cover, title, time left, and small play/pause and skip forward set close together so the title gets the room.
+- **Mini player:** a tray tucked behind the tab bar's top edge, a step lighter than the bar so it stands out, that slides up out of it while something plays: round cover, title, time left, play/pause and skip forward.
 
 ### Sheets
 

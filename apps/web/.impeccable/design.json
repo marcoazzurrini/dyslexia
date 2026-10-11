@@ -624,7 +624,7 @@
       },
       {
         "name": "control",
-        "value": "50px"
+        "value": "60px"
       },
       {
         "name": "navBar",
@@ -681,15 +681,15 @@
       "name": "Floating Tab Bar",
       "kind": "nav",
       "refersTo": "tab-bar",
-      "description": "Opaque floating capsule; the selected tab takes the tint, no shape behind it.",
+      "description": "Opaque and edge to edge along the bottom, with a hairline on top; the selected tab takes the tint, no shape behind it.",
       "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab ds-tab-on\" href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z\"/></svg>Home</a><a class=\"ds-tab\" href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M5 4v16M10 4v16M15 4l4 16\"/></svg>Library</a><a class=\"ds-tab\" href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21a8 8 0 0 1 16 0\"/></svg>Profile</a></nav>",
-      "css": ".ds-tabs{display:flex;height:50px;max-width:28rem;border-radius:999px;background:#f7f7f9;box-shadow:inset 0 0.5px 0 rgb(255 255 255 / 0.8),0 10px 30px rgb(0 0 0 / 0.14),0 1px 3px rgb(0 0 0 / 0.08);font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif} .ds-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:10px;font-weight:600;line-height:1.2;color:rgb(60 60 67 / 0.78);text-decoration:none;transition:color 120ms,transform 120ms} .ds-tab:active{transform:scale(0.94)} .ds-tab:focus-visible{outline:2px solid #5856d6;outline-offset:-2px} .ds-tab-on{color:#4f4dcc}"
+      "css": ".ds-tabs{display:flex;height:60px;background:#f7f7f9;box-shadow:inset 0 0.5px 0 rgb(255 255 255 / 0.8),0 10px 30px rgb(0 0 0 / 0.14),0 1px 3px rgb(0 0 0 / 0.08);font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif} .ds-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:10px;font-weight:600;line-height:1.2;color:rgb(60 60 67 / 0.78);text-decoration:none;transition:color 120ms,transform 120ms} .ds-tab:active{transform:scale(0.94)} .ds-tab:focus-visible{outline:2px solid #5856d6;outline-offset:-2px} .ds-tab-on{color:#4f4dcc}"
     },
     {
       "name": "Mini Player",
       "kind": "custom",
       "refersTo": "mini-player",
-      "description": "Floats above the tab bar: mini cover, title, time left, play and skip forward.",
+      "description": "A tray that slides up from behind the tab bar: mini cover, title, time left, play and skip forward.",
       "html": "<div class=\"ds-mini\"><span class=\"ds-mini-cover\">S</span><span class=\"ds-mini-text\"><span class=\"ds-mini-title\">Programming sucks</span><span class=\"ds-mini-time\">8:12 left</span></span><button class=\"ds-mini-btn\" aria-label=\"Play\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z\"/></svg></button></div>",
       "css": ".ds-mini{display:flex;align-items:center;gap:0.75rem;max-width:28rem;min-height:3.75rem;padding:0.5rem;border-radius:0.875rem;background:#f7f7f9;color:#1c1c1e;box-shadow:inset 0 0.5px 0 rgb(255 255 255 / 0.8),0 8px 30px rgb(0 0 0 / 0.16);font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif} .ds-mini-cover{width:2.75rem;height:2.75rem;border-radius:0.5rem;background:#0062c4;color:#fff;font-weight:700;font-size:1.25rem;display:flex;align-items:center;justify-content:center} .ds-mini-text{flex:1;display:flex;flex-direction:column} .ds-mini-title{font-size:0.88rem;font-weight:600;line-height:1.3} .ds-mini-time{font-size:0.8rem;color:rgb(60 60 67 / 0.78);font-variant-numeric:tabular-nums} .ds-mini-btn{width:44px;height:44px;border:none;border-radius:999px;background:transparent;color:#1c1c1e;display:flex;align-items:center;justify-content:center} .ds-mini-btn:active{opacity:0.5} .ds-mini-btn:focus-visible{outline:2px solid #5856d6}"
     },

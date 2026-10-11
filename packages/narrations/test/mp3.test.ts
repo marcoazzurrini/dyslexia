@@ -1,7 +1,7 @@
 /* eslint-disable no-bitwise -- Tests build MP3 frame headers, which are bit fields. */
 import { describe, expect, test } from "bun:test";
 
-import { joinMp3, Mp3Error } from "../src/mp3.ts";
+import { joinMp3, measureMp3, Mp3Error } from "../src/mp3.ts";
 
 interface Options {
   frames?: number;
@@ -179,6 +179,22 @@ const rejects = async (files: Uint8Array[], message: string) => {
   await expect(joining).rejects.toThrow(message);
   return written;
 };
+
+describe("measureMp3", () => {
+  test("measures a file as joinMp3 measures it", async () => {
+    const files = [await fixture("a.mp3"), await fixture("b.mp3")];
+    const { summary } = await join(files);
+    expect(files.map(measureMp3).reduce((sum, seconds) => sum + seconds)).toBe(
+      summary.durationSeconds
+    );
+  });
+
+  test("rejects data that is not MP3", () => {
+    expect(() => measureMp3(new TextEncoder().encode("not audio"))).toThrow(
+      Mp3Error
+    );
+  });
+});
 
 describe("joinMp3 rejects", () => {
   test("an empty list", async () => {

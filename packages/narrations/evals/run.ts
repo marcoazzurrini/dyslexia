@@ -14,6 +14,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 
+import { spokenText } from "@dyslexia/transcript/making";
 import { ConfigProvider, Effect, Layer } from "effect";
 import { FetchHttpClient } from "effect/http";
 
@@ -84,9 +85,10 @@ interface Experiment {
   readonly settings: ReturnType<typeof settingsFor>;
 }
 
-const article = (item: Item) => ({
-  text: item.input.text,
+const page = (item: Item) => ({
+  markdown: item.input.text,
   title: item.input.title,
+  url: item.input.link,
 });
 
 const noScript: Findings = {
@@ -111,9 +113,7 @@ const scoreItem = (experiment: Experiment, item: Item) =>
       root.attribute(name, value);
     }
     const written = yield* Effect.result(
-      (yield* Writer)
-        .write(article(item))
-        .pipe(Effect.annotateSpans(itemContext))
+      (yield* Writer).write(page(item)).pipe(Effect.annotateSpans(itemContext))
     );
     if (written._tag === "Failure") {
       yield* Effect.annotateCurrentSpan(
@@ -143,7 +143,7 @@ const scoreItem = (experiment: Experiment, item: Item) =>
     Effect.flatMap(({ root, script }) =>
       Effect.gen(function* checkScript() {
         const findings: Findings = script
-          ? (yield* judge(article(item), script, key).pipe(
+          ? (yield* judge(item.input.text, spokenText(script), key).pipe(
               Effect.withTracerEnabled(false)
             )).findings
           : noScript;

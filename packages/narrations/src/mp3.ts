@@ -105,11 +105,7 @@ const skipId3v2 = (bytes: Uint8Array, fail: (reason: string) => never) => {
 };
 
 // Finds the audio frames of one file and checks them against `expected`.
-const scan = (
-  bytes: Uint8Array,
-  index: number,
-  expected: Frame | undefined
-) => {
+const scan = (bytes: Uint8Array, index: number, expected?: Frame) => {
   const fail = (reason: string): never => {
     throw new Mp3Error(`File ${index + 1} cannot be joined: ${reason}`);
   };
@@ -190,4 +186,15 @@ export const joinMp3 = async (
     throw new Mp3Error("There are no files to join");
   }
   return { bytes, durationSeconds: samples / expected.sampleRate };
+};
+
+/**
+ * How long a complete MP3 file plays, measured from its audio frames as
+ * `joinMp3` measures it, so lengths add up to the joined recording's.
+ *
+ * @throws {Mp3Error} If the file is not usable MP3 audio.
+ */
+export const measureMp3 = (file: Uint8Array): number => {
+  const { frame, frames } = scan(file, 0);
+  return (frames * frame.samples) / frame.sampleRate;
 };

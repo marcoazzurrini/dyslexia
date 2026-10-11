@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@dyslexia/transcript": "workspace:*",
     "effect": "4.0.0"
   },
   "devDependencies": {

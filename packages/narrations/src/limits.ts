@@ -24,3 +24,9 @@ export const RETRIES = 3;
 
 /** Narrations listed in the library, newest first. */
 export const MAX_LISTED = 50;
+
+/** The most pictures kept from one article; the rest link to the page's. */
+export const MAX_PICTURES = 40;
+
+/** The largest picture kept from an article. */
+export const MAX_PICTURE_BYTES = 5 * 1024 * 1024;

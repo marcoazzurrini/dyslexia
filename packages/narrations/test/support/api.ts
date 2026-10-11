@@ -1,3 +1,4 @@
+import type { Transcript } from "@dyslexia/transcript";
 import { Effect, Schema } from "effect";
 
 import type { NarrationsEnv } from "../../src/config.ts";
@@ -10,6 +11,15 @@ import { memoryBucket } from "./bucket.ts";
 import { fakeWorkflow } from "./fakes.ts";
 
 export const ORIGIN = "https://app.test";
+
+/** The transcript of a seeded narration that has one. */
+export const TRANSCRIPT: Transcript = {
+  duration: 1,
+  items: [
+    { end: 1, kind: "paragraph", start: 0, text: "Hello.", words: [[0, 5, 0]] },
+  ],
+  version: 1,
+};
 
 export const KEYS = {
   ELEVENLABS_API_KEY: "eleven-secret",
@@ -98,6 +108,13 @@ export const apiSetup = (
         if (full.state === "ready") {
           yield* s.savePart(full.id, 0, speech(4));
           yield* s.joinParts(full.id, 1);
+          if (full.transcript) {
+            yield* s.saveTranscript(full.id, TRANSCRIPT);
+            yield* s.savePicture(full.id, 0, {
+              bytes: new TextEncoder().encode("<svg/>"),
+              type: "image/svg+xml",
+            });
+          }
         } else {
           yield* s.savePart(full.id, 0, speech());
         }

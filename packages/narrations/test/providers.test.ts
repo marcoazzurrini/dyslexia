@@ -1,12 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
-import { Effect, Fiber } from "effect";
+import { Effect, Fiber, Option } from "effect";
 import { FetchHttpClient } from "effect/http";
 import { TestClock } from "effect/testing";
 
 import { servicesFor } from "../src/layers.ts";
 import { MAX_PART_CHARACTERS } from "../src/limits.ts";
+import { Pictures } from "../src/services/pictures.ts";
 import type { Reader } from "../src/services/reader.ts";
+import { timeCharacters } from "../src/services/voice.ts";
 import type { Voice } from "../src/services/voice.ts";
 import { WriterSettings } from "../src/services/writer.ts";
 import type { Writer } from "../src/services/writer.ts";
@@ -65,9 +67,31 @@ const run = <A, E>(
   );
 
 const read = (url: string) => withReader((reader) => reader.read(url));
-const write = (text: string) =>
-  withWriter((writer) => writer.write({ text, title: "Title" }));
+const write = (markdown: string) =>
+  withWriter((writer) =>
+    writer.write({ markdown, title: "Title", url: "https://example.org/a" })
+  );
 const speak = (text: string) => withVoice((voice) => voice.speak(text));
+
+/** What the writer reads for an article of one paragraph. */
+const writerInput = (markdown: string) =>
+  JSON.stringify({ blocks: [{ markdown }], title: "Title" });
+
+/** A script of one paragraph. */
+const scriptOf = (say: string, title = "Title") => ({
+  items: [{ kind: "paragraph" as const, say, visual: null }],
+  title,
+});
+
+/** The voice's answer: audio of the text, timed a tenth of a second apart. */
+const voiced = (text: string, audio = speech()) =>
+  Response.json({
+    alignment: {
+      character_start_times_seconds: [...text].map((_, at) => at / 10),
+      characters: [...text],
+    },
+    audio_base64: Buffer.from(audio).toString("base64"),
+  });
 
 interface Scraped {
   readonly markdown: string;
@@ -255,10 +279,10 @@ describe("the article reader (Firecrawl)", () => {
 describe("the writer (OpenRouter)", () => {
   test("asks the model for the whole article and its title as JSON, with the article as data", async () => {
     const { fetch, requests } = fakeFetch(
-      completion(JSON.stringify({ text: "Spoken.", title: " Headline " }))
+      completion(JSON.stringify(scriptOf("Spoken.", " Headline ")))
     );
     const result = await run(write("Article body."), fetch);
-    expect(result).toEqual({ value: { text: "Spoken.", title: "Headline" } });
+    expect(result).toEqual({ value: scriptOf("Spoken.", "Headline") });
     const [request] = requests;
     expect(request?.url).toBe("https://openrouter.ai/api/v1/chat/completions");
     expect(request?.headers.get("authorization")).toBe(
@@ -271,7 +295,7 @@ describe("the writer (OpenRouter)", () => {
       response_format: {
         json_schema: {
           name: "narration",
-          schema: { required: ["text", "title"] },
+          schema: { additionalProperties: false, required: ["items", "title"] },
           strict: true,
         },
         type: "json_schema",
@@ -282,7 +306,7 @@ describe("the writer (OpenRouter)", () => {
     expect(body.messages[0].content).toContain("not a summary");
     expect(body.messages[0].content).toContain("Name the article");
     expect(body.messages[1]).toEqual({
-      content: JSON.stringify({ text: "Article body.", title: "Title" }),
+      content: writerInput("Article body."),
       role: "user",
     });
   });
@@ -302,10 +326,19 @@ describe("the writer (OpenRouter)", () => {
       "returned text that is not JSON",
       completion("Here is your narration: ..."),
     ],
-    ["returned JSON without text", completion(JSON.stringify({ title: "x" }))],
+    ["returned JSON without items", completion(JSON.stringify({ title: "x" }))],
     [
       "returned JSON without a title",
-      completion(JSON.stringify({ text: "x" })),
+      completion(JSON.stringify({ items: [] })),
+    ],
+    [
+      "returned an item of an unknown kind",
+      completion(
+        JSON.stringify({
+          items: [{ kind: "aside", say: "x", visual: null }],
+          title: "x",
+        })
+      ),
     ],
     [
       "returned two answers",
@@ -333,7 +366,7 @@ describe("the writer (OpenRouter)", () => {
 
   test("uses the model and prompt it is given, for comparing them", async () => {
     const { fetch, requests } = fakeFetch(
-      completion(JSON.stringify({ text: "Spoken.", title: "Title" }))
+      completion(JSON.stringify(scriptOf("Spoken.")))
     );
     await run(
       write("Article.").pipe(
@@ -358,10 +391,10 @@ describe("the writer (OpenRouter)", () => {
 
   test("keeps the page's title when the model gives an empty one", async () => {
     const { fetch } = fakeFetch(
-      completion(JSON.stringify({ text: "Spoken.", title: "  " }))
+      completion(JSON.stringify(scriptOf("Spoken.", "  ")))
     );
     const result = await run(write("Article."), fetch);
-    expect(result).toEqual({ value: { text: "Spoken.", title: "Title" } });
+    expect(result).toEqual({ value: scriptOf("Spoken.") });
   });
 
   test.each([
@@ -380,14 +413,19 @@ describe("the writer (OpenRouter)", () => {
 });
 
 describe("the voice (ElevenLabs)", () => {
-  test("asks for constant-bitrate MP3 with the chosen voice and model", async () => {
+  test("asks for constant-bitrate MP3 with the chosen voice and model, and when it says each character", async () => {
     const audio = speech(3);
-    const { fetch, requests } = fakeFetch(new Response(audio));
+    const { fetch, requests } = fakeFetch(voiced("Hello there.", audio));
     const result = await run(speak("Hello there."), fetch);
-    expect(result).toEqual({ value: audio });
+    expect(result).toEqual({
+      value: {
+        audio,
+        starts: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1],
+      },
+    });
     const [request] = requests;
     expect(request?.url).toBe(
-      "https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb?output_format=mp3_44100_128"
+      "https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb/with-timestamps?output_format=mp3_44100_128"
     );
     expect(request?.headers.get("xi-api-key")).toBe("eleven-secret");
     expect(request?.headers.get("authorization")).toBeNull();
@@ -399,14 +437,21 @@ describe("the voice (ElevenLabs)", () => {
 
   test("sends the longest part whole", async () => {
     const text = "a".repeat(MAX_PART_CHARACTERS);
-    const { fetch, requests } = fakeFetch(new Response(speech()));
+    const { fetch, requests } = fakeFetch(voiced(text));
     await run(speak(text), fetch);
     const body = await requests[0]?.json();
     expect(body).toMatchObject({ text });
   });
 
-  test("reports an unavailable service for empty audio", async () => {
-    const { fetch } = fakeFetch(new Response(new Uint8Array()));
+  test.each([
+    ["empty audio", voiced("Hello.", new Uint8Array())],
+    [
+      "audio that is not Base64",
+      Response.json({ alignment: null, audio_base64: "%%%" }),
+    ],
+    ["an answer that is not JSON", new Response(speech())],
+  ])("reports an unavailable service for %s", async (_case, answer) => {
+    const { fetch } = fakeFetch(answer);
     const result = await run(speak("Hello."), fetch);
     expect(result).toEqual({
       error: expect.objectContaining({
@@ -418,7 +463,7 @@ describe("the voice (ElevenLabs)", () => {
 
   test("rejects audio over 8 MiB", async () => {
     const { fetch } = fakeFetch(
-      new Response(new Uint8Array(8 * 1024 * 1024 + 1))
+      voiced("Hello.", new Uint8Array(8 * 1024 * 1024 + 1))
     );
     const result = await run(speak("Hello."), fetch);
     expect(result).toEqual({
@@ -443,13 +488,69 @@ describe("the voice (ElevenLabs)", () => {
   });
 });
 
+const fetchPicture = (url: string, answer: Response) =>
+  Effect.runPromise(
+    Effect.gen(function* body() {
+      return yield* (yield* Pictures).fetch(url);
+    }).pipe(
+      Effect.provide(Pictures.layer),
+      Effect.provide(FetchHttpClient.layer),
+      Effect.provideService(FetchHttpClient.Fetch, fakeFetch(answer).fetch)
+    )
+  );
+const png = (bytes: number, type = "image/png") =>
+  new Response(new Uint8Array(bytes), { headers: { "Content-Type": type } });
+
+describe("keeping an article's pictures", () => {
+  test("fetches a picture with its type", async () => {
+    const picture = await fetchPicture("https://example.org/a.png", png(3));
+    expect(Option.getOrThrow(picture)).toEqual({
+      bytes: new Uint8Array(3),
+      type: "image/png",
+    });
+  });
+
+  test.each([
+    ["is missing", new Response("Not found", { status: 404 })],
+    ["is a web page", png(3, "text/html; charset=utf-8")],
+    ["is empty", png(0)],
+    ["is over 5 MiB", png(5 * 1024 * 1024 + 1)],
+  ])("keeps nothing when the picture %s", async (_case, answer) => {
+    expect(
+      Option.isNone(await fetchPicture("https://example.org/a.png", answer))
+    ).toBe(true);
+  });
+});
+
+describe("timing what the voice says", () => {
+  test("times each character the voice lists", () => {
+    expect(timeCharacters("Hi.", ["H", "i", "."], [0, 0.2, 0.3])).toEqual([
+      0, 0.2, 0.3,
+    ]);
+  });
+
+  test("gives a character the voice skipped the time before it", () => {
+    expect(timeCharacters("a-b", ["a", "b"], [0, 1])).toEqual([0, 0, 1]);
+  });
+
+  test("times both halves of a character made of two code units", () => {
+    expect(
+      timeCharacters("😀 hi", ["😀", " ", "h", "i"], [0, 1, 2, 3])
+    ).toEqual([0, 0, 1, 2, 3]);
+  });
+
+  test("ignores characters the text does not hold", () => {
+    expect(timeCharacters("ab", ["a", "x", "b"], [0, 1, 2])).toEqual([0, 2]);
+  });
+});
+
 describe("traces of the outside services", () => {
   test("never record a service key", async () => {
     const { spans, tracer } = recordingTracer();
     const { fetch } = fakeFetch(
       scraped({ markdown: "Body.", metadata: { title: "Title" } }),
-      completion(JSON.stringify({ text: "Body.", title: "Title" })),
-      new Response(speech())
+      completion(JSON.stringify(scriptOf("Body."))),
+      voiced("Hi")
     );
     await run(
       Effect.all([
@@ -477,14 +578,14 @@ describe("traces of the outside services", () => {
           {
             finish_reason: "stop",
             message: {
-              content: JSON.stringify({ text: "Spoken.", title: "Title" }),
+              content: JSON.stringify(scriptOf("Spoken.")),
               reasoning: "Read it all.",
             },
           },
         ],
         model: "openai/gpt-6.1-sol-20261001",
       }),
-      new Response(speech())
+      voiced("Hi")
     );
     await run(
       Effect.all([
@@ -513,10 +614,7 @@ describe("traces of the outside services", () => {
     const [system, user] = parsed(String(writer["langfuse.observation.input"]));
     expect(system).toMatchObject({ role: "system" });
     expect(system.content).toContain("not a summary");
-    expect(user).toEqual({
-      content: JSON.stringify({ text: "Body.", title: "Title" }),
-      role: "user",
-    });
+    expect(user).toEqual({ content: writerInput("Body."), role: "user" });
     expect(parsed(String(writer["langfuse.observation.output"]))).toEqual({
       content: "Spoken.",
       reasoning: "Read it all.",
@@ -558,7 +656,7 @@ describe("traces of the outside services", () => {
           {
             finish_reason: "stop",
             message: {
-              content: JSON.stringify({ text: "Body.", title: "Title" }),
+              content: JSON.stringify(scriptOf("Body.")),
             },
           },
         ],

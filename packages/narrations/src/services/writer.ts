@@ -1,3 +1,10 @@
+import {
+  prepare,
+  scriptJsonSchema,
+  ScriptSchema,
+  spokenText,
+} from "@dyslexia/transcript/making";
+import type { Page, Script } from "@dyslexia/transcript/making";
 import { Config, Context, Effect, Layer, Redacted, Schema } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 
@@ -9,7 +16,6 @@ import {
   observationOutput,
   observationType,
 } from "../observation.ts";
-import type { Article } from "./reader.ts";
 import { decodeJson, send } from "./send.ts";
 import { WRITING_PROMPT } from "./writing-prompt.ts";
 
@@ -53,21 +59,19 @@ const Completion = Schema.Struct({
   ),
 });
 
-/** A narration script and the title to show it under. */
-export const ScriptSchema = Schema.Struct({
-  text: Schema.String,
-  title: Schema.String,
-});
-export type Script = typeof ScriptSchema.Type;
+export type { Script } from "@dyslexia/transcript/making";
 
 const Answer = Schema.fromJsonString(ScriptSchema);
 
-/** Rewrites an article as a script to be read aloud. */
+/**
+ * Rewrites an article as a script to be read aloud, item by item, with the
+ * article's visuals placed where they stand.
+ */
 export class Writer extends Context.Service<
   Writer,
   {
     readonly write: (
-      article: Article
+      page: Page
     ) => Effect.Effect<
       Script,
       ScriptIncomplete | ServiceUnavailable | ServiceRejected
@@ -81,7 +85,7 @@ export class Writer extends Context.Service<
       const key = yield* Config.Redacted("OPENROUTER_API_KEY");
       const client = yield* HttpClient.HttpClient;
       const write = Effect.fn("Writer.write")(function* writerWrite(
-        article: Article
+        page: Page
       ) {
         const {
           model: requested,
@@ -90,14 +94,14 @@ export class Writer extends Context.Service<
         } = yield* WriterSettings;
         const messages = [
           { content: prompt, role: "system" },
-          { content: JSON.stringify(article), role: "user" },
+          { content: JSON.stringify(prepare(page)), role: "user" },
         ];
         const settings = {
           max_completion_tokens: 64_000,
           reasoning: { effort },
         };
         yield* Effect.annotateCurrentSpan({
-          "article.characters": article.text.length,
+          "article.characters": page.markdown.length,
           "gen_ai.provider.name": "openrouter",
           "gen_ai.request.model": requested,
           ...observationType("generation"),
@@ -120,15 +124,7 @@ export class Writer extends Context.Service<
               response_format: {
                 json_schema: {
                   name: "narration",
-                  schema: {
-                    additionalProperties: false,
-                    properties: {
-                      text: { type: "string" },
-                      title: { type: "string" },
-                    },
-                    required: ["text", "title"],
-                    type: "object",
-                  },
+                  schema: scriptJsonSchema,
                   strict: true,
                 },
                 type: "json_schema",
@@ -167,21 +163,23 @@ export class Writer extends Context.Service<
         ) {
           return yield* new ScriptIncomplete();
         }
-        const { text, title } = yield* Schema.decodeUnknownEffect(Answer)(
+        const script: Script = yield* Schema.decodeUnknownEffect(Answer)(
           choice.message.content
         ).pipe(Effect.mapError(() => new ScriptIncomplete()));
+        const text = spokenText(script);
         yield* Effect.annotateCurrentSpan({
           "script.characters": text.length,
-          // The script itself, easier to read than the JSON it came in.
+          "script.items": script.items.length,
+          // What the voice will say, easier to read than the JSON it came in.
           ...observationOutput({
             content: text,
             reasoning,
             role: "assistant",
-            title,
+            title: script.title,
           }),
         });
         // The page's own title is still better than none.
-        return { text, title: title.trim() || article.title };
+        return { ...script, title: script.title.trim() || page.title };
       });
       return { write };
     })

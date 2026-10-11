@@ -2,6 +2,7 @@ import type {
   FixedLengthStream as FixedLengthStreamType,
   R2Bucket,
 } from "@cloudflare/workers-types";
+import type { Transcript } from "@dyslexia/transcript";
 import { Array as Arr, Clock, Context, Effect, Layer, Schema } from "effect";
 
 import { serveAudioObject } from "../audio.ts";
@@ -11,6 +12,7 @@ import { siteOf } from "../link.ts";
 import { joinMp3 } from "../mp3.ts";
 import { NarrationRecordSchema } from "../narration.ts";
 import type { NarrationRecord } from "../narration.ts";
+import type { Picture } from "./pictures.ts";
 
 // A Workers runtime global: R2 stores a streamed upload only when its length
 // is declared up front.
@@ -20,6 +22,8 @@ declare const FixedLengthStream: typeof FixedLengthStreamType;
 //   narrations/<id>/narration.json   what the app shows
 //   narrations/<id>/parts/<n>.mp3    recorded parts, until they are joined
 //   narrations/<id>/audio.mp3        the finished recording
+//   narrations/<id>/transcript.json  its text, timed against the recording
+//   narrations/<id>/pictures/<n>     the article's pictures, shown with it
 // Ids start with the time counted down, so the newest lists first.
 const ROOT = "narrations/";
 const ID = /^\d{13}-[\da-f]{8}$/u;
@@ -28,6 +32,9 @@ const recordKey = (id: string) => `${folder(id)}narration.json`;
 const partKey = (id: string, index: number) =>
   `${folder(id)}parts/${index}.mp3`;
 const audioKey = (id: string) => `${folder(id)}audio.mp3`;
+const transcriptKey = (id: string) => `${folder(id)}transcript.json`;
+const pictureKey = (id: string, index: number) =>
+  `${folder(id)}pictures/${index}`;
 
 const newId = (now: number) =>
   `${String(9_999_999_999_999 - now).padStart(13, "0")}-${crypto
@@ -168,6 +175,28 @@ const makeStore = (bucket: R2Bucket): Store["Service"] => {
       );
       return Arr.getSomes(records);
     }).pipe(Effect.withSpan("Store.list")),
+    picture: Effect.fn("Store.picture")(function* storePicture(
+      id: string,
+      index: number
+    ) {
+      const object = yield* r2(() => bucket.get(pictureKey(id, index)));
+      if (!object) {
+        return yield* new NarrationNotFound();
+      }
+      const bytes = yield* r2(() => object.arrayBuffer());
+      return new Response(bytes, {
+        headers: {
+          "Cache-Control": "private, max-age=86400, immutable",
+          // A picture is the page's content: an SVG must never run scripts
+          // or load anything when opened on its own.
+          "Content-Security-Policy":
+            "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox",
+          "Content-Type":
+            object.httpMetadata?.contentType ?? "application/octet-stream",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    }),
     remove: Effect.fn("Store.remove")(function* storeRemove(id: string) {
       yield* deleteKeys(yield* keysIn(folder(id)));
     }),
@@ -178,6 +207,35 @@ const makeStore = (bucket: R2Bucket): Store["Service"] => {
           httpMetadata: { contentType: "audio/mpeg" },
         })
       ).pipe(Effect.asVoid),
+    savePicture: (id, index, picture) =>
+      r2(() =>
+        bucket.put(pictureKey(id, index), picture.bytes, {
+          httpMetadata: { contentType: picture.type },
+        })
+      ).pipe(Effect.asVoid),
+    saveTranscript: (id, transcript) =>
+      r2(() =>
+        bucket.put(transcriptKey(id), JSON.stringify(transcript), {
+          httpMetadata: { contentType: "application/json" },
+        })
+      ).pipe(Effect.asVoid),
+    transcript: Effect.fn("Store.transcript")(function* storeTranscript(
+      id: string
+    ) {
+      const object = yield* r2(() => bucket.get(transcriptKey(id)));
+      if (!object) {
+        return yield* new NarrationNotFound();
+      }
+      const json = yield* r2(() => object.text());
+      // A transcript never changes, like the recording it belongs to.
+      return new Response(json, {
+        headers: {
+          "Cache-Control": "private, max-age=86400, immutable",
+          "Content-Type": "application/json",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    }),
   };
 };
 
@@ -212,6 +270,26 @@ export class Store extends Context.Service<
     readonly remove: (id: string) => Effect.Effect<void>;
     /** Serves the finished recording, with byte ranges for seeking. */
     readonly audio: (id: string, request: Request) => Effect.Effect<Response>;
+    /** Keeps one of the article's pictures, numbered from 0. */
+    readonly savePicture: (
+      id: string,
+      index: number,
+      picture: Picture
+    ) => Effect.Effect<void>;
+    /** Serves one of the article's pictures. */
+    readonly picture: (
+      id: string,
+      index: number
+    ) => Effect.Effect<Response, NarrationNotFound>;
+    /** Saves the recording's transcript. */
+    readonly saveTranscript: (
+      id: string,
+      transcript: Transcript
+    ) => Effect.Effect<void>;
+    /** Serves the recording's transcript, as JSON. */
+    readonly transcript: (
+      id: string
+    ) => Effect.Effect<Response, NarrationNotFound>;
   }
 >()("narrations/Store") {
   /** Keeps everything in an R2 bucket. */

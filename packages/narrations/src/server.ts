@@ -13,7 +13,16 @@ import { isConfigured } from "./config.ts";
 import type { NarrationsEnv } from "./config.ts";
 import { NotConfigured } from "./errors.ts";
 import { storageFor } from "./layers.ts";
-import { audio, list, present, remove, retry, start } from "./library.ts";
+import {
+  audio,
+  list,
+  picture,
+  present,
+  remove,
+  retry,
+  start,
+  transcript,
+} from "./library.ts";
 import type { Engine } from "./services/engine.ts";
 import type { Store } from "./services/store.ts";
 import { flushTraces, tracingFor } from "./telemetry.ts";
@@ -88,6 +97,16 @@ const Handlers = HttpApiBuilder.group(NarrationsApi, "narrations", (handlers) =>
               Effect.map(HttpServerResponse.fromWeb)
             )
           : Effect.die(new TypeError("Expected a Fetch request"))
+      )
+      .handle("picture", ({ params }) =>
+        serve(picture(params.id, params.index)).pipe(
+          Effect.map(HttpServerResponse.fromWeb)
+        )
+      )
+      .handle("transcript", ({ params }) =>
+        serve(transcript(params.id)).pipe(
+          Effect.map(HttpServerResponse.fromWeb)
+        )
       );
   })
 );

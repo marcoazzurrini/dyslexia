@@ -70,6 +70,24 @@ export const NarrationsApi = HttpApi.make("narrations")
           params,
         })
       )
+      .add(
+        HttpApiEndpoint.get("transcript", "/:id/transcript", {
+          error: NarrationNotFound,
+          params,
+        })
+      )
+      .add(
+        HttpApiEndpoint.get("picture", "/:id/pictures/:index", {
+          error: NarrationNotFound,
+          params: {
+            ...params,
+            index: Schema.NumberFromString.check(
+              Schema.isInt(),
+              Schema.isGreaterThanOrEqualTo(0)
+            ),
+          },
+        })
+      )
       .middleware(Guard)
   )
   .prefix("/api/narrations");

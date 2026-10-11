@@ -1,7 +1,7 @@
 import "./support/workers.ts";
 import { describe, expect, test } from "bun:test";
 
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
 
 import {
   ArticleUnreadable,
@@ -14,6 +14,7 @@ import {
   MAX_SCRIPT_CHARACTERS,
 } from "../src/limits.ts";
 import {
+  keepPictures,
   publish,
   readArticle,
   recordPart,
@@ -23,9 +24,15 @@ import {
   writeScript,
 } from "../src/making.ts";
 import type { Script as WrittenScript } from "../src/services/writer.ts";
-import { secondsOf, speech } from "./support/audio.ts";
+import { secondsOf, speech, spoken } from "./support/audio.ts";
 import { memoryBucket } from "./support/bucket.ts";
-import { ARTICLE, fakeServices, runtimeWith } from "./support/fakes.ts";
+import {
+  ARTICLE,
+  fakeServices,
+  PICTURE,
+  runtimeWith,
+  scriptOf,
+} from "./support/fakes.ts";
 import type { Script } from "./support/fakes.ts";
 import { withStore } from "./support/services.ts";
 
@@ -144,10 +151,10 @@ describe("reading the article", () => {
 });
 
 describe("writing the script", () => {
-  test("splits the script into parts and starts recording", async () => {
+  test("plans the parts to record and starts recording", async () => {
     const { id, runtime, stored } = await setup();
-    const parts = await runtime.runPromise(writeScript(id, ARTICLE));
-    expect(parts.join("")).toBe(ARTICLE.text);
+    const { parts } = await runtime.runPromise(writeScript(id, ARTICLE));
+    expect(parts.map(({ text }) => text)).toEqual([ARTICLE.text]);
     expect(await stored()).toMatchObject({
       progress: { done: 0, total: parts.length },
       stage: "recording",
@@ -158,8 +165,7 @@ describe("writing the script", () => {
 
   test("saves the title the writer gave the article", async () => {
     const { id, runtime, stored } = await setup({
-      write: (article) =>
-        Effect.succeed({ text: article.text, title: "Reading is recent" }),
+      write: () => Effect.succeed(scriptOf(["Reading."], "Reading is recent")),
     });
     await runtime.runPromise(writeScript(id, ARTICLE));
     expect(await stored()).toMatchObject({ title: "Reading is recent" });
@@ -167,11 +173,10 @@ describe("writing the script", () => {
 
   test("trusts the writer: a script shorter than the article is used as written", async () => {
     const { calls, id, runtime } = await setup({
-      write: () =>
-        Effect.succeed({ text: "Reading is recent.", title: ARTICLE.title }),
+      write: () => Effect.succeed(scriptOf(["Reading is recent."])),
     });
-    const parts = await runtime.runPromise(writeScript(id, ARTICLE));
-    expect(parts).toEqual(["Reading is recent."]);
+    const { parts } = await runtime.runPromise(writeScript(id, ARTICLE));
+    expect(parts.map(({ text }) => text)).toEqual(["Reading is recent."]);
     expect(calls.write).toBe(1);
   });
 
@@ -179,10 +184,25 @@ describe("writing the script", () => {
     const { calls, id, runtime } = await setup({
       write: inTurn<WrittenScript, ScriptIncomplete>(
         Effect.fail(new ScriptIncomplete()),
-        Effect.succeed(ARTICLE)
+        Effect.succeed(scriptOf(["Reading is recent."]))
       ),
     });
     await runtime.runPromise(writeScript(id, ARTICLE));
+    expect(calls.write).toBe(2);
+  });
+
+  test("writes again when the script shows a visual the article does not have", async () => {
+    const { calls, id, runtime } = await setup({
+      write: inTurn<WrittenScript, ScriptIncomplete>(
+        Effect.succeed({
+          items: [{ kind: "visual", say: "", visual: 1 }],
+          title: ARTICLE.title,
+        }),
+        Effect.succeed(scriptOf(["Reading is recent."]))
+      ),
+    });
+    const { items } = await runtime.runPromise(writeScript(id, ARTICLE));
+    expect(items).toEqual([{ kind: "paragraph", text: "Reading is recent." }]);
     expect(calls.write).toBe(2);
   });
 
@@ -199,13 +219,8 @@ describe("writing the script", () => {
 
   test("refuses a script over its limit", async () => {
     const { id, runtime } = await setup({
-      write: (article) =>
-        Effect.succeed({
-          text: article.text.repeat(
-            Math.ceil((MAX_SCRIPT_CHARACTERS + 1) / article.text.length)
-          ),
-          title: article.title,
-        }),
+      write: () =>
+        Effect.succeed(scriptOf(["a".repeat(MAX_SCRIPT_CHARACTERS + 1)])),
     });
     expect(
       await runtime.runPromise(Effect.flip(writeScript(id, ARTICLE)))
@@ -214,9 +229,12 @@ describe("writing the script", () => {
 });
 
 describe("recording", () => {
-  test("records a part", async () => {
+  test("records a part, and when each character of it is said", async () => {
     const { calls, id, keys, runtime } = await setup();
-    expect(await runtime.runPromise(recordPart(id, 3, "Part four."))).toBe(3);
+    expect(await runtime.runPromise(recordPart(id, 3, "Part four."))).toEqual({
+      seconds: secondsOf(2),
+      starts: spoken("Part four.").starts,
+    });
     expect(calls.speak).toEqual(["Part four."]);
     expect(keys()).toContain(`narrations/${id}/parts/3.mp3`);
   });
@@ -243,27 +261,86 @@ describe("recording", () => {
 });
 
 describe("finishing", () => {
-  test("publishing joins the parts and marks the narration ready", async () => {
-    const { id, keys, record, runtime, stored } = await setup();
-    await runtime.runPromise(
-      Effect.gen(function* body() {
-        yield* recordPart(id, 0, "One.");
-        yield* recordPart(id, 1, "Two.");
-      })
+  test("publishing joins the parts, saves the transcript, and marks the narration ready", async () => {
+    const { id, json, keys, record, runtime, stored } = await setup({
+      write: () => Effect.succeed(scriptOf(["One.", "Two."])),
+    });
+    const planned = await runtime.runPromise(writeScript(id, ARTICLE));
+    const recorded = await runtime.runPromise(
+      Effect.all(
+        planned.parts.map(({ text }, index) => recordPart(id, index, text))
+      )
     );
-    expect(await runtime.runPromise(publish(id, 2))).toBeCloseTo(secondsOf(4));
+    expect(
+      await runtime.runPromise(publish(id, planned, recorded))
+    ).toBeCloseTo(secondsOf(2));
     expect(await stored()).toEqual({
       createdAt: record.createdAt,
-      durationSeconds: secondsOf(4),
+      durationSeconds: secondsOf(2),
       id,
       state: "ready",
-      title: record.title,
+      title: ARTICLE.title,
+      transcript: true,
       url: record.url,
     });
     expect(keys()).toEqual([
       `narrations/${id}/audio.mp3`,
       `narrations/${id}/narration.json`,
+      `narrations/${id}/transcript.json`,
     ]);
+    expect(json(`narrations/${id}/transcript.json`)).toMatchObject({
+      items: [
+        { kind: "paragraph", start: 0, text: "One." },
+        { kind: "paragraph", text: "Two." },
+      ],
+      version: 1,
+    });
+  });
+
+  test("keeps the pictures the script shows, and shows them from the app", async () => {
+    const article = {
+      text: "![A map](https://example.org/map.png)\n\n![A logo](/logo.png)\n\n![Gone](https://example.org/gone.png)\n\nThe end.",
+      title: "Maps",
+    };
+    const { calls, files, id, json, runtime } = await setup({
+      fetchPicture: (url) =>
+        url.endsWith("gone.png") ? Option.none() : Option.some(PICTURE),
+      write: () =>
+        Effect.succeed({
+          items: [
+            { kind: "visual", say: "A map of the town.", visual: 1 },
+            { kind: "visual", say: "", visual: 3 },
+            { kind: "paragraph", say: "The end.", visual: null },
+          ],
+          title: "Maps",
+        }),
+    });
+    const planned = await runtime.runPromise(writeScript(id, article));
+    const kept = await runtime.runPromise(keepPictures(id, planned));
+    // The logo is not in the script, so it is never fetched.
+    expect(calls.pictures).toEqual([
+      "https://example.org/map.png",
+      "https://example.org/gone.png",
+    ]);
+    expect(kept).toEqual({
+      "https://example.org/map.png": `/api/narrations/${id}/pictures/0`,
+    });
+    expect(files.get(`narrations/${id}/pictures/0`)?.httpMetadata).toEqual({
+      contentType: "image/png",
+    });
+    const recorded = await runtime.runPromise(
+      Effect.all(
+        planned.parts.map(({ text }, index) => recordPart(id, index, text))
+      )
+    );
+    await runtime.runPromise(publish(id, planned, recorded, kept));
+    expect(json(`narrations/${id}/transcript.json`)).toMatchObject({
+      items: [
+        { visual: { src: `/api/narrations/${id}/pictures/0` } },
+        { visual: { src: "https://example.org/gone.png" } },
+        { text: "The end." },
+      ],
+    });
   });
 
   test("stopping deletes what was made and saves the reason", async () => {

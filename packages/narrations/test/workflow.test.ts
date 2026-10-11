@@ -1,7 +1,8 @@
 import "./support/workers.ts";
 import { describe, expect, test } from "bun:test";
 
-import { Effect, Option } from "effect";
+import { TranscriptSchema } from "@dyslexia/transcript";
+import { Effect, Option, Schema } from "effect";
 
 import {
   ArticleUnreadable,
@@ -9,7 +10,7 @@ import {
   ServiceRejected,
 } from "../src/errors.ts";
 import { makeNarration } from "../src/workflow.ts";
-import { secondsOf, speech } from "./support/audio.ts";
+import { secondsOf, spoken } from "./support/audio.ts";
 import { memoryBucket } from "./support/bucket.ts";
 import {
   fakeServices,
@@ -27,6 +28,7 @@ const LONG_ARTICLE = {
   text: [1, 2, 3, 4, 5, 6].map(paragraph).join("\n\n"),
   title: "A long article",
 };
+const PARAGRAPHS = LONG_ARTICLE.text.split("\n\n").map((text) => text.trim());
 
 const setup = async (script: Script = {}) => {
   const memory = memoryBucket();
@@ -56,9 +58,10 @@ describe("making a narration", () => {
       "save progress 2",
       "record part 3",
       "save progress 3",
+      "keep the pictures",
       "publish the recording",
     ]);
-    expect(calls.speak.join("")).toBe(LONG_ARTICLE.text.trim());
+    expect(calls.speak.join("\n\n")).toBe(PARAGRAPHS.join("\n\n"));
     expect(await stored()).toMatchObject({
       durationSeconds: secondsOf(6),
       state: "ready",
@@ -67,6 +70,28 @@ describe("making a narration", () => {
     expect(keys()).toEqual([
       `narrations/${id}/audio.mp3`,
       `narrations/${id}/narration.json`,
+      `narrations/${id}/transcript.json`,
+    ]);
+  });
+
+  test("times the script against the whole recording", async () => {
+    const { id, json, runtime } = await setup();
+    await makeNarration(id, fakeSteps().step, runtime);
+    const transcript = Schema.decodeUnknownSync(TranscriptSchema)(
+      json(`narrations/${id}/transcript.json`)
+    );
+    expect(transcript.duration).toBeCloseTo(secondsOf(6));
+    expect(
+      transcript.items.map((item) => (item.kind === "visual" ? "" : item.text))
+    ).toEqual(PARAGRAPHS);
+    // Each of the three parts holds two paragraphs and plays for two frames.
+    expect(transcript.items.map(({ start }) => start)).toEqual([
+      0,
+      expect.closeTo(secondsOf(1), 2),
+      expect.closeTo(secondsOf(2), 2),
+      expect.closeTo(secondsOf(3), 2),
+      expect.closeTo(secondsOf(4), 2),
+      expect.closeTo(secondsOf(5), 2),
     ]);
   });
 
@@ -91,6 +116,7 @@ describe("making a narration", () => {
     expect(second.names()).toEqual([
       "record part 3",
       "save progress 3",
+      "keep the pictures",
       "publish the recording",
     ]);
     expect(calls.read).toHaveLength(1);
@@ -123,7 +149,7 @@ describe("when making a narration fails", () => {
       speak: (text) =>
         text.startsWith("Paragraph 3")
           ? Effect.fail(new ServiceRejected({ service: "voice", status: 402 }))
-          : Effect.succeed(speech()),
+          : Effect.succeed(spoken(text)),
     });
     const steps = fakeSteps();
     await expect(makeNarration(id, steps.step, runtime)).rejects.toThrow(
@@ -167,12 +193,12 @@ describe("when making a narration fails", () => {
   test("a crash that passes on Cloudflare's retry does not stop the narration", async () => {
     let crashes = 1;
     const { id, runtime, stored } = await setup({
-      speak: () => {
+      speak: (text) => {
         if (crashes > 0) {
           crashes -= 1;
           return Effect.die(new Error("Worker crashed"));
         }
-        return Effect.succeed(speech());
+        return Effect.succeed(spoken(text));
       },
     });
     await makeNarration(id, fakeSteps().step, runtime);
@@ -199,6 +225,7 @@ describe("tracing a narration", () => {
       "save progress",
       "record part",
       "save progress",
+      "keep the pictures",
       "publish the recording",
     ]);
     expect(

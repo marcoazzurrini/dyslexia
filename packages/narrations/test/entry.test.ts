@@ -44,7 +44,11 @@ const services = (reader: () => Response) => {
               finish_reason: "stop",
               message: {
                 content: JSON.stringify({
-                  text: ARTICLE,
+                  items: ARTICLE.split("\n\n").map((say) => ({
+                    kind: "paragraph",
+                    say,
+                    visual: null,
+                  })),
                   title: "How reading began",
                 }),
               },
@@ -54,7 +58,15 @@ const services = (reader: () => Response) => {
       );
     }
     if (host === "api.elevenlabs.io") {
-      return Promise.resolve(new Response(speech(3)));
+      return request.json().then(({ text }: { text: string }) =>
+        Response.json({
+          alignment: {
+            character_start_times_seconds: [...text].map((_, at) => at / 1000),
+            characters: [...text],
+          },
+          audio_base64: Buffer.from(speech(3)).toString("base64"),
+        })
+      );
     }
     return Promise.reject(new Error(`Unexpected request to ${host}`));
   });
@@ -133,14 +145,28 @@ describe("narrations, from link to recording", () => {
         id,
         state: "ready",
         title: "How reading began",
+        transcriptUrl: `${API_PATH}/${id}/transcript`,
         url: "https://example.org/reading",
       }),
     ]);
     const audio = await request("GET", `/${id}/audio`);
     expect(new Uint8Array(await audio.arrayBuffer())).toEqual(speech(3));
+    const transcript = await request("GET", `/${id}/transcript`);
+    expect(transcript.headers.get("Content-Type")).toBe("application/json");
+    expect(await transcript.json()).toMatchObject({
+      items: [
+        { kind: "paragraph", start: 0, text: "Reading is a recent invention." },
+        {
+          kind: "paragraph",
+          start: 0.032,
+          text: "It recycles the visual system.",
+        },
+      ],
+    });
     expect(keys()).toEqual([
       `narrations/${id}/audio.mp3`,
       `narrations/${id}/narration.json`,
+      `narrations/${id}/transcript.json`,
     ]);
   });
 

@@ -6,6 +6,7 @@
   "exports": {
     "./components/*": "./src/components/*.tsx",
     "./screens/*": "./src/screens/*.tsx",
+    "./player/inset": "./src/player/inset.ts",
     "./player/*": "./src/player/*.tsx",
     "./lib/*": "./src/lib/*.ts"
   },

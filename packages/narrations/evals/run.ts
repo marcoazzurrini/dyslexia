@@ -116,6 +116,7 @@ const scoreItem = (experiment: Experiment, item: Item) =>
       (yield* Writer).write(page(item)).pipe(Effect.annotateSpans(itemContext))
     );
     if (written._tag === "Failure") {
+      console.error(`${item.metadata.case}: ${written.failure._tag}`);
       yield* Effect.annotateCurrentSpan(
         observationOutput({ failed: written.failure._tag })
       );

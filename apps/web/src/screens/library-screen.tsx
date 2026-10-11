@@ -229,11 +229,26 @@ export const LibraryScreen = ({
 }: LibraryScreenProps) => {
   // Opening the library shows it at once; only a chosen filter animates.
   const [chosen, setChosen] = useState(false);
+  const hasNarrations = narrations !== null && narrations.length > 0;
   return (
     <Screen
       title="Library"
       background="plain"
       bottomInset={bottomInset}
+      // The filters hold still under the title while the list scrolls.
+      accessory={
+        hasNarrations && (
+          <ChipGroup
+            label="Show"
+            options={FILTERS}
+            value={filter}
+            onChange={(next) => {
+              setChosen(true);
+              onFilter(next);
+            }}
+          />
+        )
+      }
       trailing={
         <IconButton
           label="Add article"
@@ -279,32 +294,21 @@ export const LibraryScreen = ({
           }
         />
       )}
-      {narrations && narrations.length > 0 && (
-        <>
-          <ChipGroup
-            label="Show"
-            options={FILTERS}
-            value={filter}
-            onChange={(next) => {
-              setChosen(true);
-              onFilter(next);
-            }}
-          />
-          <Results
-            key={filter}
-            changed={chosen}
-            filter={filter}
-            listeningOf={listeningOf}
-            narrations={narrations}
-            onDelete={onDelete}
-            onOpenFailed={onOpenFailed}
-            onOptions={onOptions}
-            onOpen={onOpen}
-            onListen={onListen}
-            onPause={onPause}
-            playingId={playingId}
-          />
-        </>
+      {hasNarrations && (
+        <Results
+          key={filter}
+          changed={chosen}
+          filter={filter}
+          listeningOf={listeningOf}
+          narrations={narrations}
+          onDelete={onDelete}
+          onOpenFailed={onOpenFailed}
+          onOptions={onOptions}
+          onOpen={onOpen}
+          onListen={onListen}
+          onPause={onPause}
+          playingId={playingId}
+        />
       )}
     </Screen>
   );

@@ -1,4 +1,10 @@
-import { HomeIcon, LibraryIcon, PersonIcon, TabBar } from "@dyslexia/ui";
+import {
+  HomeIcon,
+  LibraryIcon,
+  PersonIcon,
+  scrollScreenToTop,
+  TabBar,
+} from "@dyslexia/ui";
 import { useLocation } from "@tanstack/react-router";
 
 import { RouterTabBarLink } from "./links";
@@ -26,7 +32,7 @@ export const AppTabBar = () => {
           onClick={() => {
             // As in iOS, pressing the open tab again returns to its top.
             if (index === selected) {
-              window.scrollTo({ behavior: "smooth", top: 0 });
+              scrollScreenToTop();
             }
           }}
         />

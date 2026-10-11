@@ -31,7 +31,7 @@ export { Notice } from "./notice.tsx";
 export type { ActivityIndicatorProps, ProgressBarProps } from "./progress.tsx";
 export { ActivityIndicator, ProgressBar } from "./progress.tsx";
 export type { ScreenProps } from "./screen.tsx";
-export { Screen } from "./screen.tsx";
+export { Screen, scrollScreenToTop } from "./screen.tsx";
 export type {
   SegmentedControlProps,
   SegmentedOption,

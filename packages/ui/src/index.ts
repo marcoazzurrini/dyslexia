@@ -46,8 +46,12 @@ export type {
 } from "./segmented-control.tsx";
 export { SegmentedControl } from "./segmented-control.tsx";
 export type { SheetProps } from "./sheet.tsx";
-export type { TabBarLinkProps, TabBarProps } from "./tab-bar.tsx";
-export { TabBar, TabBarLink } from "./tab-bar.tsx";
+export type {
+  TabBarActionProps,
+  TabBarLinkProps,
+  TabBarProps,
+} from "./tab-bar.tsx";
+export { TabBar, TabBarAction, TabBarLink } from "./tab-bar.tsx";
 export { Sheet } from "./sheet.tsx";
 export type { Step, StepListProps, StepState } from "./step-list.tsx";
 export { StepList } from "./step-list.tsx";

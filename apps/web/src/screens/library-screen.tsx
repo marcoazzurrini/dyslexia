@@ -4,7 +4,6 @@ import {
   Button,
   ChipGroup,
   EmptyState,
-  IconButton,
   ListSection,
   Notice,
   PlusIcon,
@@ -248,14 +247,6 @@ export const LibraryScreen = ({
             }}
           />
         )
-      }
-      trailing={
-        <IconButton
-          label="Add article"
-          icon={<PlusIcon />}
-          variant="tinted"
-          onClick={onAdd}
-        />
       }
     >
       {error && (

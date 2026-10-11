@@ -177,7 +177,7 @@ components:
     backgroundColor: "{colors.media-canvas}"
     textColor: "{colors.label-secondary}"
     rounded: "{rounded.full}"
-    height: "62px"
+    height: "50px"
     width: "28rem"
   tab-bar-selected:
     textColor: "{colors.indigo-text}"
@@ -297,7 +297,7 @@ An iOS system palette with one indigo tint, plus eight deep cover hues that carr
 
 A single column capped at a 40rem measure plus a 1.25rem gutter on each side, honoring safe-area insets. Screens stack sections with a 1.5rem gap. Spacing follows a 4-point scale in rem (0.125rem to 3rem). Home uses horizontal shelves that scroll under the screen margins with snap and hidden scrollbars; a lone card spans the width. Library and Profile are lists. The full player is a sheet: grabber, cover at min(78%, 38vh) up to 17rem so controls stay in view on short screens, left-aligned title and site, scrubber, transport controls 3rem apart, speed control at the bottom.
 
-The bottom of each screen is reserved for floating chrome: the tab bar (62px) floats above the home indicator, capped at 28rem; the mini player floats 0.5rem above it. Content pads its bottom to clear them.
+The bottom of each screen is reserved for floating chrome: the tab bar (50px) floats above the home indicator, capped at 28rem; while something plays, the mini player (48px) slides up from behind it as a narrower tray. Content pads its bottom to clear them.
 
 ### Named Rules
 
@@ -361,9 +361,9 @@ Gray track with 3px padding, a white thumb that slides on a spring; used for pla
 
 ### Navigation
 
-- **Tab bar:** a floating opaque capsule, no highlight shape; the selected tab is tinted indigo, others secondary label; fixed 11px semibold labels under 1.5rem glyphs; press scales to 0.96.
+- **Tab bar:** a floating opaque capsule, no highlight shape; the selected tab is tinted indigo, others secondary label; fixed 10px semibold labels under 1.3rem glyphs; press scales to 0.96. Adding an article sits in its end: a gray circle concentric with the capsule, neutral so the tint only marks the open tab.
 - **Nav bar:** transparent over the large title, turning opaque with a hairline once scrolled while the compact title fades in.
-- **Mini player:** an opaque floating rounded rectangle above the tab bar: mini cover, title, time left, play/pause and skip forward.
+- **Mini player:** a tray tucked behind the tab bar, a step darker and narrower, that slides up out of it while something plays: round cover, title, time left, and small play/pause and skip forward set close together so the title gets the room.
 
 ### Sheets
 

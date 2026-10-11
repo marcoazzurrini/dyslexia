@@ -3,7 +3,7 @@ import { AppTabBar } from "@dyslexia/web/components/app-tab-bar";
 import { open, playback, useNowPlaying } from "@dyslexia/web/lib/now-playing";
 import { recordingOf } from "@dyslexia/web/lib/recording";
 import { useBottomInset } from "@dyslexia/web/player/inset";
-import { Player } from "@dyslexia/web/player/player";
+import { MiniPlayerSlot, Player } from "@dyslexia/web/player/player";
 import { FailedSheet } from "@dyslexia/web/screens/failed-sheet";
 import { HomeScreen } from "@dyslexia/web/screens/home-screen";
 import type { LibraryFilter } from "@dyslexia/web/screens/library-screen";
@@ -105,15 +105,14 @@ const Profile = () => (
 );
 
 /** As the app lays out every signed-in screen. */
-const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-      <AppTabBar />
-      <Player />
-    </>
-  ),
-});
+const Layout = () => (
+  <Player>
+    <Outlet />
+    <AppTabBar accessory={<MiniPlayerSlot />} onAdd={useDemo().handleAdd} />
+  </Player>
+);
+
+const rootRoute = createRootRoute({ component: Layout });
 
 const routeTree = rootRoute.addChildren([
   createRoute({ component: Home, getParentRoute: () => rootRoute, path: "/" }),

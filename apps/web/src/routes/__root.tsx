@@ -14,10 +14,13 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
 import { AppTabBar } from "../components/app-tab-bar";
-import { NarrationsProvider } from "../components/narrations-provider";
+import {
+  NarrationsProvider,
+  useNarrations,
+} from "../components/narrations-provider";
 import { stop } from "../lib/now-playing";
 import { checkSession, signIn, useSession } from "../lib/session";
-import { Player } from "../player/player";
+import { MiniPlayerSlot, Player } from "../player/player";
 import { NotFoundScreen } from "../screens/not-found-screen";
 import { WelcomeScreen } from "../screens/welcome-screen";
 
@@ -62,6 +65,10 @@ const RootDocument = ({ children }: { children: ReactNode }) => (
       <Scripts />
     </body>
   </html>
+);
+
+const Tabs = () => (
+  <AppTabBar accessory={<MiniPlayerSlot />} onAdd={useNarrations().handleAdd} />
 );
 
 /** Everything needs sign-in, so signed-out visitors see the welcome screen. */
@@ -128,9 +135,10 @@ const App = () => {
   }
   return (
     <NarrationsProvider>
-      <Outlet />
-      <AppTabBar />
-      <Player />
+      <Player>
+        <Outlet />
+        <Tabs />
+      </Player>
     </NarrationsProvider>
   );
 };

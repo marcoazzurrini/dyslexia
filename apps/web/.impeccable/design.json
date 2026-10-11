@@ -632,7 +632,7 @@
       },
       {
         "name": "tabBar",
-        "value": "62px"
+        "value": "50px"
       }
     ]
   },
@@ -683,7 +683,7 @@
       "refersTo": "tab-bar",
       "description": "Opaque floating capsule; the selected tab takes the tint, no shape behind it.",
       "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab ds-tab-on\" href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z\"/></svg>Home</a><a class=\"ds-tab\" href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M5 4v16M10 4v16M15 4l4 16\"/></svg>Library</a><a class=\"ds-tab\" href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21a8 8 0 0 1 16 0\"/></svg>Profile</a></nav>",
-      "css": ".ds-tabs{display:flex;height:62px;max-width:28rem;border-radius:999px;background:#f7f7f9;box-shadow:inset 0 0.5px 0 rgb(255 255 255 / 0.8),0 10px 30px rgb(0 0 0 / 0.14),0 1px 3px rgb(0 0 0 / 0.08);font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif} .ds-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:11px;font-weight:600;line-height:1.2;color:rgb(60 60 67 / 0.78);text-decoration:none;transition:color 120ms,transform 120ms} .ds-tab:active{transform:scale(0.94)} .ds-tab:focus-visible{outline:2px solid #5856d6;outline-offset:-2px} .ds-tab-on{color:#4f4dcc}"
+      "css": ".ds-tabs{display:flex;height:50px;max-width:28rem;border-radius:999px;background:#f7f7f9;box-shadow:inset 0 0.5px 0 rgb(255 255 255 / 0.8),0 10px 30px rgb(0 0 0 / 0.14),0 1px 3px rgb(0 0 0 / 0.08);font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif} .ds-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:10px;font-weight:600;line-height:1.2;color:rgb(60 60 67 / 0.78);text-decoration:none;transition:color 120ms,transform 120ms} .ds-tab:active{transform:scale(0.94)} .ds-tab:focus-visible{outline:2px solid #5856d6;outline-offset:-2px} .ds-tab-on{color:#4f4dcc}"
     },
     {
       "name": "Mini Player",

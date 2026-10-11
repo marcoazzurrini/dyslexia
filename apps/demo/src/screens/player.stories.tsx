@@ -1,5 +1,12 @@
+import {
+  HomeIcon,
+  LibraryIcon,
+  PersonIcon,
+  TabBar,
+  TabBarLink,
+} from "@dyslexia/ui";
 import { collapse, open, readAlong } from "@dyslexia/web/lib/now-playing";
-import { Player } from "@dyslexia/web/player/player";
+import { MiniPlayerSlot, Player } from "@dyslexia/web/player/player";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 const recording = {
@@ -40,12 +47,41 @@ export const NowPlaying: Story = {
   },
 };
 
-/** The bar that keeps playback in reach on every screen. */
+/** The row atop the tab bar that keeps playback in reach on every screen. */
 export const MiniPlayer: Story = {
   beforeEach: () => {
     open(recording);
     collapse();
   },
+  render: () => (
+    <Player>
+      <TabBar
+        label="Main"
+        accessory={<MiniPlayerSlot />}
+        tabs={[
+          <TabBarLink
+            key="home"
+            href="#"
+            icon={<HomeIcon />}
+            label="Home"
+            selected
+          />,
+          <TabBarLink
+            key="library"
+            href="#"
+            icon={<LibraryIcon />}
+            label="Library"
+          />,
+          <TabBarLink
+            key="profile"
+            href="#"
+            icon={<PersonIcon />}
+            label="Profile"
+          />,
+        ]}
+      />
+    </Player>
+  ),
 };
 
 /** The full player of a narration with text: a glimpse of it below the controls. */

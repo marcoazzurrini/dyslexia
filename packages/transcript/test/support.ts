@@ -44,12 +44,16 @@ const WORDS = [
   "don't",
   "co-operate",
   "line\nbreak",
+  "[sighs]",
 ];
 
 const index = (maximum: number) =>
   Schema.Int.check(Schema.isBetween({ maximum, minimum: 0 }));
 
-/** Text of words, with sentences, line breaks, and the odd emoji. */
+/**
+ * Text of words, with sentences, line breaks, the odd emoji, and directions
+ * to the voice.
+ */
 const textOf = (picks: readonly number[]) =>
   picks
     .map(

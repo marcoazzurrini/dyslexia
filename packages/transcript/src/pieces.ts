@@ -30,6 +30,13 @@ const pieceEnd = (text: string, start: number, max: number) => {
   return split && end - 1 > start ? end - 1 : end;
 };
 
+// A cut inside a direction to the voice, such as [sighs], would have the
+// voice say its words. Cut before it instead.
+const beforeDirection = (text: string, start: number, end: number) => {
+  const open = text.lastIndexOf("[", end - 1);
+  return open > start && text.indexOf("]", open) >= end ? open : end;
+};
+
 /**
  * Splits text into pieces of at most `max` characters, which join back into
  * the text. A text that fits stays whole.
@@ -38,7 +45,7 @@ export const splitText = (text: string, max: number): string[] => {
   const pieces: string[] = [];
   let start = 0;
   while (start < text.length) {
-    const end = pieceEnd(text, start, max);
+    const end = beforeDirection(text, start, pieceEnd(text, start, max));
     pieces.push(text.slice(start, end));
     start = end;
   }

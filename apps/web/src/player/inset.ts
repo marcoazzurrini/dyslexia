@@ -1,10 +1,9 @@
 import { size } from "@dyslexia/ui/tokens.stylex";
 
 import { useNowPlaying } from "../lib/now-playing";
-import { MINI_PLAYER_INSET } from "./mini-player";
 
-/** Space screens keep clear for the tab bar, and the mini player above it. */
+/** Space screens keep clear for the tab bar, and the mini player atop it. */
 export const useBottomInset = () =>
   useNowPlaying().recording
-    ? `calc(${size.tabBar} + ${MINI_PLAYER_INSET})`
+    ? `calc(${size.tabBar} + ${size.miniPlayer})`
     : size.tabBar;

@@ -57,6 +57,16 @@ test("the tab bar moves between Home, Library, and Profile", async ({
   ).toBeVisible();
 });
 
+test("the tab bar adds an article from any tab", async ({ page }) => {
+  await mockNarrations(page, { narrations });
+  await page.goto("/profile");
+  await page
+    .getByRole("navigation", { name: "Main" })
+    .getByRole("button", { name: "Add article" })
+    .click();
+  await expect(page.getByRole("dialog", { name: "Add article" })).toBeVisible();
+});
+
 test("Home picks up the three latest listens and lists what is new", async ({
   page,
 }) => {
@@ -174,6 +184,9 @@ test("Home offers to add an article when the library is empty", async ({
   await mockNarrations(page);
   await page.goto("/");
   await expect(page.getByText("Nothing to listen to yet")).toBeVisible();
-  await page.getByRole("button", { name: "Add article" }).last().click();
+  await page
+    .getByRole("main")
+    .getByRole("button", { name: "Add article" })
+    .click();
   await expect(page.getByRole("dialog", { name: "Add article" })).toBeVisible();
 });

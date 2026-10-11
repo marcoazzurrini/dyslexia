@@ -89,6 +89,11 @@ export const color = stylex.defineVars({
   },
   /** The raised part of a control, such as a segmented control's thumb. */
   thumb: { default: "#ffffff", [DARK]: "#636366" },
+  /**
+   * A tray tucked behind a bar, such as the mini player behind the tab bar:
+   * a step apart from the bar, so the two read as layers.
+   */
+  tray: { default: "#ebebf0", [DARK]: "#161618" },
   warning: { default: "#b25000", [DARK]: "#ffb340" },
   warningFill: {
     default: "rgb(178 80 0 / 0.12)",
@@ -149,9 +154,11 @@ export const size = stylex.defineVars({
   dock: "42.5rem",
   /** Readable line length for long text. */
   measure: "40rem",
+  /** The mini player, in its tray above the tab bar. */
+  miniPlayer: "48px",
   navBar: "52px",
-  /** Each floating bar at the bottom: the tab bar, and the mini player. */
-  tabBar: "62px",
+  /** The tab bar's row of tabs. */
+  tabBar: "50px",
   /** The smallest comfortable touch target. */
   touch: "44px",
 });

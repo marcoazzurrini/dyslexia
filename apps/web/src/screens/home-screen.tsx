@@ -4,7 +4,6 @@ import {
   Button,
   CheckIcon,
   EmptyState,
-  IconButton,
   ListSection,
   Notice,
   PlusIcon,
@@ -127,14 +126,6 @@ export const HomeScreen = ({
       title={greetingFor(now)}
       background="plain"
       bottomInset={bottomInset}
-      trailing={
-        <IconButton
-          label="Add article"
-          icon={<PlusIcon />}
-          variant="tinted"
-          onClick={onAdd}
-        />
-      }
     >
       {error && (
         <Notice

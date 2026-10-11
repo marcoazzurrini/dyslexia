@@ -1,6 +1,7 @@
 import { createPlayer } from "@videojs/react";
 import { Audio, audioFeatures } from "@videojs/react/audio";
 import { useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 
 import { collapse, expand, playback, useNowPlaying } from "../lib/now-playing";
 import type { Recording } from "../lib/recording";
@@ -54,7 +55,7 @@ const usePlayback = (): PlaybackView => {
   };
 };
 
-const Controls = ({
+const FullPlayer = ({
   expanded,
   readingAlong,
   recording,
@@ -62,23 +63,41 @@ const Controls = ({
   expanded: boolean;
   readingAlong: boolean;
   recording: Recording;
-}) => {
-  const view = usePlayback();
-  return (
-    <>
-      {/* The sheet covers the bar, so only one set of controls exists. */}
-      {!expanded && (
-        <MiniPlayer recording={recording} view={view} onExpand={expand} />
-      )}
-      <NowPlaying
-        open={expanded}
-        onClose={collapse}
-        readingAlong={readingAlong}
-        recording={recording}
-        view={view}
-      />
-    </>
-  );
+}) => (
+  <NowPlaying
+    open={expanded}
+    onClose={collapse}
+    readingAlong={readingAlong}
+    recording={recording}
+    view={usePlayback()}
+  />
+);
+
+const MiniPlayerControls = ({
+  expanded,
+  recording,
+}: {
+  expanded: boolean;
+  recording: Recording;
+}) => (
+  // The sheet covers the bar, so only one set of controls is in reach.
+  <MiniPlayer
+    hidden={expanded}
+    recording={recording}
+    view={usePlayback()}
+    onExpand={expand}
+  />
+);
+
+/**
+ * The mini player, for the tab bar's top row, while a recording is loaded.
+ * It must sit inside the `Player`.
+ */
+export const MiniPlayerSlot = () => {
+  const { expanded, recording } = useNowPlaying();
+  return recording ? (
+    <MiniPlayerControls expanded={expanded} recording={recording} />
+  ) : null;
 };
 
 /** The app's one audio element, handed to the player. */
@@ -89,16 +108,18 @@ const AudioElement = () => {
 };
 
 /**
- * The app's one audio player. It stays mounted across navigation, so
- * playback never restarts when the screen changes.
+ * The app's one audio player, around the screens and the tab bar that holds
+ * its `MiniPlayerSlot`. It stays mounted across navigation, so playback
+ * never restarts when the screen changes.
  */
-export const Player = () => {
+export const Player = ({ children }: { children?: ReactNode }) => {
   const { expanded, readingAlong, recording } = useNowPlaying();
   return (
     <PlayerProvider>
       <AudioElement />
+      {children}
       {recording && (
-        <Controls
+        <FullPlayer
           expanded={expanded}
           readingAlong={readingAlong}
           recording={recording}

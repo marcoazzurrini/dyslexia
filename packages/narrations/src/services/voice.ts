@@ -11,7 +11,7 @@ import {
 } from "../observation.ts";
 import { decodeJson, send } from "./send.ts";
 
-const VOICE = "JBFqnCBsd6RMkjVDRZzb";
+const VOICE = "r1KmysJdVYZjJCm4mL3b";
 const MODEL = "eleven_v4";
 /** Constant bitrate MP3, which joins into one seekable file. */
 const FORMAT = "mp3_44100_128";

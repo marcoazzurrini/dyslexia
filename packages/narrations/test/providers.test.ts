@@ -425,7 +425,7 @@ describe("the voice (ElevenLabs)", () => {
     });
     const [request] = requests;
     expect(request?.url).toBe(
-      "https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb/with-timestamps?output_format=mp3_44100_128"
+      "https://api.elevenlabs.io/v1/text-to-speech/r1KmysJdVYZjJCm4mL3b/with-timestamps?output_format=mp3_44100_128"
     );
     expect(request?.headers.get("xi-api-key")).toBe("eleven-secret");
     expect(request?.headers.get("authorization")).toBeNull();

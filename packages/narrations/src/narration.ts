@@ -39,7 +39,11 @@ const ready = {
 /** A narration as stored. */
 export const NarrationRecordSchema = Schema.Union([
   Making,
-  Schema.Struct(ready),
+  Schema.Struct({
+    ...ready,
+    /** Whether its text was timed against the recording. Older ones were not. */
+    transcript: Schema.optionalKey(Schema.Boolean),
+  }),
   Failed,
 ]);
 export type NarrationRecord = typeof NarrationRecordSchema.Type;
@@ -47,7 +51,12 @@ export type NarrationRecord = typeof NarrationRecordSchema.Type;
 /** A narration as the app sees it: being made, ready to play, or failed. */
 export const NarrationSchema = Schema.Union([
   Making,
-  Schema.Struct({ ...ready, audioUrl: Schema.String }),
+  Schema.Struct({
+    ...ready,
+    audioUrl: Schema.String,
+    /** Its text, timed against the recording, when it has one. */
+    transcriptUrl: Schema.optionalKey(Schema.String),
+  }),
   Failed,
 ]);
 export type Narration = typeof NarrationSchema.Type;

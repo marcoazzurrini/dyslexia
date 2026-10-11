@@ -3,6 +3,7 @@ import { FetchHttpClient } from "effect/http";
 
 import type { NarrationsEnv } from "./config.ts";
 import { Engine } from "./services/engine.ts";
+import { Pictures } from "./services/pictures.ts";
 import { Reader } from "./services/reader.ts";
 import { Store } from "./services/store.ts";
 import { Voice } from "./services/voice.ts";
@@ -34,7 +35,7 @@ const secretsOf = (env: Secrets) => {
 
 /** The outside services, with keys read from the Worker's secrets. */
 export const servicesFor = (env: Secrets) =>
-  Layer.mergeAll(Reader.layer, Writer.layer, Voice.layer).pipe(
+  Layer.mergeAll(Reader.layer, Writer.layer, Voice.layer, Pictures.layer).pipe(
     Layer.provide(FetchHttpClient.layer),
     Layer.provide(
       ConfigProvider.layer(ConfigProvider.fromEnv({ env: secretsOf(env) }))

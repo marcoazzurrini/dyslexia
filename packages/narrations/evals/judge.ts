@@ -2,9 +2,7 @@ import { Effect, Schema } from "effect";
 import { HttpClientRequest } from "effect/http";
 
 import { ScriptIncomplete } from "../src/errors.ts";
-import type { Article } from "../src/services/reader.ts";
 import { decodeJson, send } from "../src/services/send.ts";
-import type { Script } from "../src/services/writer.ts";
 
 const JUDGE_MODEL = "anthropic/claude-opus-5.5";
 
@@ -67,10 +65,13 @@ const list = { items: { type: "string" }, type: "array" };
 /** What the judge found, check by check: an empty list is a pass. */
 export type Findings = Readonly<Record<Check, readonly string[]>>;
 
-/** Asks the judge model to check a script against its article. */
+/**
+ * Asks the judge model to check a script, everything the voice says, against
+ * its article's Markdown.
+ */
 export const judge = Effect.fn("judge")(function* judge(
-  article: Article,
-  script: Script,
+  page: string,
+  script: string,
   key: string
 ) {
   const body = yield* send(
@@ -84,10 +85,7 @@ export const judge = Effect.fn("judge")(function* judge(
         messages: [
           { content: INSTRUCTIONS, role: "system" },
           {
-            content: JSON.stringify({
-              page: article.text,
-              script: script.text,
-            }),
+            content: JSON.stringify({ page, script }),
             role: "user",
           },
         ],

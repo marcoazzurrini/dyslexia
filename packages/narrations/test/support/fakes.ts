@@ -1,6 +1,14 @@
 import type { Workflow } from "@cloudflare/workers-types";
+import type { Page } from "@dyslexia/transcript/making";
 import type { WorkflowStep } from "cloudflare:workers";
-import { Effect, Layer, ManagedRuntime, Schedule, Tracer } from "effect";
+import {
+  Effect,
+  Layer,
+  ManagedRuntime,
+  Option,
+  Schedule,
+  Tracer,
+} from "effect";
 
 import type {
   ArticleUnreadable,
@@ -10,13 +18,16 @@ import type {
 } from "../../src/errors.ts";
 import { RetrySchedule } from "../../src/making.ts";
 import type { NarrationParams } from "../../src/services/engine.ts";
+import { Pictures } from "../../src/services/pictures.ts";
+import type { Picture } from "../../src/services/pictures.ts";
 import { Reader } from "../../src/services/reader.ts";
 import type { Article } from "../../src/services/reader.ts";
 import { Store } from "../../src/services/store.ts";
 import { Voice } from "../../src/services/voice.ts";
+import type { Speech } from "../../src/services/voice.ts";
 import { Writer } from "../../src/services/writer.ts";
 import type { Script as WrittenScript } from "../../src/services/writer.ts";
-import { speech } from "./audio.ts";
+import { spoken } from "./audio.ts";
 
 export const ARTICLE: Article = {
   text: "Reading is a recent invention.\n\nLearning to read recycles part of the visual system.",
@@ -30,20 +41,42 @@ export interface Script {
     url: string
   ) => Effect.Effect<Article, ArticleUnreadable | ServiceError>;
   readonly write?: (
-    article: Article
+    page: Page
   ) => Effect.Effect<WrittenScript, ScriptIncomplete | ServiceError>;
-  readonly speak?: (text: string) => Effect.Effect<Uint8Array, ServiceError>;
+  readonly speak?: (text: string) => Effect.Effect<Speech, ServiceError>;
+  /** A picture at an address, or none; by default every one is a PNG. */
+  readonly fetchPicture?: (url: string) => Option.Option<Picture>;
 }
+
+/** The bytes of the fake pictures the fake services fetch. */
+export const PICTURE: Picture = {
+  bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
+  type: "image/png",
+};
+
+/** A script that says each of `paragraphs`, under `title`. */
+export const scriptOf = (
+  paragraphs: readonly string[],
+  title = ARTICLE.title
+): WrittenScript => ({
+  items: paragraphs.map((say) => ({ kind: "paragraph", say, visual: null })),
+  title,
+});
+
+/** A script that says the page word for word, a paragraph at a time. */
+export const verbatim = (page: Page) =>
+  scriptOf(page.markdown.split("\n\n"), page.title);
 
 /**
  * Stand-ins for the outside services. By default they read `ARTICLE`, write
- * it back word for word under its own title, and speak two frames of audio per part. `calls`
- * counts what was asked of them.
+ * it back word for word under its own title, and speak two frames of audio
+ * per part. `calls` counts what was asked of them.
  */
 export const fakeServices = (script: Script = {}) => {
   const read: string[] = [];
   const speak: string[] = [];
-  const calls = { read, speak, write: 0 };
+  const pictures: string[] = [];
+  const calls = { pictures, read, speak, write: 0 };
   const layer = Layer.mergeAll(
     Layer.succeed(Reader, {
       read: (url) =>
@@ -53,17 +86,24 @@ export const fakeServices = (script: Script = {}) => {
         }),
     }),
     Layer.succeed(Writer, {
-      write: (article) =>
+      write: (page) =>
         Effect.suspend(() => {
           calls.write += 1;
-          return script.write?.(article) ?? Effect.succeed(article);
+          return script.write?.(page) ?? Effect.succeed(verbatim(page));
         }),
     }),
     Layer.succeed(Voice, {
       speak: (text) =>
         Effect.suspend(() => {
           calls.speak.push(text);
-          return script.speak?.(text) ?? Effect.succeed(speech());
+          return script.speak?.(text) ?? Effect.succeed(spoken(text));
+        }),
+    }),
+    Layer.succeed(Pictures, {
+      fetch: (url) =>
+        Effect.sync(() => {
+          calls.pictures.push(url);
+          return script.fetchPicture?.(url) ?? Option.some(PICTURE);
         }),
     })
   );

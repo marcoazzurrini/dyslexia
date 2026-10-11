@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 
 import { INTERRUPTED } from "../src/errors.ts";
 import { MAX_IN_PROGRESS } from "../src/limits.ts";
-import { apiSetup, ORIGIN } from "./support/api.ts";
+import { apiSetup, ORIGIN, TRANSCRIPT } from "./support/api.ts";
 import { speech } from "./support/audio.ts";
 
 const LONG_AGO = "2020-01-01T00:00:00.000Z";
@@ -311,6 +311,84 @@ describe("playing", () => {
     const ready = await api.seed({ durationSeconds: 1, state: "ready" });
     api.access.signedIn = false;
     expect(await api.status("GET", `/${ready.id}/audio`)).toBe(401);
+  });
+});
+
+describe("reading along", () => {
+  test("lists where to read a narration that has a transcript", async () => {
+    const api = apiSetup();
+    const timed = await api.seed({
+      durationSeconds: 1,
+      state: "ready",
+      transcript: true,
+    });
+    const older = await api.seed({ durationSeconds: 1, state: "ready" });
+    const response = await api.call("GET");
+    // Only the link to the transcript shows; toEqual skips undefined fields.
+    expect(await response.json()).toEqual([
+      { ...older, audioUrl: `/api/narrations/${older.id}/audio` },
+      {
+        ...timed,
+        audioUrl: `/api/narrations/${timed.id}/audio`,
+        transcript: undefined,
+        transcriptUrl: `/api/narrations/${timed.id}/transcript`,
+      },
+    ]);
+  });
+
+  test("serves the transcript as JSON", async () => {
+    const api = apiSetup();
+    const ready = await api.seed({
+      durationSeconds: 1,
+      state: "ready",
+      transcript: true,
+    });
+    const response = await api.call("GET", `/${ready.id}/transcript`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("application/json");
+    expect(await response.json()).toEqual(TRANSCRIPT);
+  });
+
+  test("has no transcript for a narration made before transcripts, or not ready", async () => {
+    const api = apiSetup();
+    const older = await api.seed({ durationSeconds: 1, state: "ready" });
+    const making = await api.seed(
+      { stage: "recording", state: "making" },
+      { running: true }
+    );
+    expect(await api.status("GET", `/${older.id}/transcript`)).toBe(404);
+    expect(await api.status("GET", `/${making.id}/transcript`)).toBe(404);
+  });
+
+  test("serves it only to someone signed in", async () => {
+    const api = apiSetup();
+    const ready = await api.seed({
+      durationSeconds: 1,
+      state: "ready",
+      transcript: true,
+    });
+    api.access.signedIn = false;
+    expect(await api.status("GET", `/${ready.id}/transcript`)).toBe(401);
+    expect(await api.status("GET", `/${ready.id}/pictures/0`)).toBe(401);
+  });
+
+  test("serves the article's pictures, unable to run anything", async () => {
+    const api = apiSetup();
+    const ready = await api.seed({
+      durationSeconds: 1,
+      state: "ready",
+      transcript: true,
+    });
+    const response = await api.call("GET", `/${ready.id}/pictures/0`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("image/svg+xml");
+    expect(response.headers.get("Content-Security-Policy")).toContain(
+      "sandbox"
+    );
+    expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(await response.text()).toBe("<svg/>");
+    expect(await api.status("GET", `/${ready.id}/pictures/1`)).toBe(404);
+    expect(await api.status("GET", `/${ready.id}/pictures/x`)).toBe(400);
   });
 });
 

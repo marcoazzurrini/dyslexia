@@ -1,3 +1,5 @@
+import { PlanSchema, RecordedSchema } from "@dyslexia/transcript/making";
+import type { Recorded } from "@dyslexia/transcript/making";
 import type { WorkflowStep, WorkflowStepConfig } from "cloudflare:workers";
 import { Effect, Layer, ManagedRuntime, Schema } from "effect";
 import type { Tracer } from "effect";
@@ -8,6 +10,7 @@ import type { MakingError } from "./errors.ts";
 import { servicesFor, storageFor } from "./layers.ts";
 import { PARTS_AT_ONCE } from "./limits.ts";
 import {
+  keepPictures,
   publish,
   readArticle,
   recordPart,
@@ -23,6 +26,7 @@ import {
   observationInput,
   observationOutput,
 } from "./observation.ts";
+import type { Pictures } from "./services/pictures.ts";
 import { ArticleSchema } from "./services/reader.ts";
 import type { Reader } from "./services/reader.ts";
 import { Store } from "./services/store.ts";
@@ -30,7 +34,7 @@ import type { Voice } from "./services/voice.ts";
 import type { Writer } from "./services/writer.ts";
 import { flushTraces, narrationTracingFor } from "./telemetry.ts";
 
-type Services = Reader | Writer | Voice | Store;
+type Services = Reader | Writer | Voice | Pictures | Store;
 
 /** Everything a run needs, from the Worker's environment. */
 export const runtimeFor = (env: NarrationsEnv) =>
@@ -139,20 +143,22 @@ const makeSteps = async (
       ArticleSchema,
       readArticle(id)
     );
-    const parts = await run(
+    const planned = await run(
       "write the script",
-      Schema.Array(Schema.String),
+      PlanSchema,
       writeScript(id, article)
     );
+    const { parts } = planned;
+    const recorded: Recorded[] = [];
     for (let start = 0; start < parts.length; start += PARTS_AT_ONCE) {
       const batch = parts.slice(start, start + PARTS_AT_ONCE);
       // Let every part in the batch finish, so none is saved after cleanup.
       // eslint-disable-next-line no-await-in-loop -- Record a few parts at a time.
       const results = await Promise.allSettled(
-        batch.map((text, offset) =>
+        batch.map(({ text }, offset) =>
           run(
             `record part ${start + offset + 1}`,
-            Schema.Number,
+            RecordedSchema,
             recordPart(id, start + offset, text),
             {
               attributes: { "narration.part": start + offset + 1 },
@@ -161,9 +167,11 @@ const makeSteps = async (
           )
         )
       );
-      const failure = results.find((result) => result.status === "rejected");
-      if (failure) {
-        throw failure.reason;
+      for (const result of results) {
+        if (result.status === "rejected") {
+          throw result.reason;
+        }
+        recorded.push(result.value);
       }
       const done = start + batch.length;
       // eslint-disable-next-line no-await-in-loop -- Save progress after each batch.
@@ -174,10 +182,15 @@ const makeSteps = async (
         { attributes: { "narration.parts_done": done }, span: "save progress" }
       );
     }
+    const kept = await run(
+      "keep the pictures",
+      Schema.Record(Schema.String, Schema.String),
+      keepPictures(id, planned)
+    );
     const durationSeconds = await run(
       "publish the recording",
       Schema.Number,
-      publish(id, parts.length)
+      publish(id, planned, recorded, kept)
     );
     annotate(
       parent,
@@ -204,7 +217,7 @@ const makeSteps = async (
 
 /**
  * Makes a narration: read the article, write the script, record its parts,
- * and join them. If any step fails, deletes what was made and saves the
+ * and join them, with the script timed against the recording. If any step fails, deletes what was made and saves the
  * reason. Cloudflare saves each step's result, so a run that restarts skips
  * the steps it finished.
  */

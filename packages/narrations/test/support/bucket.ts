@@ -5,6 +5,7 @@ interface Stored {
   readonly bytes: Uint8Array<ArrayBuffer>;
   readonly etag: string;
   readonly uploaded: Date;
+  readonly httpMetadata?: { readonly contentType?: string };
 }
 
 /** What narrations store: JSON text, audio bytes, or a stream of audio. */
@@ -16,6 +17,7 @@ const toBytes = async (value: Body) =>
 const objectOf = (key: string, stored: Stored) => ({
   etag: stored.etag,
   httpEtag: `"${stored.etag}"`,
+  httpMetadata: stored.httpMetadata ?? {},
   key,
   size: stored.bytes.byteLength,
   uploaded: stored.uploaded,
@@ -107,11 +109,16 @@ export const memoryBucket = () => {
         truncated,
       });
     },
-    put: async (key: string, value: Body) => {
+    put: async (
+      key: string,
+      value: Body,
+      options?: { httpMetadata?: { contentType?: string } }
+    ) => {
       version += 1;
       const stored = {
         bytes: await toBytes(value),
         etag: `v${version}`,
+        httpMetadata: options?.httpMetadata,
         uploaded: new Date("2026-10-01T00:00:00Z"),
       };
       files.set(key, stored);

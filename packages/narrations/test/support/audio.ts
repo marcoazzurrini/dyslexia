@@ -16,3 +16,15 @@ export const speech = (frames = 2) => {
 
 /** How long `speech(frames)` plays. */
 export const secondsOf = (frames: number) => (frames * 1152) / 44_100;
+
+/**
+ * What the voice gives for `text`: audio of `frames` frames, with the text's
+ * characters said evenly across it.
+ */
+export const spoken = (text: string, frames = 2) => ({
+  audio: speech(frames),
+  starts: Array.from(
+    { length: text.length },
+    (_, at) => (at * secondsOf(frames)) / text.length
+  ),
+});

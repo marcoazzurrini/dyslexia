@@ -108,8 +108,40 @@ export const audio = Effect.fn("library.audio")(function* libraryAudio(
   return yield* store.audio(id, request);
 });
 
+/** The finished recording's transcript, as JSON. */
+export const transcript = Effect.fn("library.transcript")(
+  function* libraryTranscript(id: string) {
+    const store = yield* Store;
+    const record = yield* store.get(id);
+    if (record.state !== "ready" || !record.transcript) {
+      return yield* new NarrationNotFound();
+    }
+    return yield* store.transcript(id);
+  }
+);
+
+/** One of the article's pictures, kept with a narration. */
+export const picture = Effect.fn("library.picture")(function* libraryPicture(
+  id: string,
+  index: number
+) {
+  const store = yield* Store;
+  const record = yield* store.get(id);
+  if (record.state !== "ready") {
+    return yield* new NarrationNotFound();
+  }
+  return yield* store.picture(id, index);
+});
+
 /** A narration as the app sees it. */
-export const present = (record: NarrationRecord): Narration =>
-  record.state === "ready"
-    ? { ...record, audioUrl: `${API_PATH}/${record.id}/audio` }
-    : record;
+export const present = (record: NarrationRecord): Narration => {
+  if (record.state !== "ready") {
+    return record;
+  }
+  const { transcript: timed, ...ready } = record;
+  return {
+    ...ready,
+    audioUrl: `${API_PATH}/${record.id}/audio`,
+    ...(timed && { transcriptUrl: `${API_PATH}/${record.id}/transcript` }),
+  };
+};

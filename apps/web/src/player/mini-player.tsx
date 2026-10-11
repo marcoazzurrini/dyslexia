@@ -7,14 +7,7 @@ import {
   PlayIcon,
   recipes,
 } from "@dyslexia/ui";
-import {
-  color,
-  font,
-  media,
-  radius,
-  size,
-  space,
-} from "@dyslexia/ui/tokens.stylex";
+import { color, font, radius, size, space } from "@dyslexia/ui/tokens.stylex";
 import * as stylex from "@stylexjs/stylex";
 import { SeekButton, Time } from "@videojs/react";
 
@@ -22,32 +15,22 @@ import type { Recording } from "../lib/recording";
 import { coverOf } from "../lib/recording";
 import type { PlaybackView } from "./player";
 
+/** The width of the cover. */
+const COVER = "2.75rem";
+
 const styles = stylex.create({
   bar: {
     alignItems: "center",
-    backdropFilter: {
-      default: "blur(24px) saturate(180%)",
-      [media.reducedTransparency]: "none",
-    },
-    backgroundColor: {
-      default: color.glass,
-      [media.reducedTransparency]: color.elevated,
-    },
-    borderRadius: radius.lg,
-    boxShadow: `inset 0 0.5px 0 ${color.glassEdge}, 0 8px 30px rgb(0 0 0 / 0.16)`,
     display: "flex",
     gap: space.xs,
-    marginInline: "auto",
-    maxWidth: size.dock,
-    minHeight: "3.75rem",
     paddingInlineEnd: space.sm,
-    pointerEvents: "auto",
   },
+  // Round, to sit in the capsule as the bar's ends do.
   cover: {
-    borderRadius: radius.sm,
+    borderRadius: radius.full,
     flexShrink: 0,
     overflow: "hidden",
-    width: "2.75rem",
+    width: COVER,
   },
   // Floats just above the tab bar, with content fading out behind it.
   dock: {
@@ -61,10 +44,6 @@ const styles = stylex.create({
       zIndex: -1,
     },
     bottom: `calc(max(${space.sm}, env(safe-area-inset-bottom)) + ${size.tabBar} + ${space.sm})`,
-    insetInline: 0,
-    paddingInline: `max(${space.sm}, env(safe-area-inset-left))`,
-    pointerEvents: "none",
-    position: "fixed",
     zIndex: 20,
   },
   loading: {
@@ -76,16 +55,17 @@ const styles = stylex.create({
   },
   open: {
     alignItems: "center",
+    alignSelf: "stretch",
     backgroundColor: "transparent",
-    borderRadius: radius.lg,
+    borderRadius: radius.full,
     borderStyle: "none",
     color: color.label,
     display: "flex",
     flexGrow: 1,
     gap: space.md,
     minWidth: 0,
-    paddingBlock: space.sm,
-    paddingInlineStart: space.sm,
+    // Even all around the cover, so it sits concentric with the bar's end.
+    paddingInlineStart: `calc((${size.tabBar} - ${COVER}) / 2)`,
     textAlign: "start",
   },
   // A plain glyph, as the play button beside it.
@@ -119,7 +99,7 @@ const styles = stylex.create({
 });
 
 /** Height the mini player covers, kept clear at the bottom of screens. */
-export const MINI_PLAYER_INSET = "4.5rem";
+export const MINI_PLAYER_INSET = `calc(${size.tabBar} + ${space.sm})`;
 
 /**
  * A floating bar that keeps the current recording in reach on every
@@ -134,8 +114,8 @@ export const MiniPlayer = ({
   recording: Recording;
   view: PlaybackView;
 }) => (
-  <div {...stylex.props(styles.dock)}>
-    <div {...stylex.props(styles.bar)}>
+  <div {...stylex.props(recipes.bottomDock, styles.dock)}>
+    <div {...stylex.props(recipes.bottomBar, styles.bar)}>
       <button
         type="button"
         aria-label={`Open player: ${recording.title}`}

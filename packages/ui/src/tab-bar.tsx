@@ -2,24 +2,9 @@ import * as stylex from "@stylexjs/stylex";
 import type { ComponentProps, ReactNode } from "react";
 
 import { recipes } from "./recipes.ts";
-import { color, media, radius, size, space } from "./tokens.stylex.ts";
+import { color, space } from "./tokens.stylex.ts";
 
 const styles = stylex.create({
-  bar: {
-    backdropFilter: {
-      default: "blur(24px) saturate(180%)",
-      [media.reducedTransparency]: "none",
-    },
-    backgroundColor: {
-      default: color.glass,
-      [media.reducedTransparency]: color.elevated,
-    },
-    borderRadius: radius.full,
-    boxShadow: `inset 0 0.5px 0 ${color.glassEdge}, 0 10px 30px rgb(0 0 0 / 0.14), 0 1px 3px rgb(0 0 0 / 0.08)`,
-    marginInline: "auto",
-    maxWidth: size.dock,
-    pointerEvents: "auto",
-  },
   // Floats above the content and the home indicator. Content fades out
   // behind it, so no row shows half cut beside the bar.
   dock: {
@@ -33,10 +18,6 @@ const styles = stylex.create({
       zIndex: -1,
     },
     bottom: `max(${space.sm}, env(safe-area-inset-bottom))`,
-    insetInline: 0,
-    paddingInline: `max(${space.lg}, env(safe-area-inset-left))`,
-    pointerEvents: "none",
-    position: "fixed",
     // Above the mini player, whose fade must never cover the tabs.
     zIndex: 21,
   },
@@ -61,7 +42,7 @@ const styles = stylex.create({
     textDecoration: "none",
     userSelect: "none",
   },
-  items: { display: "flex", height: size.tabBar },
+  items: { display: "flex", height: "100%" },
   selected: { color: color.accentText },
 });
 
@@ -77,8 +58,8 @@ export interface TabBarProps {
  * as in iOS. The selected tab takes the tint; no shape sits behind it.
  */
 export const TabBar = ({ label, tabs }: TabBarProps) => (
-  <nav aria-label={label} {...stylex.props(styles.dock)}>
-    <div {...stylex.props(styles.bar)}>
+  <nav aria-label={label} {...stylex.props(recipes.bottomDock, styles.dock)}>
+    <div {...stylex.props(recipes.bottomBar)}>
       <div {...stylex.props(styles.items)}>{tabs}</div>
     </div>
   </nav>

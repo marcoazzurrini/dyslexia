@@ -14,7 +14,27 @@ const slideOut = stylex.keyframes({
 });
 
 const styles = stylex.create({
-  // A circle concentric with the bar's end.
+  // A tray tucked behind the bar's top edge, lit along its own top.
+  accessory: {
+    animationDuration: motion.slow,
+    animationName: { default: slideOut, [media.reducedMotion]: "none" },
+    animationTimingFunction: motion.spring,
+    backgroundColor: color.tray,
+    borderRadius: TUCK,
+    boxShadow: `inset 0 0.5px 0 ${color.glassEdge}, 0 8px 30px rgb(0 0 0 / 0.16)`,
+    // Hidden while it holds nothing, so it slides out when filled.
+    display: { ":empty": "none", default: "block" },
+    marginBlockEnd: `calc(-1 * ${TUCK})`,
+    marginInline: "auto",
+    maxWidth: size.dock,
+    paddingBlockEnd: TUCK,
+    pointerEvents: "auto",
+  },
+  // Keeps the tray off the screen's sides.
+  accessoryRow: {
+    paddingInline: `max(${space.sm}, env(safe-area-inset-left))`,
+  },
+  // A circle at the bar's end.
   action: {
     alignItems: "center",
     backgroundColor: { ":active": color.fillPressed, default: color.fill },
@@ -23,31 +43,30 @@ const styles = stylex.create({
     color: color.label,
     display: "flex",
     flexShrink: 0,
-    fontSize: "1.1rem",
-    height: `calc(${size.tabBar} - 2 * ${space.xs} - 2px)`,
+    fontSize: "1.2rem",
+    height: size.touch,
     justifyContent: "center",
-    marginInlineEnd: `calc(${space.xs} + 1px)`,
+    marginInlineEnd: space.sm,
     padding: 0,
-    width: `calc(${size.tabBar} - 2 * ${space.xs} - 2px)`,
+    width: size.touch,
   },
-  // Floats above the content and the home indicator. Content fades out
-  // behind it, so no row shows half cut beside the bar.
+  // Docked to the bottom edge, under the home indicator. Content fades out
+  // above it, so no row shows half cut beside the mini player.
   dock: {
     "::before": {
       backgroundImage: `linear-gradient(to top, ${color.canvas} 50%, transparent)`,
-      bottom: `calc(-1 * max(${space.sm}, env(safe-area-inset-bottom)))`,
+      bottom: 0,
       content: "''",
-      height: `calc(100% + max(${space.sm}, env(safe-area-inset-bottom)) + ${space.xl})`,
+      height: `calc(100% + ${space.xl})`,
       insetInline: 0,
       position: "absolute",
       zIndex: -1,
     },
-    bottom: `max(${space.sm}, env(safe-area-inset-bottom))`,
-    // Closer to the screen's sides than other docked bars.
-    paddingInline: `max(calc(${space.xs} + ${space.xxs}), env(safe-area-inset-left))`,
+    bottom: 0,
+    paddingInline: 0,
     zIndex: 21,
   },
-  icon: { display: "flex", fontSize: "1.3rem" },
+  icon: { display: "flex", fontSize: "1.4rem" },
   item: {
     // Long-press opens no link preview, as with native tabs.
     WebkitTouchCallout: "none",
@@ -58,7 +77,7 @@ const styles = stylex.create({
     flexDirection: "column",
     flexGrow: 1,
     // Tab labels stay small and fixed, as in iOS, so the bar keeps its height.
-    fontSize: "10px",
+    fontSize: "11px",
     fontWeight: 600,
     gap: "1px",
     justifyContent: "center",
@@ -69,25 +88,28 @@ const styles = stylex.create({
     userSelect: "none",
   },
   items: { display: "flex", flexGrow: 1, height: "100%" },
-  row: { marginInline: "auto", maxWidth: size.dock },
+  // The tabs, as wide as screen content, centered in the bar.
+  row: {
+    alignItems: "center",
+    display: "flex",
+    height: size.tabBar,
+    marginInline: "auto",
+    maxWidth: size.dock,
+  },
   selected: { color: color.accentText },
-  // Above the tray, which tucks under it.
-  surface: { alignItems: "center", display: "flex", position: "relative" },
-  tray: {
-    animationDuration: motion.slow,
-    animationName: { default: slideOut, [media.reducedMotion]: "none" },
-    animationTimingFunction: motion.spring,
-    backgroundColor: color.tray,
-    borderColor: color.separator,
-    borderRadius: TUCK,
-    borderStyle: "solid",
-    borderWidth: "0.5px",
-    // Hidden while it holds nothing, so it slides out when filled.
-    display: { ":empty": "none", default: "block" },
-    marginBlockEnd: `calc(-1 * ${TUCK})`,
-    marginInline: space.xxl,
-    paddingBlockEnd: TUCK,
+  // Edge to edge, with a hairline along its top, as iOS's tab bar.
+  surface: {
+    backgroundColor: {
+      default: color.glass,
+      [media.reducedTransparency]: color.elevated,
+    },
+    boxShadow: `inset 0 0.5px 0 ${color.separator}`,
+    paddingBlockEnd: "env(safe-area-inset-bottom)",
+    paddingInlineEnd: "env(safe-area-inset-right)",
+    paddingInlineStart: "env(safe-area-inset-left)",
     pointerEvents: "auto",
+    // Above the tray, which tucks under it.
+    position: "relative",
   },
 });
 
@@ -111,9 +133,11 @@ export interface TabBarProps {
  */
 export const TabBar = ({ accessory, action, label, tabs }: TabBarProps) => (
   <nav aria-label={label} {...stylex.props(recipes.bottomDock, styles.dock)}>
-    <div {...stylex.props(styles.row)}>
-      <div {...stylex.props(styles.tray)}>{accessory}</div>
-      <div {...stylex.props(recipes.bottomBar, styles.surface)}>
+    <div {...stylex.props(styles.accessoryRow)}>
+      <div {...stylex.props(styles.accessory)}>{accessory}</div>
+    </div>
+    <div {...stylex.props(styles.surface)}>
+      <div {...stylex.props(styles.row)}>
         <div {...stylex.props(styles.items)}>{tabs}</div>
         {action}
       </div>

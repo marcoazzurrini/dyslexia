@@ -16,23 +16,20 @@ import { coverOf } from "../lib/recording";
 import type { PlaybackView } from "./player";
 
 /** The width of the cover. */
-const COVER = "2.25rem";
+const COVER = "3rem";
 
-/** Play and skip: small glyphs, close together, so the title gets room. */
-const GLYPH = "1.15rem";
+/** The tabs' glyph size, so every glyph at the bottom matches. */
+const GLYPH = "1.4rem";
 
-/** Each control's width. Its touch area keeps the full height. */
-const CONTROL = "2.25rem";
+/** Each control's width: a full touch target. */
+const CONTROL = size.touch;
 
 const styles = stylex.create({
   bar: {
     alignItems: "center",
     display: "flex",
     height: size.miniPlayer,
-    // The glyphs' own margin makes this match the cover's side.
-    paddingInlineEnd: space.xs,
   },
-  // Round, to sit in the capsule as the bar's ends do.
   cover: {
     borderRadius: radius.full,
     flexShrink: 0,
@@ -58,7 +55,8 @@ const styles = stylex.create({
     gap: space.md,
     minWidth: 0,
     paddingInlineEnd: space.sm,
-    paddingInlineStart: space.md,
+    // Even all around the cover.
+    paddingInlineStart: `calc((${size.miniPlayer} - ${COVER}) / 2)`,
     textAlign: "start",
   },
   play: { fontSize: GLYPH, width: CONTROL },
@@ -81,12 +79,12 @@ const styles = stylex.create({
   text: { display: "flex", flexDirection: "column", minWidth: 0 },
   time: {
     color: color.secondaryLabel,
-    fontSize: font.caption,
+    fontSize: font.footnote,
     fontVariantNumeric: "tabular-nums",
     lineHeight: 1.3,
   },
   title: {
-    fontSize: font.subheadline,
+    fontSize: font.callout,
     fontWeight: 600,
     lineHeight: 1.3,
   },

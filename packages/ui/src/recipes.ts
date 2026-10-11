@@ -20,8 +20,8 @@ export const recipes = stylex.create({
     scrollbarWidth: "none",
   },
   /**
-   * A bar floating at the bottom of the screen, such as the tab bar: a glass
-   * capsule as wide as the screen allows. Every such bar looks the same.
+   * A bar floating at the bottom of the screen, such as the read-along
+   * controls: a glass capsule as wide as the screen allows.
    */
   bottomBar: {
     backdropFilter: {

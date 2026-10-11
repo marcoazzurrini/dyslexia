@@ -70,7 +70,8 @@ test("Home picks up the three latest listens and lists what is new", async ({
   await mockNarrations(page, { narrations });
   await page.goto("/");
   const resume = section(page, "Pick up where you left off");
-  await expect(resume.getByRole("button")).toHaveText([
+  // Each card also has its own play button, which is not the card.
+  await expect(resume.getByRole("button", { name: /^(?!Play )/u })).toHaveText([
     /Newest listen.*8 min left/u,
     /Middle listen.*5 min left/u,
     /Fourth listen.*10 min left/u,
@@ -93,6 +94,7 @@ test("listening moves a narration to Pick up where you left off", async ({
   await player.getByRole("button", { name: "Close" }).click();
   await expect(
     section(page, "Pick up where you left off").getByRole("button", {
+      exact: true,
       name: "Fresh",
     })
   ).toBeVisible();

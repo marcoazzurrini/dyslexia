@@ -499,6 +499,31 @@ test("a row's Play button plays in place, and pauses while it plays", async ({
   expect(await audioValue(page, "paused")).toBe(true);
 });
 
+test("a Home card's play button plays in place, and pauses while it plays", async ({
+  page,
+}) => {
+  await page.addInitScript((key) => {
+    localStorage.setItem(
+      key,
+      JSON.stringify({ playedAt: 1, position: 10, rate: 1 })
+    );
+  }, PLAYBACK_KEY);
+  await mockNarrations(page, { narrations: [makeNarration("ready")] });
+  await page.route("**/api/narrations/job-one/audio", serveAudio);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Play A new article" }).click();
+  await expect.poll(() => audioValue(page, "paused")).toBe(false);
+  await expect(player(page)).toBeHidden();
+  await page.getByRole("button", { name: "Pause A new article" }).click();
+  await expect.poll(() => audioValue(page, "paused")).toBe(true);
+  // Pressing the card opens the player, without playing.
+  await page
+    .getByRole("button", { exact: true, name: "A new article" })
+    .click();
+  await expect(player(page)).toBeVisible();
+  expect(await audioValue(page, "paused")).toBe(true);
+});
+
 test("playing another row switches recordings, and each keeps its place", async ({
   page,
 }) => {

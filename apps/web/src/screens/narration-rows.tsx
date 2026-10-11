@@ -11,7 +11,7 @@ import {
   PlayIcon,
   WarningIcon,
 } from "@dyslexia/ui";
-import type { RowMeta } from "@dyslexia/ui";
+import type { RowAction, RowMeta } from "@dyslexia/ui";
 
 import type { Listening } from "../lib/listening";
 import { coverOf, formatDuration, siteOf } from "../lib/recording";
@@ -47,6 +47,31 @@ const metaOf = (narration: Ready, listening: Listening): RowMeta => {
   };
 };
 
+/** Plays or pauses a narration in place, leaving the player closed. */
+interface Listen {
+  /** It is playing now, so its button pauses it. */
+  readonly playing: boolean;
+  readonly onListen: (narration: Ready) => void;
+  readonly onPause: () => void;
+}
+
+/** The button that plays a narration in place, or pauses it while playing. */
+const listenAction = (
+  narration: Ready,
+  { onListen, onPause, playing }: Listen
+): RowAction =>
+  playing
+    ? {
+        icon: <PauseIcon />,
+        label: `Pause ${narration.title}`,
+        onClick: onPause,
+      }
+    : {
+        icon: <PlayIcon />,
+        label: `Play ${narration.title}`,
+        onClick: () => onListen(narration),
+      };
+
 /** A narration being made, with what it is doing. */
 export const MakingRow = ({ narration }: { narration: Making }) => (
   <ListRow
@@ -60,16 +85,11 @@ export const MakingRow = ({ narration }: { narration: Making }) => (
   />
 );
 
-export interface ReadyRowProps {
+export interface ReadyRowProps extends Listen {
   readonly narration: Ready;
   readonly listening: Listening;
-  /** It is playing now, so its button pauses it. */
-  readonly playing: boolean;
   /** Pressing the row opens the full player. */
   readonly onOpen: (narration: Ready) => void;
-  /** Its Play button plays it at once, leaving the player closed. */
-  readonly onListen: (narration: Ready) => void;
-  readonly onPause: () => void;
   /** Offers Delete by swiping and through the more button. */
   readonly onOptions?: (narration: Ready) => void;
   readonly onDelete?: (narration: Ready) => void;
@@ -98,19 +118,7 @@ export const ReadyRow = ({
     swipeAction={
       onDelete && { label: "Delete", onAction: () => onDelete(narration) }
     }
-    action={
-      playing
-        ? {
-            icon: <PauseIcon />,
-            label: `Pause ${narration.title}`,
-            onClick: onPause,
-          }
-        : {
-            icon: <PlayIcon />,
-            label: `Play ${narration.title}`,
-            onClick: () => onListen(narration),
-          }
-    }
+    action={listenAction(narration, { onListen, onPause, playing })}
     more={
       onOptions && {
         label: `Options for ${narration.title}`,
@@ -120,13 +128,17 @@ export const ReadyRow = ({
   />
 );
 
-/** A narration to pick up, as a card in a darker shade of its cover's color. */
+/**
+ * A narration to pick up, as a card in a darker shade of its cover's color.
+ * Pressing it opens the player; its button plays or pauses it in place.
+ */
 export const ResumeCard = ({
   listening,
   narration,
   onOpen,
   wide = false,
-}: {
+  ...listen
+}: Listen & {
   narration: Ready;
   listening: Listening;
   onOpen: (narration: Ready) => void;
@@ -134,6 +146,7 @@ export const ResumeCard = ({
   wide?: boolean;
 }) => (
   <MediaCard
+    action={listenAction(narration, listen)}
     label={narration.title}
     artwork={<Cover {...coverOf(narration.url)} />}
     title={narration.title}
@@ -145,15 +158,20 @@ export const ResumeCard = ({
   />
 );
 
-/** A narration on a shelf: its cover, title, and length. */
+/**
+ * A narration on a shelf: its cover, title, and length. Pressing it opens
+ * the player; its button plays or pauses it in place.
+ */
 export const ShelfTile = ({
   narration,
   onOpen,
-}: {
+  ...listen
+}: Listen & {
   narration: Ready;
   onOpen: (narration: Ready) => void;
 }) => (
   <MediaTile
+    action={listenAction(narration, listen)}
     label={narration.title}
     artwork={<Cover {...coverOf(narration.url)} />}
     title={narration.title}

@@ -171,7 +171,10 @@ export const HomeScreen = ({
                 key={narration.id}
                 narration={narration}
                 listening={listening}
+                playing={narration.id === playingId}
                 onOpen={onOpen}
+                onListen={onListen}
+                onPause={onPause}
                 wide={resume.length === 1}
               />
             ))}
@@ -200,7 +203,10 @@ export const HomeScreen = ({
               <ShelfTile
                 key={narration.id}
                 narration={narration}
+                playing={narration.id === playingId}
                 onOpen={onOpen}
+                onListen={onListen}
+                onPause={onPause}
               />
             ))}
           </Shelf>
